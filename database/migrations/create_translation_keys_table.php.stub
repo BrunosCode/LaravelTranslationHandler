@@ -8,12 +8,18 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('migration_table_name_table', function (Blueprint $table) {
+        Schema::create('translation_keys', function (Blueprint $table) {
             $table->id();
 
-            // add fields
+            $table->string('key')->unique();  
 
             $table->timestamps();
+            $table->softDeletes();
         });
+    }
+
+    public function down()
+    {
+        Schema::dropIfExists('translation_keys');
     }
 };

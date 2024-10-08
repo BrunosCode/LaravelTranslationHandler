@@ -4,8 +4,6 @@ namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Commands\TranslationHandlerExportCommand;
 use BrunosCode\TranslationHandler\Commands\TranslationHandlerImportCommand;
-use BrunosCode\TranslationHandler\DbHandler;
-use BrunosCode\TranslationHandler\JsonFileHandler;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -35,10 +33,10 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(TranslationHandlerService::class, function () {
             return new TranslationHandlerService(
-                new PhpFileHandler(),
-                new CsvFileHandler(),
-                new JsonFileHandler(),
-                new DbHandler(),
+                new PhpFileHandler,
+                new CsvFileHandler,
+                new JsonFileHandler,
+                new DbHandler,
             );
         });
     }

@@ -10,16 +10,16 @@ return [
     'default' => [
         'import_from' => \BrunosCode\TranslationHandler\TranslationHandlerService::PHP,
         'import_to' => \BrunosCode\TranslationHandler\TranslationHandlerService::DB,
-    
+
         'export_from' => \BrunosCode\TranslationHandler\TranslationHandlerService::DB,
         'export_to' => \BrunosCode\TranslationHandler\TranslationHandlerService::PHP,
     ],
-    
+
     'php_handler' => \BrunosCode\TranslationHandler\PhpFileHandler::class,
     'csv_handler' => \BrunosCode\TranslationHandler\CsvFileHandler::class,
     'json_handler' => \BrunosCode\TranslationHandler\JsonFileHandler::class,
     'db_handler' => \BrunosCode\TranslationHandler\DbHandler::class,
-    
+
     'php_file' => [
         'format_export' => true,
     ],

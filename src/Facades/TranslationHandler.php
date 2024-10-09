@@ -16,7 +16,7 @@ class TranslationHandler extends Facade
      * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getTypes()
      * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getDefaultExportFrom()
      * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getDefaultExportTo()
-     * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getDefaultImportFrom()   
+     * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getDefaultImportFrom()
      * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getDefaultImportTo()
      */
     protected static function getFacadeAccessor()

@@ -3,38 +3,27 @@
 // config for BrunosCode/TranslationHandler
 
 return [
-    'key_separator' => '.',
-    'file_names' => [],
-    'locales' => [],
+    'keyDelimiter' => '.',
 
-    'default' => [
-        'import_from' => \BrunosCode\TranslationHandler\TranslationHandlerService::PHP,
-        'import_to' => \BrunosCode\TranslationHandler\TranslationHandlerService::DB,
+    'fileNames' => ['translation-handler'],
+    'locales' => ['en'],
 
-        'export_from' => \BrunosCode\TranslationHandler\TranslationHandlerService::DB,
-        'export_to' => \BrunosCode\TranslationHandler\TranslationHandlerService::PHP,
-    ],
+    'defaultImportFrom' => \BrunosCode\TranslationHandler\Data\TranslationOptions::PHP,
+    'defaultImportTo' => \BrunosCode\TranslationHandler\Data\TranslationOptions::PHP,
+    'defaultExportFrom' => \BrunosCode\TranslationHandler\Data\TranslationOptions::PHP,
+    'defaultExportTo' => \BrunosCode\TranslationHandler\Data\TranslationOptions::PHP,
 
-    'php_handler' => \BrunosCode\TranslationHandler\PhpFileHandler::class,
-    'csv_handler' => \BrunosCode\TranslationHandler\CsvFileHandler::class,
-    'json_handler' => \BrunosCode\TranslationHandler\JsonFileHandler::class,
-    'db_handler' => \BrunosCode\TranslationHandler\DbHandler::class,
+    'phpHandlerClass' => \BrunosCode\TranslationHandler\PhpFileHandler::class,
+    'csvHandlerClass' => \BrunosCode\TranslationHandler\CsvFileHandler::class,
+    'jsonHandlerClass' => \BrunosCode\TranslationHandler\JsonFileHandler::class,
+    'dbHandlerClass' => \BrunosCode\TranslationHandler\DatabaseHandler::class,
 
-    'php_file' => [
-        'format_export' => true,
-    ],
+    'phpFormat' => false,
+    'phpPath' => lang_path(),
 
-    'db' => [
-        'escape_values' => false,
-        'key_table_name' => 'translation_keys',
-        'value_table_name' => 'translation_values',
-    ],
+    'csvDelimiter' => ';',
+    'csvFileName' => 'translations',
+    'csvPath' => storage_path('lang'),
 
-    'csv_file' => [
-        'delimiter' => ';',
-        'enclosure' => '"',
-    ],
-
-    'json_file' => [],
-
+    'jsonPath' => lang_path(),
 ];

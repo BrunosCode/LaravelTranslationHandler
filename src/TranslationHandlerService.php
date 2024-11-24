@@ -2,175 +2,215 @@
 
 namespace BrunosCode\TranslationHandler;
 
-use BrunosCode\TranslationHandler\Interfaces\DbHandlerInterface;
+use BrunosCode\TranslationHandler\Collections\TranslationCollection;
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
+use BrunosCode\TranslationHandler\Interfaces\DatabaseHandlerInterface;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
 
 class TranslationHandlerService
 {
-    const PHP = 'php_file';
+    protected TranslationOptions $defaultOptions;
 
-    const CSV = 'csv_file';
+    protected ?TranslationOptions $options;
 
-    const JSON = 'json_file';
-
-    const DB = 'db';
-
-    const TYPES = [
-        self::PHP,
-        self::CSV,
-        self::JSON,
-        self::DB,
-    ];
-
-    public array $fileNames;
-
-    public array $locales;
-
-    public string $defaultExportFrom;
-
-    public string $defaultExportTo;
-
-    public string $defaultImportFrom;
-
-    public string $defaultImportTo;
-
-    public function __construct(
-        private FileHandlerInterface $phpHandler,
-        private FileHandlerInterface $csvHandler,
-        private FileHandlerInterface $jsonHandler,
-        private DbHandlerInterface $dbHandler
-    ) {
-        $this->fileNames = config('translation-handler.file_names', []);
-        if (empty($this->fileNames)) {
-            throw new \InvalidArgumentException('config translation-handler.file_names cannot be empty');
-        }
-
-        $this->locales = config('translation-handler.locales', []);
-        if (empty($this->locales)) {
-            throw new \InvalidArgumentException('config translation-handler.locales cannot be empty');
-        }
-
-        $this->defaultExportFrom = config('translation-handler.default.export_from', self::DB);
-        if (! in_array($this->defaultExportFrom, self::TYPES)) {
-            throw new \InvalidArgumentException('Invalid default export type');
-        }
-
-        $this->defaultExportTo = config('translation-handler.default.export_to', self::PHP);
-        if (! in_array($this->defaultExportTo, self::TYPES)) {
-            throw new \InvalidArgumentException('Invalid default export to type');
-        }
-
-        $this->defaultImportFrom = config('translation-handler.default.import_from', self::PHP);
-        if (! in_array($this->defaultImportFrom, self::TYPES)) {
-            throw new \InvalidArgumentException('Invalid default import from type');
-        }
-
-        $this->defaultImportTo = config('translation-handler.default.import_to', self::DB);
-        if (! in_array($this->defaultImportTo, self::TYPES)) {
-            throw new \InvalidArgumentException('Invalid default import to type');
-        }
+    public function __construct()
+    {
+        $this->defaultOptions = new TranslationOptions;
+        $this->options = null;
     }
 
-    public function import(?string $from = null, ?string $to = null, ?array $fileNames = null, ?array $locales = null): bool
+    public function import(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
     {
-        $from = $from ?? $this->defaultImportFrom;
-        if (! is_string($from) || ! in_array($from, self::TYPES)) {
-            throw new \InvalidArgumentException('Invalid import type');
+        $options = $this->getOptions();
+
+        $from = $from ?? $options->defaultImportFrom;
+
+        $to = $to ?? $options->defaultImportTo;
+
+        $translations = $this->get($from, $fromPath);
+
+        if ($translations->isEmpty()) {
+            throw new \Error('No translations were found');
         }
 
-        $to = $to ?? $this->defaultExportTo;
-        if (! is_string($to) || ! in_array($to, self::TYPES)) {
-            throw new \InvalidArgumentException('Invalid export type');
-        }
-
-        $fileNames = $fileNames ?? $this->fileNames;
-        $locales = $locales ?? $this->locales;
-
-        $fromHandler = match ($from) {
-            self::PHP => $this->phpHandler,
-            self::CSV => $this->csvHandler,
-            self::JSON => $this->jsonHandler,
-            self::DB => $this->dbHandler,
-        };
-
-        $toHandler = match ($to) {
-            self::PHP => $this->phpHandler,
-            self::CSV => $this->csvHandler,
-            self::JSON => $this->jsonHandler,
-            self::DB => $this->dbHandler,
-        };
-
-        $translations = $fromHandler->get($fileNames, $locales);
-
-        return (bool) $toHandler->store($translations, $fileNames, $locales);
+        return $this->set($translations, $to, $toPath, $force) > 0;
     }
 
-    public function export(?string $from = null, ?string $to = null, ?array $fileNames = null, ?array $locales = null): bool
+    public function export(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
     {
-        $from = $from ?? $this->defaultImportFrom;
-        if (! is_string($from) || ! in_array($from, self::TYPES)) {
-            throw new \InvalidArgumentException('Invalid import type');
+        $options = $this->getOptions();
+
+        $from = $from ?? $options->defaultExportFrom;
+
+        $to = $to ?? $options->defaultExportTo;
+
+        $translations = $this->get($from, $fromPath);
+
+        if ($translations->isEmpty()) {
+            throw new \Error('No translations were found');
         }
 
-        $to = $to ?? $this->defaultExportTo;
-        if (! is_string($to) || ! in_array($to, self::TYPES)) {
-            throw new \InvalidArgumentException('Invalid export type');
+        return $this->set($translations, $to, $toPath, $force) > 0;
+    }
+
+    public function get(string $from, ?string $path = null): TranslationCollection
+    {
+        $options = $this->getOptions();
+
+        $translations = match ($from) {
+            TranslationOptions::PHP => $this->getPhpHandler()->get(
+                path: $path
+            ),
+            TranslationOptions::CSV => $this->getCsvHandler()->get(
+                path: $path
+            ),
+            TranslationOptions::JSON => $this->getJsonHandler()->get(
+                path: $path
+            ),
+            TranslationOptions::DB => $this->getDbHandler()->get(
+                connection: $path
+            ),
+            default => throw new \InvalidArgumentException('Invalid $from type'),
+        };
+
+        return $translations
+            ->whereGroupIn($options->fileNames)
+            ->whereLocaleIn($options->locales);
+    }
+
+    public function set(TranslationCollection $translations, string $to, ?string $path = null, bool $force = false): int
+    {
+        $oldTranslations = $this->get($to, $path);
+
+        if ($force) {
+            $newTranslations = $oldTranslations->replaceTranslations($translations);
+        } else {
+            $newTranslations = $oldTranslations->addTranslations($translations);
         }
 
-        $fileNames = $fileNames ?? $this->fileNames;
-        $locales = $locales ?? $this->locales;
+        $newTranslations = $newTranslations->sortTranslations();
 
-        $fromHandler = match ($from) {
-            self::PHP => $this->phpHandler,
-            self::CSV => $this->csvHandler,
-            self::JSON => $this->jsonHandler,
-            self::DB => $this->dbHandler,
+        return match ($to) {
+            TranslationOptions::PHP => $this->getPhpHandler()->put(
+                translations: $newTranslations,
+                path: $path,
+            ),
+            TranslationOptions::CSV => $this->getCsvHandler()->put(
+                translations: $newTranslations,
+                path: $path,
+            ),
+            TranslationOptions::JSON => $this->getJsonHandler()->put(
+                translations: $newTranslations,
+                path: $path,
+            ),
+            TranslationOptions::DB => $this->getDbHandler()->put(
+                translations: $newTranslations,
+                connection: $path
+            ),
+            default => throw new \InvalidArgumentException('Invalid $to type'),
         };
+    }
 
-        $toHandler = match ($to) {
-            self::PHP => $this->phpHandler,
-            self::CSV => $this->csvHandler,
-            self::JSON => $this->jsonHandler,
-            self::DB => $this->dbHandler,
+    public function delete(string $from, ?string $path = null): int
+    {
+        return match ($from) {
+            TranslationOptions::PHP => $this->getPhpHandler()->delete(
+                path: $path
+            ),
+            TranslationOptions::CSV => $this->getCsvHandler()->delete(
+                path: $path
+            ),
+            TranslationOptions::JSON => $this->getJsonHandler()->delete(
+                path: $path
+            ),
+            TranslationOptions::DB => $this->getDbHandler()->delete(
+                connection: $path
+            ),
+            default => throw new \InvalidArgumentException('Invalid $from type'),
         };
-
-        $translations = $fromHandler->get($fileNames, $locales);
-
-        return (bool) $toHandler->store($translations, $fileNames, $locales);
     }
 
     public function getTypes(): array
     {
-        return self::TYPES;
+        return TranslationOptions::TYPES;
     }
 
-    public function getDefaultExportFrom(): string
+    public function getPhpHandler(): FileHandlerInterface
     {
-        return $this->defaultExportFrom;
+        return app($this->getOptions()->phpHandlerClass, [$this->getOptions()]);
     }
 
-    public function getDefaultExportTo(): string
+    public function getCsvHandler(): FileHandlerInterface
     {
-        return $this->defaultExportTo;
+        return app($this->getOptions()->csvHandlerClass, [$this->getOptions()]);
     }
 
-    public function getDefaultImportFrom(): string
+    public function getJsonHandler(): FileHandlerInterface
     {
-        return $this->defaultImportFrom;
+        return app($this->getOptions()->jsonHandlerClass, [$this->getOptions()]);
     }
 
-    public function getDefaultImportTo(): string
+    public function getDbHandler(): DatabaseHandlerInterface
     {
-        return $this->defaultImportTo;
+        return app($this->getOptions()->dbHandlerClass, [$this->getOptions()]);
     }
 
-    public function getFileNames(): array
+    public function getOptions(): TranslationOptions
     {
-        return $this->fileNames;
+        return $this->options ?? $this->defaultOptions;
     }
 
-    public function getLocales(): array
+    public function setOptions(TranslationOptions $options): self
     {
-        return $this->locales;
+        $this->options = $options;
+
+        return $this;
+    }
+
+    public function resetOptions(): self
+    {
+        $this->options = null;
+
+        return $this;
+    }
+
+    public function setOption(string $name, mixed $value): self
+    {
+        if ($this->options === null) {
+            $this->options = clone $this->defaultOptions;
+        }
+
+        $this->options->$name = $value;
+
+        return $this;
+    }
+
+    public function getOption(string $name): mixed
+    {
+        return $this->getOptions()->$name;
+    }
+
+    public function getDefaultOptions(): TranslationOptions
+    {
+        return $this->defaultOptions;
+    }
+
+    public function setDefaultOptions(TranslationOptions $options): self
+    {
+        $this->defaultOptions = $options;
+
+        return $this;
+    }
+
+    public function setDefaultOption(string $name, mixed $value): self
+    {
+        $this->defaultOptions->$name = $value;
+
+        return $this;
+    }
+
+    public function getDefaultOption(string $name): mixed
+    {
+        return $this->defaultOptions->$name;
     }
 }

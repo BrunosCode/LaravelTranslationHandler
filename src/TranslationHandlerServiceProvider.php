@@ -2,8 +2,12 @@
 
 namespace BrunosCode\TranslationHandler;
 
-use BrunosCode\TranslationHandler\Commands\TranslationHandlerExportCommand;
-use BrunosCode\TranslationHandler\Commands\TranslationHandlerImportCommand;
+use BrunosCode\TranslationHandler\Commands\Command;
+use BrunosCode\TranslationHandler\Commands\ExportCommand;
+use BrunosCode\TranslationHandler\Commands\GetCommand;
+use BrunosCode\TranslationHandler\Commands\ImportCommand;
+use BrunosCode\TranslationHandler\Commands\SetCommand;
+use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -24,20 +28,22 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
                 'create_translation_values_table',
             ])
             ->hasCommands([
-                TranslationHandlerExportCommand::class,
-                TranslationHandlerImportCommand::class,
-            ]);
+                Command::class,
+                ImportCommand::class,
+                ExportCommand::class,
+                GetCommand::class,
+                SetCommand::class,
+            ])
+            ->hasInstallCommand(function (InstallCommand $command) {
+                $command
+                    ->publishConfigFile()
+                    ->publishMigrations()
+                    ->copyAndRegisterServiceProviderInApp();
+            });
     }
 
     public function packageRegistered(): void
     {
-        $this->app->singleton(TranslationHandlerService::class, function () {
-            return new TranslationHandlerService(
-                new PhpFileHandler,
-                new CsvFileHandler,
-                new JsonFileHandler,
-                new DbHandler,
-            );
-        });
+        $this->app->singleton(TranslationHandlerService::class, fn () => new TranslationHandlerService);
     }
 }

@@ -10,5 +10,6 @@ parameters:
     tmpDir: build/phpstan
     checkOctaneCompatibility: true
     checkModelProperties: true
-    checkMissingIterableValueType: false
-
+    treatPhpDocTypesAsCertain: false
+    ignoreErrors:
+        - '#Command "translation-handler(:[a-z\-]+)?" does not have (argument|option) "([a-z\-]+)"#'

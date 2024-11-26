@@ -21,7 +21,7 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
          * More info: https://github.com/spatie/laravel-package-tools
          */
         $package
-            ->name('laraveltranslationhandler')
+            ->name('laravel-translation-handler')
             ->hasConfigFile('translation-handler')
             ->hasMigrations([
                 'create_translation_keys_table',

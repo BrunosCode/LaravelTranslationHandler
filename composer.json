@@ -1,12 +1,12 @@
 {
-    "name": "brunoscode/laraveltranslationhandler",
-    "description": "This is my package laraveltranslationhandler",
+    "name": "brunoscode/laravel-translation-handler",
+    "description": "This is my package laravel-translation-handler",
     "keywords": [
         "BrunosCode",
         "laravel",
-        "laraveltranslationhandler"
+        "laravel-translation-handler"
     ],
-    "homepage": "https://github.com/brunoscode/laraveltranslationhandler",
+    "homepage": "https://github.com/brunoscode/laravel-translation-handler",
     "license": "MIT",
     "authors": [
         {
@@ -63,6 +63,8 @@
         ],
         "analyse": "vendor/bin/phpstan analyse --memory-limit 300M",
         "format": "vendor/bin/pint",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
         "serve": [
             "Composer\\Config::disableProcessTimeout",
             "@build",
@@ -71,9 +73,7 @@
         "lint": [
             "@php vendor/bin/pint --ansi",
             "@php vendor/bin/phpstan analyse --verbose --ansi"
-        ],
-        "test": "vendor/bin/pest",
-        "test-coverage": "vendor/bin/pest --coverage"
+        ]
     },
     "config": {
         "sort-packages": true,

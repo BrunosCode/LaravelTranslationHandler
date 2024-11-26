@@ -1,3 +1,3 @@
 # Changelog
 
-All notable changes to `LaravelTranslationHandler` will be documented in this file.
+All notable changes to `laravel-translation-handler` will be documented in this file.

@@ -26,7 +26,7 @@ class TestCase extends Orchestra
         Artisan::call('migrate');
     }
 
-    protected function test_config(array $config = [])
+    protected function testConfig(array $config = [])
     {
         return array_merge([
             'keyDelimiter' => '.',

@@ -22,7 +22,7 @@ class TestCase extends Orchestra
 
     private function prepareForTests()
     {
-        $this->app['config']->set('translation-handler', $this->testConfig());
+        $this->app['config']->set('translation-handler', $this->test_config());
         Artisan::call('migrate');
     }
 

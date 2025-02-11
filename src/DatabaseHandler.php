@@ -212,9 +212,9 @@ class DatabaseHandler implements DatabaseHandlerInterface
                     ->whereIn('translation_key_id', $dbKeys->pluck('id')->toArray());
 
                 if ($hardDelete) {
-                    $keysQuery->delete();
-
                     $counter += $valuesQuery->delete();
+                    
+                    $keysQuery->delete();
 
                     continue;
                 }

@@ -213,7 +213,7 @@ class DatabaseHandler implements DatabaseHandlerInterface
 
                 if ($hardDelete) {
                     $counter += $valuesQuery->delete();
-                    
+
                     $keysQuery->delete();
 
                     continue;

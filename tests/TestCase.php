@@ -22,11 +22,13 @@ class TestCase extends Orchestra
 
     private function prepareForTests()
     {
-        $this->app['config']->set('translation-handler', $this->test_config());
-        Artisan::call('migrate');
+        $this->app['config']->set('translation-handler', $this->config());
+
+        // $this->artisan('vendor:publish --tag="laravel-translation-handler-migrations"');
+        // $this->artisan('migrate');
     }
 
-    protected function test_config(array $config = [])
+    protected function config(array $config = [])
     {
         return array_merge([
             'keyDelimiter' => '.',
@@ -59,6 +61,6 @@ class TestCase extends Orchestra
 
     public function getEnvironmentSetUp($app)
     {
-        config()->set('database.default', 'testing');
+        config()->set('database.default', 'sqlite');
     }
 }

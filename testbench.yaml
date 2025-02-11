@@ -1,0 +1,25 @@
+providers:
+ - BrunosCode\TranslationHandler\TranslationHandlerServiceProvider
+
+migrations:
+  - workbench/database/migrations
+
+workbench:
+  start: '/'
+  install: true
+  discovers:
+    web: true
+    api: false
+    commands: true
+    components: false
+    views: false
+  build:
+    - asset-publish
+    - create-sqlite-db
+    - db-wipe
+    - migrate-fresh:
+        --seed: false
+  assets:
+    - laravel-assets
+    - laravel-translation-handler-config
+    - laravel-translation-handler-migrations

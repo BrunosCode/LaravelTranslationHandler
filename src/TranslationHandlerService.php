@@ -29,10 +29,6 @@ class TranslationHandlerService
 
         $translations = $this->get($from, $fromPath);
 
-        if ($translations->isEmpty()) {
-            throw new \Error('No translations were found');
-        }
-
         return $this->set($translations, $to, $toPath, $force) > 0;
     }
 
@@ -45,10 +41,6 @@ class TranslationHandlerService
         $to = $to ?? $options->defaultExportTo;
 
         $translations = $this->get($from, $fromPath);
-
-        if ($translations->isEmpty()) {
-            throw new \Error('No translations were found');
-        }
 
         return $this->set($translations, $to, $toPath, $force) > 0;
     }

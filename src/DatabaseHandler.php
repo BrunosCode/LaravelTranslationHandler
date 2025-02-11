@@ -87,6 +87,7 @@ class DatabaseHandler implements DatabaseHandlerInterface
         });
 
         $keysToInsert = $translationToInsert
+            ->unique('key')
             ->map(fn (Translation $translation) => [
                 'key' => $translation->key,
                 'updated_at' => now(),
@@ -128,6 +129,7 @@ class DatabaseHandler implements DatabaseHandlerInterface
         });
 
         $keysToUpdate = $translationToInsert
+            ->unique('key')
             ->map(fn (Translation $translation) => [
                 'key' => $translation->key,
                 'updated_at' => now(),

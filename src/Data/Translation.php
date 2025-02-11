@@ -50,7 +50,7 @@ class Translation
     {
         return Validator::make($data, [
             'key' => 'string|required|min:1',
-            'locale' => 'string|required|min:2|max:2',
+            'locale' => 'string|required|min:2|max:7',
             'value' => 'string|nullable',
         ]);
     }
@@ -59,7 +59,7 @@ class Translation
     {
         return Validator::make($data, [
             '*.key' => 'string|required|min:1',
-            '*.locale' => 'string|required|min:2|max:2',
+            '*.locale' => 'string|required|min:2|max:7',
             '*.value' => 'string|nullable',
         ]);
     }

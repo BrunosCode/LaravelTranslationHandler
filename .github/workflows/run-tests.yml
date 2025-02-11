@@ -51,5 +51,8 @@ jobs:
       - name: List Installed Dependencies
         run: composer show -D
 
+      - name: Build Testbench
+        run: vendor/bin/testbench workbench:build
+
       - name: Execute tests
         run: vendor/bin/pest --ci

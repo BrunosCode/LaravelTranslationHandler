@@ -2,48 +2,25 @@
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Data\Translation;
-use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
-    $options = new TranslationOptions;
-    $jsonHandler = app($options->jsonHandlerClass, [$options]);
-
-    TranslationHandler::shouldReceive('getOptions')->andReturn($options);
-    TranslationHandler::shouldReceive('getJsonHandler')->andReturn($jsonHandler);
-
-    if (! File::exists($options->jsonPath)) {
-        File::makeDirectory($options->jsonPath, 0777, true);
-    }
-
-    foreach ($options->locales as $locale) {
-        File::put(
-            "{$options->jsonPath}/{$locale}.json",
-            json_encode([
-                'test1.get' => "get-1-{$locale}",
-                'test2.get' => "get-2-{$locale}",
-            ])
-        );
-    }
+    $this->prepareJsonTranslations();
 });
 
 afterEach(function () {
-    $options = TranslationHandler::getOptions();
-    foreach ($options->locales as $locale) {
-        File::delete("{$options->jsonPath}/{$locale}.json");
-    }
+    $this->cleanJsonTranslations();
 });
 
 describe('JsonFileHandler get', function () {
-    test('get method throws an exception for an empty path', function () {
+    it('throws an exception for an empty path', function () {
         $jsonHandler = TranslationHandler::getJsonHandler();
 
         expect(fn () => $jsonHandler->get(path: ''))
             ->toThrow(InvalidArgumentException::class);
     });
 
-    test('get method reads translations from a JSON file', function () {
+    it('reads translations from a JSON file', function () {
         $translations = TranslationHandler::getJsonHandler()->get();
 
         expect($translations)->toBeInstanceOf(TranslationCollection::class);
@@ -58,8 +35,7 @@ describe('JsonFileHandler get', function () {
 })->group('JsonFileHandler');
 
 describe('JsonFileHandler put', function () {
-
-    test('put method throws an exception for an empty path', function () {
+    it('throws an exception for an empty path', function () {
         $jsonHandler = TranslationHandler::getJsonHandler();
 
         $translations = new TranslationCollection([
@@ -73,7 +49,7 @@ describe('JsonFileHandler put', function () {
             ->toThrow(InvalidArgumentException::class);
     });
 
-    test('put method writes translations to a JSON file', function () {
+    it('writes translations to a JSON file', function () {
         $translations = new TranslationCollection([
             new Translation('test1.put', 'en', 'put-1-en'),
             new Translation('test1.put', 'it', 'put-2-it'),
@@ -88,14 +64,14 @@ describe('JsonFileHandler put', function () {
 })->group('JsonFileHandler');
 
 describe('JsonFileHandler delete', function () {
-    test('delete method throws an exception for an empty path', function () {
+    it('throws an exception for an empty path', function () {
         $jsonHandler = TranslationHandler::getJsonHandler();
 
         expect(fn () => $jsonHandler->delete(path: ''))
             ->toThrow(InvalidArgumentException::class);
     });
 
-    test('delete method deletes the JSON file', function () {
+    it('deletes the JSON file', function () {
         $result = TranslationHandler::getJsonHandler()->delete();
 
         expect($result)->toBe(4);

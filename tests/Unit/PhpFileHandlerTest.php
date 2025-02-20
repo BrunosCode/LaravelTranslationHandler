@@ -2,32 +2,15 @@
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Data\Translation;
-use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
-    $options = new TranslationOptions;
-    $phpHandler = app($options->phpHandlerClass, [$options]);
+    $this->preparePhpTranslations();
+});
 
-    TranslationHandler::shouldReceive('getOptions')->andReturn($options);
-    TranslationHandler::shouldReceive('getPhpHandler')->andReturn($phpHandler);
-
-    if (! File::exists($options->phpPath)) {
-        File::makeDirectory($options->phpPath, 0777, true);
-    }
-
-    foreach ($options->locales as $locale) {
-        if (! File::exists($options->phpPath.'/'.$locale)) {
-            File::makeDirectory($options->phpPath.'/'.$locale, 0777, true);
-        }
-
-        foreach ($options->fileNames as $filename) {
-            File::put("{$options->phpPath}/{$locale}/{$filename}.php", '<?php return '.var_export([
-                'test' => "{$locale}-{$filename}",
-            ], true).';');
-        }
-    }
+afterEach(function () {
+    $this->cleanPhpTranslations();
 });
 
 describe('PhpFileHandler get', function () {
@@ -93,7 +76,3 @@ describe('PhpFileHandler delete', function () {
         }
     });
 })->group('PhpFileHandler');
-
-afterEach(function () {
-    File::deleteDirectory(TranslationHandler::getOptions()->phpPath);
-});

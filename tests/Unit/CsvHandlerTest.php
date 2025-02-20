@@ -2,30 +2,14 @@
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Data\Translation;
-use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
-    $options = new TranslationOptions;
-    $csvHandler = app($options->csvHandlerClass, [$options]);
-
-    TranslationHandler::shouldReceive('getOptions')->andReturn($options);
-    TranslationHandler::shouldReceive('getCsvHandler')->andReturn($csvHandler);
-
-    if (! File::exists($options->csvPath)) {
-        File::makeDirectory($options->csvPath, 0777, true);
-    }
-
-    File::put(
-        "{$options->csvPath}/{$options->csvFileName}.csv",
-        "key;en;it\ntest1.get;get-1-en;get-1-it\ntest2.get;get-2-en;get-2-it"
-    );
+    $this->prepareCsvTranslations();
 });
 
 afterEach(function () {
-    $options = TranslationHandler::getOptions();
-    File::delete("{$options->csvPath}/{$options->csvFileName}.csv");
+    $this->cleanCsvTranslations();
 });
 
 describe('CsvFileHandler get', function () {

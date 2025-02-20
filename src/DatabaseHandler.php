@@ -166,6 +166,7 @@ class DatabaseHandler implements DatabaseHandlerInterface
                     'locale' => $translation->locale,
                     'created_at' => $dbValue?->created_at ?? now(),
                     'updated_at' => now(),
+                    'deleted_at' => null,
                 ];
             })
             ->filter(fn (array $translation) => $translation['translation_key_id'] !== null);
@@ -174,7 +175,7 @@ class DatabaseHandler implements DatabaseHandlerInterface
             ->upsert(
                 $valuesToUpdate->toArray(),
                 ['translation_key_id', 'locale'],
-                ['value', 'updated_at', 'created_at']
+                ['value', 'updated_at', 'created_at', 'deleted_at']
             );
     }
 

@@ -51,7 +51,7 @@ class CsvFileHandler implements FileHandlerInterface
         $rawTranslations = [];
 
         while ($data = fgetcsv($handler, 0, $this->options->csvDelimiter)) {
-            if (count($data) <= 1) {
+            if (count($data) <= 1 || count($data) != count($headers)) {
                 throw new \InvalidArgumentException('Invalid CSV file');
             }
 
@@ -90,6 +90,14 @@ class CsvFileHandler implements FileHandlerInterface
         foreach ($translations as $translation) {
             $fileTranslations[$translation->key] ??= ['key' => $translation->key];
             $fileTranslations[$translation->key][$translation->locale] = $translation->value;
+        }
+
+        foreach ($fileTranslations as $key => $value) {
+            foreach ($this->options->locales as $locale) {
+                if (! array_key_exists($locale, $value)) {
+                    $fileTranslations[$key][$locale] = '';
+                }
+            }
         }
 
         $fileTranslations = array_map(function (array $array) use ($orderedHeaders) {

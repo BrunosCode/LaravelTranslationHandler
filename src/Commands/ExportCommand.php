@@ -11,7 +11,7 @@ class ExportCommand extends Command
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler:export {--force} {--from} {--from-path} {--to} {--to-path} {--file-names=*} {--locales=*} {--guided}';
+    public $signature = 'translation-handler:export {--force} {--from} {--from-path} {--file-names=*} {--locales=*} {--to} {--to-path} {--guided}';
 
     public $description = 'Export translations';
 
@@ -21,17 +21,19 @@ class ExportCommand extends Command
 
         $force = $this->getTranslationForceOption($guided);
 
-        $from = $this->getTranslationFromOption($guided);
+        $options = TranslationHandler::getOptions();
 
-        $to = $this->getTranslationToOption($guided);
+        $from = $this->getTranslationFromOption($options->defaultExportFrom, $guided);
+
+        $to = $this->getTranslationToOption($options->defaultExportTo, $guided);
 
         $fromPath = $this->getTranslationFromPathOption($guided);
 
         $toPath = $this->getTranslationToPathOption($guided);
 
-        $fileNames = $this->getTranslationFileNamesOption($guided);
+        $fileNames = $this->getTranslationFileNamesOption($options->fileNames, $guided);
 
-        $locales = $this->getTranslationLocalesOption($guided);
+        $locales = $this->getTranslationLocalesOption($options->locales, $guided);
 
         $this->comment(__('Starting Export...'));
 

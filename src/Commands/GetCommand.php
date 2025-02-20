@@ -37,7 +37,7 @@ class GetCommand extends Command
 
             return self::FAILURE;
         }
-        $this->option('from-path');
+
         $this->comment(__('Translation found'));
 
         $this->info($translation->value);

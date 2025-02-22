@@ -38,12 +38,15 @@ class TestCase extends Orchestra
             'csvHandlerClass' => \BrunosCode\TranslationHandler\CsvFileHandler::class,
             'jsonHandlerClass' => \BrunosCode\TranslationHandler\JsonFileHandler::class,
             'dbHandlerClass' => \BrunosCode\TranslationHandler\DatabaseHandler::class,
+            'phpPath' => lang_path('php-test'),
             'phpFormat' => false,
-            'phpPath' => lang_path('test'),
             'csvDelimiter' => ';',
             'csvFileName' => 'test-translations',
-            'csvPath' => storage_path('lang/test'),
-            'jsonPath' => lang_path('test'),
+            'csvPath' => storage_path('lang/csv-test'),
+            'jsonPath' => lang_path('json-test'),
+            'jsonFileName' => 'test-translations',
+            'jsonNested' => false,
+            'jsonFormat' => true,
         ], $config);
     }
 
@@ -91,9 +94,12 @@ class TestCase extends Orchestra
             }
 
             foreach ($options->fileNames as $filename) {
-                File::put("{$options->phpPath}/{$locale}/{$filename}.php", '<?php return '.var_export([
-                    'get' => "get-1-{$locale}",
-                ], true).';');
+                File::put(
+                    "{$options->phpPath}/{$locale}/{$filename}.php",
+                    '<?php return '.var_export([
+                        'get' => "get-1-{$locale}",
+                    ], true).';'
+                );
             }
         }
     }
@@ -112,12 +118,21 @@ class TestCase extends Orchestra
         }
 
         foreach ($options->locales as $locale) {
+            $path = ! empty($options->jsonFileName)
+                ? "{$options->jsonPath}/{$locale}/{$options->jsonFileName}.json"
+                : "{$options->jsonPath}/{$locale}.json";
+
+            if (! File::exists(dirname($path))) {
+                File::makeDirectory(dirname($path), 0777, true);
+            }
+
             File::put(
-                "{$options->jsonPath}/{$locale}.json",
+                $path,
                 json_encode([
                     'test1.get' => "get-1-{$locale}",
                     'test2.get' => "get-2-{$locale}",
-                ])
+                ]),
+                false
             );
         }
     }
@@ -126,7 +141,11 @@ class TestCase extends Orchestra
     {
         $options = TranslationHandler::getOptions();
         foreach ($options->locales as $locale) {
-            File::delete("{$options->jsonPath}/{$locale}.json");
+            $path = ! empty($options->jsonFileName)
+                ? "{$options->jsonPath}/{$locale}/{$options->jsonFileName}.json"
+                : "{$options->jsonPath}/{$locale}.json";
+
+            File::delete($path);
         }
     }
 

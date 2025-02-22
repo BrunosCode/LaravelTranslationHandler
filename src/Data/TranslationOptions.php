@@ -50,6 +50,12 @@ class TranslationOptions
 
     public string $jsonPath;
 
+    public ?string $jsonFileName;
+
+    public bool $jsonNested;
+
+    public bool $jsonFormat;
+
     public string $csvPath;
 
     public string $csvFileName;
@@ -85,6 +91,9 @@ class TranslationOptions
         $this->phpFormat = $validated['phpFormat'];
 
         $this->jsonPath = $validated['jsonPath'];
+        $this->jsonFileName = $validated['jsonFileName'];
+        $this->jsonNested = $validated['jsonNested'];
+        $this->jsonFormat = $validated['jsonFormat'];
 
         $this->csvPath = $validated['csvPath'];
         $this->csvFileName = $validated['csvFileName'];
@@ -116,6 +125,9 @@ class TranslationOptions
             'phpFormat' => 'required|boolean',
 
             'jsonPath' => 'required|string|min:1',
+            'jsonFileName' => 'nullable|string|min:0',
+            'jsonNested' => 'required|boolean',
+            'jsonFormat' => 'required|boolean',
 
             'csvPath' => 'required|string|min:1',
             'csvFileName' => 'required|string|min:1',

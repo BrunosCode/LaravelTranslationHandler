@@ -15,66 +15,74 @@ class TranslationHandlerService
 
     public function __construct()
     {
-        $this->defaultOptions = new TranslationOptions;
+        $this->defaultOptions = new TranslationOptions();
         $this->options = null;
     }
 
-    public function import(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
-    {
-        $options = $this->getOptions();
+    public function move(
+        bool $overwrite,
+        string $fromType,
+        string $toType,
+        ?string $fromPath = null,
+        ?string $toPath = null,
+        null|string|array $fromFileNames = null,
+        null|string|array $toFileNames = null
+    ): bool {
+        $translations = $this->get(
+            type: $fromType,
+            path: $fromPath,
+            fileNames: $fromFileNames
+        );
 
-        $from = $from ?? $options->defaultImportFrom;
-
-        $to = $to ?? $options->defaultImportTo;
-
-        $translations = $this->get($from, $fromPath);
-
-        return $this->set($translations, $to, $toPath, $force) > 0;
+        return $this->set(
+            translations: $translations,
+            type: $toType,
+            path: $toPath,
+            fileNames: $toFileNames,
+            overwrite: $overwrite
+        ) > 0;
     }
 
-    public function export(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
-    {
+    public function get(
+        string $type,
+        ?string $path = null,
+        null|string|array $fileNames = null
+    ): TranslationCollection {
         $options = $this->getOptions();
 
-        $from = $from ?? $options->defaultExportFrom;
-
-        $to = $to ?? $options->defaultExportTo;
-
-        $translations = $this->get($from, $fromPath);
-
-        return $this->set($translations, $to, $toPath, $force) > 0;
-    }
-
-    public function get(string $from, ?string $path = null): TranslationCollection
-    {
-        $options = $this->getOptions();
-
-        $translations = match ($from) {
+        $translations = match ($type) {
             TranslationOptions::PHP => $this->getPhpHandler()->get(
-                path: $path
+                path: $path,
+                fileNames: $fileNames
             ),
             TranslationOptions::CSV => $this->getCsvHandler()->get(
-                path: $path
+                path: $path,
+                fileNames: $fileNames
             ),
             TranslationOptions::JSON => $this->getJsonHandler()->get(
-                path: $path
+                path: $path,
+                fileNames: $fileNames
             ),
             TranslationOptions::DB => $this->getDbHandler()->get(
-                connection: $path
+                connection: $path,
             ),
-            default => throw new \InvalidArgumentException('Invalid $from type'),
+            default => throw new \InvalidArgumentException('Invalid $fromType'),
         };
 
         return $translations
-            ->whereGroupIn($options->fileNames)
             ->whereLocaleIn($options->locales);
     }
 
-    public function set(TranslationCollection $translations, string $to, ?string $path = null, bool $force = false): int
-    {
-        $oldTranslations = $this->get($to, $path);
+    public function set(
+        TranslationCollection $translations,
+        string $type,
+        ?string $path = null,
+        null|string|array $fileNames = null,
+        bool $overwrite = false
+    ): int {
+        $oldTranslations = $this->get($type, $path, $fileNames);
 
-        if ($force) {
+        if ($overwrite) {
             $newTranslations = $oldTranslations->replaceTranslations($translations);
         } else {
             $newTranslations = $oldTranslations->addTranslations($translations);
@@ -82,38 +90,44 @@ class TranslationHandlerService
 
         $newTranslations = $newTranslations->sortTranslations();
 
-        return match ($to) {
+        return match ($type) {
             TranslationOptions::PHP => $this->getPhpHandler()->put(
                 translations: $newTranslations,
                 path: $path,
+                fileNames: $fileNames
             ),
             TranslationOptions::CSV => $this->getCsvHandler()->put(
                 translations: $newTranslations,
                 path: $path,
+                fileNames: $fileNames
             ),
             TranslationOptions::JSON => $this->getJsonHandler()->put(
                 translations: $newTranslations,
                 path: $path,
+                fileNames: $fileNames
             ),
             TranslationOptions::DB => $this->getDbHandler()->put(
                 translations: $newTranslations,
                 connection: $path
             ),
-            default => throw new \InvalidArgumentException('Invalid $to type'),
+            default => throw new \InvalidArgumentException('Invalid $toType'),
         };
     }
 
-    public function delete(string $from, ?string $path = null): int
+    public function delete(string $type, ?string $path = null, null|string|array $fileNames = null): int
     {
-        return match ($from) {
+        return match ($type) {
             TranslationOptions::PHP => $this->getPhpHandler()->delete(
-                path: $path
+                path: $path,
+                fileNames: $fileNames
             ),
             TranslationOptions::CSV => $this->getCsvHandler()->delete(
-                path: $path
+                path: $path,
+                fileNames: $fileNames
             ),
             TranslationOptions::JSON => $this->getJsonHandler()->delete(
-                path: $path
+                path: $path,
+                fileNames: $fileNames
             ),
             TranslationOptions::DB => $this->getDbHandler()->delete(
                 connection: $path

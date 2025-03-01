@@ -17,7 +17,7 @@ describe('TranslationCollection', function () {
     });
 
     it('can add a translation', function () {
-        $collection = new TranslationCollection;
+        $collection = new TranslationCollection();
         $translation = new Translation('key1', 'en', 'Hello');
 
         $collection = $collection->addTranslation($translation);

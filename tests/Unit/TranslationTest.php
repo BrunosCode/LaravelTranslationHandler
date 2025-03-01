@@ -84,7 +84,7 @@ describe('Translation', function () {
     it('can fake a translation', function () {
         $translation = Translation::fake();
 
-        TranslationHandler::shouldReceive('getOptions')->andReturn(new TranslationOptions);
+        TranslationHandler::shouldReceive('getOptions')->andReturn(new TranslationOptions());
 
         expect($translation)->toBeInstanceOf(Translation::class);
         expect($translation->key)->toContain(TranslationHandler::getOptions()->keyDelimiter);

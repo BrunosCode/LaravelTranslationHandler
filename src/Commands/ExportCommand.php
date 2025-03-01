@@ -9,23 +9,24 @@ use Illuminate\Console\Command;
 
 class ExportCommand extends Command
 {
-    use HasTranslationArguments, HasTranslationOptions;
+    use HasTranslationArguments;
+    use HasTranslationOptions;
 
-    public $signature = 'translation-handler:export {--force} {--from} {--from-path} {--file-names=*} {--locales=*} {--to} {--to-path} {--guided}';
+    public $signature = 'translation-handler:export {--guided} {--force} {--locales=*} {--from-type} {--from-path} {--from-file-names=*} {--to-type} {--to-path} {--to-file-names=*}';
 
     public $description = 'Export translations';
 
     public function handle(): int
     {
-        $guided = $this->getTranslationGuidedOption();
+        $guided = $this->getTranslationGuidedOption('guided');
 
-        $force = $this->getTranslationForceOption($guided);
+        $force = $this->getTranslationForceOption('force', $guided);
 
         $options = TranslationHandler::getOptions();
 
-        $from = $this->getTranslationFromOption($options->defaultExportFrom, $guided);
+        $fromType = $this->getTranslationTypeOption('from-type', $options->defaultFromType, $guided);
 
-        $to = $this->getTranslationToOption($options->defaultExportTo, $guided);
+        $toType = $this->getTranslationTypeOption('to-type', $options->defaultToType, $guided);
 
         $fromPath = $this->getTranslationFromPathOption($guided);
 

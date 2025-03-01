@@ -4,48 +4,57 @@ namespace BrunosCode\TranslationHandler\Commands;
 
 use BrunosCode\TranslationHandler\Commands\Behaviors\HasTranslationArguments;
 use BrunosCode\TranslationHandler\Commands\Behaviors\HasTranslationOptions;
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use Illuminate\Console\Command as BaseCommand;
 
 class Command extends BaseCommand
 {
-    use HasTranslationArguments, HasTranslationOptions;
+    use HasTranslationArguments;
+    use HasTranslationOptions;
 
-    public $signature = 'translation-handler {from?} {to?} {--force} {--file-names=*} {--locales=*} {--from-path} {--to-path} {--guided}';
+    public $signature = 'translation-handler {from-type?} {to-type?} {--guided} {--force} {--locales=*} {--from-file-names=*} {--from-path} {--to-file-names=*} {--to-path}';
 
     public $description = 'Handle translations';
 
     public function handle(): int
     {
-        $guided = $this->getTranslationGuidedOption();
+        $guided = $this->getTranslationGuidedOption('guided');
 
-        $force = $this->getTranslationForceOption($guided);
+        $locales = $this->getTranslationLocalesOption('locales', $guided);
 
-        $from = $this->getTranslationFromArgument($guided);
+        $this->comment(__('Move translations from:' ));
 
-        $fromPath = $this->getTranslationFromPathOption($guided);
+        $fromType = $this->getTranslationTypeArgument('from-type');
 
-        $to = $this->getTranslationToArgument($guided);
+        $fromPath = $this->getTranslationPathOption('from-path', $fromType, $guided);
 
-        $toPath = $this->getTranslationToPathOption($guided);
+        $fromFileNames = $this->getTranslationFileNamesOption('from-file-names', $guided);
 
-        $options = TranslationHandler::getOptions();
+        $this->comment(__('Move translations to:'));
 
-        $fileNames = $this->getTranslationFileNamesOption($options->fileNames, $guided);
+        $toType = $this->getTranslationTypeOption('to', TranslationOptions::PHP, $guided);
 
-        $locales = $this->getTranslationLocalesOption($options->locales, $guided);
+        $toPath = $this->getTranslationPathOption('to-path', $toType, $guided);
+
+        $toFileNames = $this->getTranslationFileNamesOption('to-file-names', $toType, $guided);
+
+        $locales = $this->getTranslationLocalesOption('locales', $guided);
+
+        $force = $this->getTranslationForceOption('force', $guided);
 
         $this->comment(__('Starting...'));
 
         $success = TranslationHandler::resetOptions()
-            ->setOption('fileNames', $fileNames)
             ->setOption('locales', $locales)
-            ->export(
-                from: $from,
-                to: $to,
-                force: $force,
+            ->move(
+                fromType: $fromType,
                 fromPath: $fromPath,
-                toPath: $toPath
+                fromFileNames: $fromFileNames,
+                toType: $toType,
+                toPath: $toPath,
+                toFileNames: $toFileNames,
+                force: $force,
             );
 
         if (! $success) {
@@ -54,7 +63,7 @@ class Command extends BaseCommand
             return self::FAILURE;
         }
 
-        $this->comment(__('Finished!'));
+        $this->comment(__('Success!'));
 
         return self::SUCCESS;
     }

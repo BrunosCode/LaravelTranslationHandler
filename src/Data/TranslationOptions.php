@@ -7,15 +7,15 @@ use Illuminate\Support\Facades\Validator;
 
 class TranslationOptions
 {
-    const PHP = 'php_file';
+    public const PHP = 'php_file';
 
-    const CSV = 'csv_file';
+    public const CSV = 'csv_file';
 
-    const JSON = 'json_file';
+    public const JSON = 'json_file';
 
-    const DB = 'db';
+    public const DB = 'db';
 
-    const TYPES = [
+    public const TYPES = [
         self::PHP,
         self::CSV,
         self::JSON,
@@ -23,8 +23,6 @@ class TranslationOptions
     ];
 
     public string $keyDelimiter;
-
-    public array $fileNames;
 
     public array $locales;
 
@@ -36,15 +34,9 @@ class TranslationOptions
 
     public string $jsonHandlerClass;
 
-    public string $defaultImportFrom;
-
-    public string $defaultImportTo;
-
-    public string $defaultExportFrom;
-
-    public string $defaultExportTo;
-
     public string $phpPath;
+
+    public array $phpFileNames;
 
     public bool $phpFormat;
 
@@ -62,6 +54,20 @@ class TranslationOptions
 
     public string $csvDelimiter;
 
+    public ?string $dbConnection;
+
+    public string $defaultFromType;
+
+    public ?string $defaultFromPath;
+
+    public null|string|array $defaultFromFileNames;
+
+    public string $defaultToType;
+
+    public ?string $defaultToPath;
+
+    public null|string|array $defaultToFileNames;
+
     public function __construct(?array $config = null)
     {
         $validator = self::validator($config ?? config('translation-handler'));
@@ -74,18 +80,12 @@ class TranslationOptions
 
         $this->keyDelimiter = $validated['keyDelimiter'];
 
-        $this->fileNames = $validated['fileNames'];
         $this->locales = $validated['locales'];
 
         $this->phpHandlerClass = $validated['phpHandlerClass'];
         $this->dbHandlerClass = $validated['dbHandlerClass'];
         $this->csvHandlerClass = $validated['csvHandlerClass'];
         $this->jsonHandlerClass = $validated['jsonHandlerClass'];
-
-        $this->defaultImportFrom = $validated['defaultImportFrom'];
-        $this->defaultImportTo = $validated['defaultImportTo'];
-        $this->defaultExportFrom = $validated['defaultExportFrom'];
-        $this->defaultExportTo = $validated['defaultExportTo'];
 
         $this->phpPath = $validated['phpPath'];
         $this->phpFormat = $validated['phpFormat'];
@@ -98,15 +98,21 @@ class TranslationOptions
         $this->csvPath = $validated['csvPath'];
         $this->csvFileName = $validated['csvFileName'];
         $this->csvDelimiter = $validated['csvDelimiter'];
+
+        $this->dbConnection = $validated['dbConnection'];
+
+        $this->defaultFromType = $validated['defaultFromType'];
+        $this->defaultFromPath = $validated['defaultFromPath'];
+        $this->defaultFromFileNames = $validated['defaultFromFileNames'];
+        $this->defaultToType = $validated['defaultToType'];
+        $this->defaultToPath = $validated['defaultToPath'];
+        $this->defaultToFileNames = $validated['defaultToFileNames'];
     }
 
     public function validator(array $data): ValidatorContract
     {
         return Validator::make($data, [
             'keyDelimiter' => 'required|string|min:1',
-
-            'fileNames' => 'required|array',
-            'fileNames.*' => 'required|string|distinct|min:1',
 
             'locales' => 'required|array|min:1',
             'locales.*' => 'required|string|distinct|min:2|max:7',
@@ -116,12 +122,9 @@ class TranslationOptions
             'csvHandlerClass' => 'required|string|min:1',
             'jsonHandlerClass' => 'required|string|min:1',
 
-            'defaultImportFrom' => 'required|string|in:'.implode(',', self::TYPES),
-            'defaultImportTo' => 'required|string|in:'.implode(',', self::TYPES),
-            'defaultExportFrom' => 'required|string|in:'.implode(',', self::TYPES),
-            'defaultExportTo' => 'required|string|in:'.implode(',', self::TYPES),
-
             'phpPath' => 'required|string|min:1',
+            'phpFileNames' => 'array',
+            'phpFileNames.*' => 'distinct|string|min:1',
             'phpFormat' => 'required|boolean',
 
             'jsonPath' => 'required|string|min:1',
@@ -132,6 +135,15 @@ class TranslationOptions
             'csvPath' => 'required|string|min:1',
             'csvFileName' => 'required|string|min:1',
             'csvDelimiter' => 'required|string|min:1|different:'.$data['keyDelimiter'],
+
+            'dbConnection' => 'nullable|string|min:1',
+
+            'defaultFromType' => 'required|in:'.implode(',', self::TYPES),
+            'defaultFromPath' => 'nullable|string|min:1',
+            'defaultFromFileNames' => 'nullable',
+            'defaultToType' => 'required|in:'.implode(',', self::TYPES),
+            'defaultToPath' => 'nullable|string|min:1',
+            'defaultToFileNames' => 'nullable',
         ]);
     }
 }

@@ -13,22 +13,23 @@ use Illuminate\Support\Facades\DB;
 class DatabaseHandler implements DatabaseHandlerInterface
 {
     public function __construct(
-        private TranslationOptions $options
-    ) {}
+        protected TranslationOptions $options
+    ) {
+    }
 
     public function get(?string $connection = null): TranslationCollection
     {
-        $collection = new TranslationCollection;
+        $collection = new TranslationCollection();
 
         $db = $this->getDB($connection);
 
         $db->table('translation_values')
             ->join('translation_keys', 'translation_keys.id', '=', 'translation_values.translation_key_id')
-            ->where(function ($q) {
-                foreach ($this->options->fileNames as $fileName) {
-                    $q->orWhere('translation_keys.key', 'like', $fileName.'%');
-                }
-            })
+            // ->where(function ($q) {
+            //     foreach ($this->options->fileNames as $fileName) {
+            //         $q->orWhere('translation_keys.key', 'like', $fileName.'%');
+            //     }
+            // })
             ->whereIn('translation_values.locale', $this->options->locales)
             ->whereNull('translation_keys.deleted_at')
             ->whereNull('translation_values.deleted_at')
@@ -54,18 +55,55 @@ class DatabaseHandler implements DatabaseHandlerInterface
         $counter = 0;
 
         $db->transaction(function () use ($translations, $db, &$counter) {
-            foreach ($this->options->fileNames as $filename) {
-                $filteredTranslations = $translations
-                    ->whereGroup($filename);
+            // foreach ($this->options->fileNames as $filename) {
+            // $filteredTranslations = $translations
+            //     ->whereGroup($filename);
+            $filteredTranslations = $translations;
+            $filename = null;
 
-                $dbKeys = $this->getCurrentKeys($db, $filename);
+            $dbKeys = $this->getCurrentKeys($db, $filename);
 
-                $counter += $this->handleUpdate($db, $filteredTranslations, $filename, $dbKeys);
+            $counter += $this->handleUpdate($db, $filteredTranslations, $filename, $dbKeys);
 
-                $counter += $this->handleInsert($db, $filteredTranslations, $filename, $dbKeys);
+            $counter += $this->handleInsert($db, $filteredTranslations, $filename, $dbKeys);
 
-                $this->handleSoftDelete($db, $filteredTranslations, $filename, $dbKeys);
+            $this->handleSoftDelete($db, $filteredTranslations, $filename, $dbKeys);
+            // }
+        });
+
+        return $counter;
+    }
+
+    public function delete(?string $connection = null, bool $hardDelete = false): int
+    {
+        $db = $this->getDB($connection);
+
+        $counter = 0;
+
+        $db->transaction(function () use ($db, &$counter, $hardDelete) {
+            // foreach ($this->options->fileNames as $filename) {
+            $filename = null;
+            $dbKeys = $this->getCurrentKeys($db, $filename);
+
+            $keysQuery = $db->table('translation_keys')
+                ->whereIn('id', $dbKeys->pluck('id')->toArray());
+
+            $valuesQuery = $db->table('translation_values')
+                ->whereIn('translation_key_id', $dbKeys->pluck('id')->toArray());
+
+            if ($hardDelete) {
+                $counter += $valuesQuery->delete();
+
+                $keysQuery->delete();
+
+                // continue;
+                return;
             }
+
+            $keysQuery->whereNull('deleted_at')->update(['deleted_at' => now()]);
+
+            $counter += $valuesQuery->whereNull('deleted_at')->update(['deleted_at' => now()]);
+            // }
         });
 
         return $counter;
@@ -196,41 +234,13 @@ class DatabaseHandler implements DatabaseHandlerInterface
             ->update(['deleted_at' => now()]);
     }
 
-    public function delete(?string $connection = null, bool $hardDelete = false): int
-    {
-        $db = $this->getDB($connection);
-
-        $counter = 0;
-
-        $db->transaction(function () use ($db, &$counter, $hardDelete) {
-            foreach ($this->options->fileNames as $filename) {
-                $dbKeys = $this->getCurrentKeys($db, $filename);
-
-                $keysQuery = $db->table('translation_keys')
-                    ->whereIn('id', $dbKeys->pluck('id')->toArray());
-
-                $valuesQuery = $db->table('translation_values')
-                    ->whereIn('translation_key_id', $dbKeys->pluck('id')->toArray());
-
-                if ($hardDelete) {
-                    $counter += $valuesQuery->delete();
-
-                    $keysQuery->delete();
-
-                    continue;
-                }
-
-                $keysQuery->whereNull('deleted_at')->update(['deleted_at' => now()]);
-
-                $counter += $valuesQuery->whereNull('deleted_at')->update(['deleted_at' => now()]);
-            }
-        });
-
-        return $counter;
-    }
-
     public function getDB(?string $connection = null): Connection
     {
+        $connection ??= $this->options->dbConnection;
+        if (is_string($connection) && empty($connection)) {
+            throw new \InvalidArgumentException('dbConnection cannot be empty');
+        }
+
         return $connection !== null ? DB::connection($connection) : DB::connection();
     }
 }

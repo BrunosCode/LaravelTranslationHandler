@@ -62,8 +62,8 @@
             "@php vendor/bin/testbench serve"
         ],
         "analyse": "vendor/bin/phpstan analyse --memory-limit 300M",
-        "format": "vendor/bin/pint",
-        "test": "vendor/bin/pest",
+        "format": "vendor/bin/pint --preset psr12",
+        "test": "vendor/bin/pest --bail",
         "test-coverage": "vendor/bin/pest --coverage",
         "serve": [
             "Composer\\Config::disableProcessTimeout",

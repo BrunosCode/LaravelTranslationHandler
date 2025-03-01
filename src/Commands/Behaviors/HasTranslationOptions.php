@@ -2,149 +2,129 @@
 
 namespace BrunosCode\TranslationHandler\Commands\Behaviors;
 
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use PHPUnit\Event\Runtime\PHP;
 
 trait HasTranslationOptions
 {
-    protected function getTranslationFromOption(string $default, bool $ask = false): ?string
+    protected function getTranslationTypeOption(string $optionName, string $default, bool $ask = false): ?string
     {
-        if (! $this->hasOption('from')) {
-            throw new \InvalidArgumentException('--from option is not allowed in this command: '.self::class);
+        if (! $this->hasOption($optionName)) {
+            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
         }
 
-        $from = $this->option('from');
+        $type = $this->option($optionName);
 
-        if (empty($from) && $ask) {
-            $from = $this->choice(
-                'From where do you want to import translations?',
+        if (empty($type) && $ask) {
+            $type = $this->choice(
+                'Which type of translations?',
                 TranslationHandler::getTypes(),
             );
         }
 
-        if (empty($from)) {
-            $from = $default;
+        if (empty($type)) {
+            $type = $default;
         }
 
-        if (! in_array($from, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException('Invalid from argument type: '.$from);
+        if (! in_array($type, TranslationHandler::getTypes())) {
+            throw new \InvalidArgumentException('Invalid to type argument type: ' . $type);
         }
 
-        $this->comment('Exporting translations from '.$from);
+        $this->comment('- type ' . $type);
 
-        return $from;
+        return $type;
     }
 
-    protected function getTranslationToOption(string $default, bool $ask = false): ?string
+    protected function getTranslationPathOption(string $optionName, string $type, bool $ask = false): ?string
     {
-        if (! $this->hasOption('to')) {
-            throw new \InvalidArgumentException('--to option is not allowed in this command: '.self::class);
+        if (! $this->hasOption($optionName)) {
+            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
         }
 
-        $to = $this->option('to');
+        $path = $this->option($optionName);
 
-        if (empty($to) && $ask) {
-            $to = $this->choice(
-                'To where do you want to export translations?',
-                TranslationHandler::getTypes(),
+        $default = match ($type) {
+            TranslationOptions::PHP => TranslationHandler::getOptions()->phpPath,
+            TranslationOptions::CSV => TranslationHandler::getOptions()->csvPath,
+            TranslationOptions::JSON => TranslationHandler::getOptions()->jsonPath,
+            TranslationOptions::DB => TranslationHandler::getOptions()->dbConnection,
+        };
+
+        if (empty($path) && $ask) {
+            $path = $this->ask(
+                'Choose a path:',
+                $default
             );
         }
 
-        if (empty($to)) {
-            $to = $default;
+        if (empty($path)) {
+            throw new \InvalidArgumentException('--' . $optionName . ' cannot be empty');
         }
 
-        if (! in_array($to, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException('Invalid to argument type: '.$to);
-        }
+        $this->comment('- path ' . $path);
 
-        $this->comment('Exporting translations to '.$to);
-
-        return $to;
+        return $path ?: null;
     }
 
-    protected function getTranslationFromPathOption(bool $ask = false): ?string
+    protected function getTranslationFileNamesOption(string $optionName, string $type, bool $ask = false): array
     {
-        if (! $this->hasOption('from-path')) {
-            throw new \InvalidArgumentException('--from-path option is not allowed in this command: '.self::class);
+        if (! $this->hasOption($optionName)) {
+            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
         }
 
-        $fromPath = $this->option('from-path');
+        $fileNames = $this->option($optionName) ?? [];
 
-        if (empty($fromPath) && $ask) {
-            $fromPath = $this->ask(
-                'From which path do you want to import translations?',
-            );
-        }
+        $default = match ($type) {
+            TranslationOptions::PHP => TranslationHandler::getOptions()->phpFileNames,
+            TranslationOptions::CSV => TranslationHandler::getOptions()->csvFileName,
+            TranslationOptions::JSON => TranslationHandler::getOptions()->jsonFileName,
+            TranslationOptions::DB => null,
+        };
 
-        if (! empty($fromPath)) {
-            $this->comment('Importing translations from path '.$fromPath);
-        }
-
-        return $fromPath ?: null;
-    }
-
-    protected function getTranslationToPathOption(bool $ask = false): ?string
-    {
-        if (! $this->hasOption('to-path')) {
-            throw new \InvalidArgumentException('--to-path option is not allowed in this command: '.self::class);
-        }
-
-        $toPath = $this->option('to-path');
-
-        if (empty($toPath) && $ask) {
-            $toPath = $this->ask(
-                'To which path do you want to export translations?',
-            );
-        }
-
-        if (! empty($toPath)) {
-            $this->comment('Exporting translations to path '.$toPath);
-        }
-
-        return $toPath ?: null;
-    }
-
-    protected function getTranslationFileNamesOption(array $default, bool $ask = false): array
-    {
-        if (! $this->hasOption('file-names')) {
-            throw new \InvalidArgumentException('--file-names option is not allowed in this command: '.self::class);
-        }
-
-        $fileNames = $this->option('file-names') ?? [];
-
-        if (empty($fileNames) && $ask) {
+        if (is_array($default) && empty($fileNames) && $ask) {
             $fileNames = $this->choice(
-                'Which files do you want to export?',
-                TranslationHandler::getOptions()->fileNames,
-                implode(', ', TranslationHandler::getOptions()->fileNames),
+                'Which files?',
+                $default,
+                implode(', ', $default),
                 null,
                 true
             );
-        }
-
-        if (! is_array($fileNames)) {
-            throw new \InvalidArgumentException('Invalid file names option, must be an array');
-        }
-
-        if (empty($fileNames)) {
+        } else if (is_string($default) && empty($fileNames) && $ask) {
+            $fileNames = $this->ask(
+                'Which file?',
+                $default
+            );
+        } else if (empty($fileNames)) {
             $fileNames = $default;
         }
-        $this->comment('Exporting files: '.implode(', ', $fileNames));
+
+        if (is_array($default) && ! is_array($fileNames)) {
+            throw new \InvalidArgumentException('--' . $optionName . ' option must be an array');
+        } else if (is_string($default) && ! is_string($fileNames)) {
+            throw new \InvalidArgumentException('--' . $optionName . ' option must be a string');
+        } else if ($default === null && empty($fileNames)) {
+            throw new \InvalidArgumentException('--' . $optionName . ' option cannot be empty');
+        }
+
+        if (!empty($fileNames)) {
+            $this->comment('- files:' . PHP_EOL . implode(PHP_EOL . '   ', $fileNames));
+        }
 
         return $fileNames;
     }
 
-    protected function getTranslationLocalesOption(array $default, bool $ask = false): array
+    protected function getTranslationLocalesOption(string $optionName, bool $ask = false): array
     {
-        if (! $this->hasOption('locales')) {
-            throw new \InvalidArgumentException('--locales option is not allowed in this command: '.self::class);
+        if (! $this->hasOption($optionName)) {
+            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
         }
 
-        $locales = $this->option('locales') ?? [];
+        $locales = $this->option($optionName) ?? [];
 
         if (empty($locales) && $ask) {
             $locales = $this->choice(
-                'Which locales do you want to export?',
+                'Select locales?',
                 TranslationHandler::getOptions()->locales,
                 implode(', ', TranslationHandler::getOptions()->locales),
                 null,
@@ -153,24 +133,24 @@ trait HasTranslationOptions
         }
 
         if (! is_array($locales)) {
-            throw new \InvalidArgumentException('Invalid locales option, must be an array');
+            throw new \InvalidArgumentException('Invalid ' . $optionName . ' option, must be an array');
         }
 
         if (empty($locales)) {
-            $locales = $default;
+            $locales = TranslationHandler::getOptions()->locales;
         }
-        $this->comment('Exporting locales: '.implode(', ', $locales));
+        $this->comment('- locales:' . PHP_EOL . implode(PHP_EOL . '   ', $locales));
 
         return $locales;
     }
 
-    protected function getTranslationForceOption(bool $ask = false): bool
+    protected function getTranslationForceOption(string $optionName, bool $ask = false): bool
     {
-        if (! $this->hasOption('force')) {
-            throw new \InvalidArgumentException('--force option is not allowed in this command: '.self::class);
+        if (! $this->hasOption($optionName)) {
+            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
         }
 
-        $force = $this->option('force') ?? false;
+        $force = $this->option($optionName) ?? false;
 
         if (! $force && $ask) {
             $force = $this->confirm(
@@ -180,7 +160,7 @@ trait HasTranslationOptions
         }
 
         if (! is_bool($force)) {
-            throw new \InvalidArgumentException('Invalid force option, must be a boolean');
+            throw new \InvalidArgumentException('Invalid ' . $optionName . ' option, must be a boolean');
         }
 
         if ($force) {
@@ -190,12 +170,12 @@ trait HasTranslationOptions
         return $force;
     }
 
-    protected function getTranslationGuidedOption(): bool
+    protected function getTranslationGuidedOption(string $optionName, bool $ask = false): bool
     {
-        if (! $this->hasOption('guided')) {
-            throw new \InvalidArgumentException('--guided option is not allowed in this command: '.self::class);
+        if (! $this->hasOption($optionName)) {
+            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
         }
 
-        return $this->option('guided');
+        return $this->option($optionName);
     }
 }

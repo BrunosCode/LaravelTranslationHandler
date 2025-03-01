@@ -11,19 +11,51 @@ use Illuminate\Support\Facades\File;
 class CsvFileHandler implements FileHandlerInterface
 {
     public function __construct(
-        private TranslationOptions $options
-    ) {}
-
-    public function get(?string $path = null): TranslationCollection
-    {
-        $rawTranslations = $this->read($path);
-
-        return $this->build($rawTranslations);
+        protected TranslationOptions $options
+    ) {
     }
 
-    private function build(array $rawTranslations): TranslationCollection
+    public function get(?string $path = null, null|string|array $fileNames = null): TranslationCollection
     {
-        $translations = new TranslationCollection;
+        $filePath = $this->getFilePath($path, $fileNames);
+
+        $rawTranslations = $this->read($filePath);
+
+        return $this->buildTranslations($rawTranslations);
+    }
+
+    public function put(TranslationCollection $translations, ?string $path = null, null|string|array $fileNames = null): int
+    {
+        $filePath = $this->getFilePath($path, $fileNames);
+
+        $rawTranslations = $this->buildForFile($translations, $this->options->locales);
+
+        if (! $this->write($rawTranslations, $filePath)) {
+            return 0;
+        }
+
+        return $translations->count();
+    }
+
+    public function delete(?string $path = null, null|string|array $fileNames = null): int
+    {
+        $counter = $this->get($path, $fileNames)->count();
+        $filePath = $this->getFilePath($path, $fileNames);
+
+        if (! File::exists($filePath)) {
+            return 0;
+        }
+
+        if (! File::delete($filePath)) {
+            return 0;
+        }
+
+        return $counter;
+    }
+
+    protected function buildTranslations(array $rawTranslations): TranslationCollection
+    {
+        $translations = new TranslationCollection();
 
         foreach ($rawTranslations as $row) {
             $key = $row['key'];
@@ -36,9 +68,11 @@ class CsvFileHandler implements FileHandlerInterface
         return $translations;
     }
 
-    private function read(?string $path): array
+    protected function read(string $filePath): array
     {
-        $filePath = $this->getFilePath($path);
+        if (empty($filePath)) {
+            throw new \InvalidArgumentException('filePath cannot be empty');
+        }
 
         if (! File::exists($filePath)) {
             return [];
@@ -67,25 +101,10 @@ class CsvFileHandler implements FileHandlerInterface
         return $rawTranslations;
     }
 
-    public function put(TranslationCollection $translations, ?string $path = null): int
-    {
-        $rawTranslations = $this->buildForFile($translations);
-
-        $currentRawTranslations = $this->read($path);
-
-        $rawTranslations = array_replace_recursive($currentRawTranslations, $rawTranslations);
-
-        if (! $this->write($rawTranslations, $path)) {
-            return 0;
-        }
-
-        return $translations->count();
-    }
-
-    protected function buildForFile(TranslationCollection $translations): array
+    protected function buildForFile(TranslationCollection $translations, array $locales): array
     {
         $fileTranslations = [];
-        $orderedHeaders = ['key', ...$this->options->locales];
+        $orderedHeaders = ['key', ...$locales];
 
         foreach ($translations as $translation) {
             $fileTranslations[$translation->key] ??= ['key' => $translation->key];
@@ -93,7 +112,7 @@ class CsvFileHandler implements FileHandlerInterface
         }
 
         foreach ($fileTranslations as $key => $value) {
-            foreach ($this->options->locales as $locale) {
+            foreach ($locales as $locale) {
                 if (! array_key_exists($locale, $value)) {
                     $fileTranslations[$key][$locale] = '';
                 }
@@ -115,9 +134,11 @@ class CsvFileHandler implements FileHandlerInterface
         return $fileTranslations;
     }
 
-    protected function write(array $translations, ?string $path): bool
+    protected function write(array $translations, string $filePath): bool
     {
-        $filePath = $this->getFilePath($path);
+        if (empty($filePath)) {
+            throw new \InvalidArgumentException('filePath cannot be empty');
+        }
 
         // check if folder exists
         if (! File::exists(dirname($filePath))) {
@@ -134,29 +155,38 @@ class CsvFileHandler implements FileHandlerInterface
         return fclose($csv);
     }
 
-    public function delete(?string $path = null): int
-    {
-        $counter = $this->get($path)->count();
-
-        if (! File::exists($this->getFilePath($path))) {
-            return 0;
+    protected function getFilePath(
+        string $path,
+        string $fileName
+    ): string {
+        if (empty($path)) {
+            throw new \InvalidArgumentException('csvPath cannot be empty');
         }
-
-        if (! File::delete($this->getFilePath($path))) {
-            return 0;
+        if (empty($fileName)) {
+            throw new \InvalidArgumentException('csvFileName cannot be empty');
         }
-
-        return $counter;
+        return "{$path}/{$fileName}.csv";
     }
 
-    public function getFilePath(?string $path = null): string
+    protected function getPath(?string $path): string
     {
-        if (is_string($path) && empty($path)) {
-            throw new \InvalidArgumentException('Path cannot be empty');
+        $path ??= $this->options->csvPath;
+        if (empty($path)) {
+            throw new \InvalidArgumentException('csvPath cannot be empty');
         }
 
-        $path ??= $this->options->csvPath;
+        return $path;
+    }
 
-        return "{$path}/{$this->options->csvFileName}.csv";
+    protected function getFileName(
+        null|string|array $fileNames
+    ): string {
+        $fileName = $fileNames ?? $this->options->csvFileName;
+
+        if (is_array($fileName)) {
+            throw new \InvalidArgumentException('csvFileName must be a string');
+        }
+
+        return $fileName;
     }
 }

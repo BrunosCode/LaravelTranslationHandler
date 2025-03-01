@@ -11,7 +11,8 @@ use Illuminate\Console\Command;
 
 class SetCommand extends Command
 {
-    use HasTranslationArguments, HasTranslationOptions;
+    use HasTranslationArguments;
+    use HasTranslationOptions;
 
     public $signature = 'translation-handler:set {to?} {key?} {locale?} {value?} {--to-path=} {--force}';
 

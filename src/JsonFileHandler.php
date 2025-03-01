@@ -11,35 +11,112 @@ use Illuminate\Support\Facades\File;
 class JsonFileHandler implements FileHandlerInterface
 {
     public function __construct(
-        private TranslationOptions $options
-    ) {}
+        protected TranslationOptions $options
+    ) {
+    }
 
-    public function get(?string $path = null): TranslationCollection
-    {
-        $translations = new TranslationCollection;
+    public function get(
+        ?string $path = null,
+        null|string|array $fileNames = null
+    ): TranslationCollection {
+        $translations = new TranslationCollection();
 
         foreach ($this->options->locales as $locale) {
-            $rawTranslations = $this->read($path, $locale);
+            $path = $this->getFilePath($path, $fileNames, $locale);
 
-            $translations->addTranslations($this->build($locale, $rawTranslations));
+            $rawTranslations = $this->read($path);
+
+            $translations->addTranslations(
+                $this->buildTranslations(
+                    $rawTranslations,
+                    $locale,
+                    $this->options->jsonNested,
+                    $this->options->keyDelimiter
+                )
+            );
         }
 
         return $translations;
     }
 
-    private function build(string $locale, array $rawTranslations): TranslationCollection
-    {
-        $translations = new TranslationCollection;
+    public function put(
+        TranslationCollection $translations,
+        ?string $path = null,
+        null|string|array $fileNames = null
+    ): int {
+        $counter = 0;
 
-        if ($this->options->jsonNested) {
-            return $this->buildFromNestedArray($translations, '', $locale, $rawTranslations);
+        foreach ($this->options->locales as $locale) {
+            $filteredTranslations = $translations->whereLocale($locale);
+
+            if ($filteredTranslations->isEmpty()) {
+                continue;
+            }
+
+            $rawTranslations = $this->buildForFile(
+                $filteredTranslations,
+                $locale,
+                $this->options->jsonNested,
+                $this->options->keyDelimiter
+            );
+
+            $filePath = $this->getFilePath($path, $fileNames, $locale);
+
+            $this->write($rawTranslations, $filePath, $this->options->jsonFormat);
+
+            $counter += $filteredTranslations->count();
         }
 
-        return $this->buildFromFlatArray($translations, $locale, $rawTranslations);
+        return $counter;
     }
 
-    private function buildFromFlatArray(TranslationCollection $translations, string $locale, array $rawTranslations)
-    {
+    public function delete(
+        ?string $path = null,
+        null|string|array $fileNames = null
+    ): int {
+        $currentTranslations = $this->get($path);
+
+        foreach ($this->options->locales as $locale) {
+            if (! File::delete(
+                $this->getFilePath($path, $fileNames, $locale)
+            )) {
+                return 0;
+            }
+        }
+
+        return $currentTranslations->count();
+    }
+
+    protected function buildTranslations(
+        array $rawTranslations,
+        string $locale,
+        bool $nested,
+        string $keyDelimiter
+    ): TranslationCollection {
+        $translations = new TranslationCollection();
+
+        if ($nested) {
+            return $this->buildTranslationsFromNestedArray(
+                $translations,
+                $rawTranslations,
+                null,
+                $locale,
+                $keyDelimiter
+            );
+        }
+
+        return $this->buildTranslationsFromFlatArray(
+            $translations,
+            $locale,
+            $rawTranslations
+        );
+    }
+
+    protected function buildTranslationsFromFlatArray(
+        TranslationCollection $translations,
+        string $locale,
+        array $rawTranslations
+    ) {
         foreach ($rawTranslations as $key => $value) {
             $translations->addTranslation(new Translation($key, $locale, $value));
         }
@@ -47,12 +124,23 @@ class JsonFileHandler implements FileHandlerInterface
         return $translations;
     }
 
-    private function buildFromNestedArray(TranslationCollection $translations, string $key, string $locale, string|array &$value): TranslationCollection
-    {
+    protected function buildTranslationsFromNestedArray(
+        TranslationCollection $translations,
+        string|array &$value,
+        ?string $key,
+        string $locale,
+        string $keyDelimiter
+    ): TranslationCollection {
         if (is_array($value)) {
             foreach ($value as $childKey => $childValue) {
-                $currentKey = $key ? $key.$this->options->keyDelimiter.$childKey : $childKey;
-                $translations = $this->buildFromNestedArray($translations, $currentKey, $locale, $childValue);
+                $currentKey = $key ? $key . $keyDelimiter . $childKey : $childKey;
+                $translations = $this->buildTranslationsFromNestedArray(
+                    $translations,
+                    $childValue,
+                    $currentKey,
+                    $locale,
+                    $keyDelimiter
+                );
             }
         } else {
             $translations->addTranslation(new Translation($key, $locale, $value));
@@ -61,10 +149,9 @@ class JsonFileHandler implements FileHandlerInterface
         return $translations;
     }
 
-    private function read(?string $path, string $locale): array
-    {
-        $filePath = $this->getFilePath($path, $locale);
-
+    protected function read(
+        string $filePath
+    ): array {
         if (! File::exists($filePath)) {
             return [];
         }
@@ -84,44 +171,35 @@ class JsonFileHandler implements FileHandlerInterface
         return $rawTranslations;
     }
 
-    public function put(TranslationCollection $translations, ?string $path = null): int
-    {
-        $counter = 0;
-
-        foreach ($this->options->locales as $locale) {
-            $filteredTranslations = $translations->whereLocale($locale);
-
-            if ($filteredTranslations->isEmpty()) {
-                continue;
-            }
-
-            $rawTranslations = $this->buildForFile($filteredTranslations, $locale);
-
-            // $currentRawTranslations = $this->read($path, $locale);
-
-            // $rawTranslations = array_replace_recursive($currentRawTranslations, $rawTranslations);
-
-            $this->write($rawTranslations, $path, $locale);
-
-            $counter += $filteredTranslations->count();
-        }
-
-        return $counter;
-    }
-
-    protected function buildForFile(TranslationCollection $translations, string $locale): array
-    {
+    protected function buildForFile(
+        TranslationCollection $translations,
+        string $locale,
+        bool $nested = false,
+        ?string $keyDelimiter = null
+    ): array {
         $fileTranslations = [];
 
-        if ($this->options->jsonNested) {
-            return $this->buildForNestedFile($fileTranslations, $locale, $translations);
+        if ($nested) {
+            return $this->buildForNestedFile(
+                $fileTranslations,
+                $translations,
+                $locale,
+                $keyDelimiter
+            );
         }
 
-        return $this->buildForFlatFile($fileTranslations, $locale, $translations);
+        return $this->buildForFlatFile(
+            $fileTranslations,
+            $translations,
+            $locale
+        );
     }
 
-    private function buildForFlatFile(array $fileTranslations, string $locale, TranslationCollection $translations): array
-    {
+    protected function buildForFlatFile(
+        array $fileTranslations,
+        TranslationCollection $translations,
+        string $locale
+    ): array {
         foreach ($translations as $translation) {
             if ($translation->locale != $locale) {
                 continue;
@@ -133,14 +211,18 @@ class JsonFileHandler implements FileHandlerInterface
         return $fileTranslations;
     }
 
-    private function buildForNestedFile(array $fileTranslations, string $locale, TranslationCollection $translations): array
-    {
+    protected function buildForNestedFile(
+        array $fileTranslations,
+        TranslationCollection $translations,
+        string $locale,
+        string $keyDelimiter
+    ): array {
         foreach ($translations as $translation) {
             if ($translation->locale !== $locale) {
                 continue;
             }
 
-            $keys = explode($this->options->keyDelimiter, $translation->key);
+            $keys = explode($keyDelimiter, $translation->key);
 
             $current = &$fileTranslations;
 
@@ -154,47 +236,58 @@ class JsonFileHandler implements FileHandlerInterface
         return $fileTranslations;
     }
 
-    protected function write(array $translations, ?string $path, string $locale): bool
-    {
-        $filePath = $this->getFilePath($path, $locale);
-
+    protected function write(
+        array $translations,
+        string $filePath,
+        bool $format = false
+    ): bool {
         if (! File::exists(dirname($filePath))) {
             File::makeDirectory(dirname($filePath), 0777, true);
         }
 
         return (bool) File::put(
             $filePath,
-            json_encode($translations, $this->options->jsonFormat ? JSON_PRETTY_PRINT : 0),
+            json_encode($translations, $format ? JSON_PRETTY_PRINT : 0),
             false
         );
     }
 
-    public function delete(?string $path = null): int
-    {
-        $currentTranslations = $this->get($path);
+    protected function getFilePath(
+        ?string $path,
+        null|string|array $fileNames,
+        string $locale
+    ): string {
+        $path = $this->getPath($path);
+        $fileName = $this->getFileName($fileNames);
 
-        foreach ($this->options->locales as $locale) {
-            if (! File::delete($this->getFilePath($path, $locale))) {
-                return 0;
-            }
-        }
-
-        return $currentTranslations->count();
-    }
-
-    public function getFilePath(?string $path, string $locale): string
-    {
-        if (is_string($path) && empty($path)) {
-            throw new \InvalidArgumentException('Path cannot be empty');
-        }
-
-        $path ??= $this->options->jsonPath;
-
-        $fileName = $this->options->jsonFileName;
         if (empty($fileName)) {
             return "{$path}/{$locale}.json";
         }
 
         return "{$path}/{$locale}/{$fileName}.json";
+    }
+
+    protected function getPath(
+        ?string $path
+    ): string {
+        $path ??= $this->options->jsonPath;
+
+        if (is_string($path) && empty($path)) {
+            throw new \InvalidArgumentException('Path cannot be empty');
+        }
+
+        return $path;
+    }
+
+    protected function getFileName(
+        null|string|array $fileNames
+    ): ?string {
+        $fileName = $fileNames ?? $this->options->jsonFileName;
+
+        if (is_array($fileName)) {
+            throw new \InvalidArgumentException('jsonFileName must be a string');
+        }
+
+        return $fileName;
     }
 }

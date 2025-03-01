@@ -5,7 +5,7 @@ use BrunosCode\TranslationHandler\Data\TranslationOptions;
 describe('TranslationOptions', function () {
 
     it('constructs successfully with valid configuration', function () {
-        $options = new TranslationOptions;
+        $options = new TranslationOptions();
 
         expect($options)
             ->toBeInstanceOf(TranslationOptions::class)
@@ -36,13 +36,13 @@ describe('TranslationOptions', function () {
             'keyDelimiter' => '', // Invalid key delimiter
         ]));
 
-        new TranslationOptions;
+        new TranslationOptions();
     })->throws(InvalidArgumentException::class, 'The key delimiter field is required.');
 
     it('validates configuration with the validator', function () {
         $data = $this->config();
 
-        $validator = (new TranslationOptions)->validator($data);
+        $validator = (new TranslationOptions())->validator($data);
 
         expect($validator->fails())->toBeFalse();
     });
@@ -52,7 +52,7 @@ describe('TranslationOptions', function () {
             'locales' => ['en', 'e'], // Locale too short
         ]);
 
-        $validator = (new TranslationOptions)->validator($data);
+        $validator = (new TranslationOptions())->validator($data);
 
         expect($validator->fails())->toBeTrue();
         expect($validator->errors()->first())->toBe('The locales.1 field must be at least 2 characters.');

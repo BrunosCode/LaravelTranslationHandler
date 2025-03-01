@@ -5,11 +5,10 @@ namespace BrunosCode\TranslationHandler\Facades;
 use Illuminate\Support\Facades\Facade;
 
 /**
- * @method static bool import(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null)
- * @method static bool export(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null)
- * @method static \BrunosCode\TranslationHandler\Collections\TranslationCollection get(string $from, ?string $path = null)
- * @method static int set(\BrunosCode\TranslationHandler\Collections\TranslationCollection $translations, string $to, ?string $path = null, bool $force = false)
- * @method static int delete(string $from, ?string $path = null)
+ * @method static bool move(bool $overwrite, string $fromType, string $toType, ?string $fromPath = null, ?string $toPath = null, null|string|array $fromFileNames = null, null|string|array $toFileNames = null)
+ * @method static \BrunosCode\TranslationHandler\Collections\TranslationCollection get(string $type, ?string $path = null, null|string|array $fileNames = null)
+ * @method static int set(\BrunosCode\TranslationHandler\Collections\TranslationCollection $translations, string $type, ?string $path = null, null|string|array $fileNames = null, bool $force = false)
+ * @method static int delete(string $from, ?string $path = null, null|string|array $fileNames = null)
  * @method static array getTypes()
  * @method static \BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface getPhpHandler()
  * @method static \BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface getCsvHandler()
@@ -29,16 +28,6 @@ use Illuminate\Support\Facades\Facade;
  */
 class TranslationHandler extends Facade
 {
-    /**
-     * @method static \BrunosCode\TranslationHandler\TranslationHandlerService store(array $translations, array $fileNames, array $locales, bool $force = false)
-     * @method static \BrunosCode\TranslationHandler\TranslationHandlerService get(array $fileNames, array $locales)
-     * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getLocales()
-     * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getTypes()
-     * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getDefaultExportFrom()
-     * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getDefaultExportTo()
-     * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getDefaultImportFrom()
-     * @method static \BrunosCode\TranslationHandler\TranslationHandlerService getDefaultImportTo()
-     */
     protected static function getFacadeAccessor()
     {
         return \BrunosCode\TranslationHandler\TranslationHandlerService::class;

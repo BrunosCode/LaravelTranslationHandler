@@ -9,7 +9,8 @@ use Illuminate\Console\Command;
 
 class ImportCommand extends Command
 {
-    use HasTranslationArguments, HasTranslationOptions;
+    use HasTranslationArguments;
+    use HasTranslationOptions;
 
     public $signature = 'translation-handler:import {--force} {--from} {--from-path} {--to} {--to-path} {--file-names=*} {--locales=*} {--guided}';
 

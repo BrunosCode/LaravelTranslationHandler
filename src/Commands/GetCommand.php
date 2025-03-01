@@ -9,7 +9,8 @@ use Illuminate\Console\Command;
 
 class GetCommand extends Command
 {
-    use HasTranslationArguments, HasTranslationOptions;
+    use HasTranslationArguments;
+    use HasTranslationOptions;
 
     public $signature = 'translation-handler:get {from?} {key?} {locale?} {--from-path=}';
 

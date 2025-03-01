@@ -64,7 +64,7 @@ class TestCase extends Orchestra
 
     public function prepareService()
     {
-        $options = new TranslationOptions;
+        $options = new TranslationOptions();
         TranslationHandler::shouldReceive('getDefaultOptions')->andReturn($options);
 
         $phpHandler = app($options->phpHandlerClass, [$options]);

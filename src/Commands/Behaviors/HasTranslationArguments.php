@@ -6,49 +6,29 @@ use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 
 trait HasTranslationArguments
 {
-    protected function getTranslationFromArgument(): string
+    protected function getTranslationTypeArgument(string $argName): string
     {
-        $from = $this->argument('from');
+        $from = $this->argument($argName);
 
         if (empty($from)) {
             $from = $this->choice(
-                'From where do you want to import translations?',
+                'Which type of translations?',
                 TranslationHandler::getTypes()
             );
         }
 
         if (empty($from) || ! in_array($from, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException('Invalid from argument type: '.$from);
+            throw new \InvalidArgumentException('Invalid type: '.$from);
         }
 
-        $this->comment('Importing translations from '.$from);
+        $this->comment('Type: '.$from);
 
         return $from;
     }
 
-    protected function getTranslationToArgument(): string
+    protected function getTranslationKeyArgument(string $argName): string
     {
-        $to = $this->argument('to');
-
-        if (empty($to)) {
-            $to = $this->choice(
-                'To where do you want to export translations?',
-                TranslationHandler::getTypes()
-            );
-        }
-
-        if (empty($to) || ! in_array($to, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException('Invalid to argument type: '.$to);
-        }
-
-        $this->comment('Exporting translations to '.$to);
-
-        return $to;
-    }
-
-    protected function getTranslationKeyArgument(): string
-    {
-        $key = $this->argument('key');
+        $key = $this->argument($argName);
 
         if (empty($key)) {
             $key = $this->ask('What is the translation key?');
@@ -61,9 +41,9 @@ trait HasTranslationArguments
         return $key;
     }
 
-    protected function getTranslationLocaleArgument(): string
+    protected function getTranslationLocaleArgument(string $argName): string
     {
-        $locale = $this->argument('locale');
+        $locale = $this->argument($argName);
 
         if (empty($locale)) {
             $locale = $this->ask('What is the translation locale?');
@@ -76,9 +56,9 @@ trait HasTranslationArguments
         return $locale;
     }
 
-    protected function getTranslationValueArgument(): string
+    protected function getTranslationValueArgument(string $argName): string
     {
-        $value = $this->argument('value');
+        $value = $this->argument($argName);
 
         if (empty($value)) {
             $value = $this->ask('What is the translation value?');

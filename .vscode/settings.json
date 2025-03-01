@@ -11,6 +11,7 @@
     "mbstring",
     "nesbot",
     "nunomaduro",
+    "Packagist",
     "pcntl",
     "pestphp",
     "phpstan",

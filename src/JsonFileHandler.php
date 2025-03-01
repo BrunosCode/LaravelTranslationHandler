@@ -12,14 +12,13 @@ class JsonFileHandler implements FileHandlerInterface
 {
     public function __construct(
         protected TranslationOptions $options
-    ) {
-    }
+    ) {}
 
     public function get(
         ?string $path = null,
         null|string|array $fileNames = null
     ): TranslationCollection {
-        $translations = new TranslationCollection();
+        $translations = new TranslationCollection;
 
         foreach ($this->options->locales as $locale) {
             $path = $this->getFilePath($path, $fileNames, $locale);
@@ -93,7 +92,7 @@ class JsonFileHandler implements FileHandlerInterface
         bool $nested,
         string $keyDelimiter
     ): TranslationCollection {
-        $translations = new TranslationCollection();
+        $translations = new TranslationCollection;
 
         if ($nested) {
             return $this->buildTranslationsFromNestedArray(
@@ -133,7 +132,7 @@ class JsonFileHandler implements FileHandlerInterface
     ): TranslationCollection {
         if (is_array($value)) {
             foreach ($value as $childKey => $childValue) {
-                $currentKey = $key ? $key . $keyDelimiter . $childKey : $childKey;
+                $currentKey = $key ? $key.$keyDelimiter.$childKey : $childKey;
                 $translations = $this->buildTranslationsFromNestedArray(
                     $translations,
                     $childValue,

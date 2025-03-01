@@ -23,7 +23,7 @@ class Command extends BaseCommand
 
         $locales = $this->getTranslationLocalesOption('locales', $guided);
 
-        $this->comment(__('Move translations from:' ));
+        $this->comment(__('Move translations from:'));
 
         $fromType = $this->getTranslationTypeArgument('from-type');
 

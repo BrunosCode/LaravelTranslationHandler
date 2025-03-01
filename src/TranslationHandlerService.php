@@ -15,7 +15,7 @@ class TranslationHandlerService
 
     public function __construct()
     {
-        $this->defaultOptions = new TranslationOptions();
+        $this->defaultOptions = new TranslationOptions;
         $this->options = null;
     }
 

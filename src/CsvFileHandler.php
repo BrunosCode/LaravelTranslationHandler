@@ -12,8 +12,7 @@ class CsvFileHandler implements FileHandlerInterface
 {
     public function __construct(
         protected TranslationOptions $options
-    ) {
-    }
+    ) {}
 
     public function get(?string $path = null, null|string|array $fileNames = null): TranslationCollection
     {
@@ -55,7 +54,7 @@ class CsvFileHandler implements FileHandlerInterface
 
     protected function buildTranslations(array $rawTranslations): TranslationCollection
     {
-        $translations = new TranslationCollection();
+        $translations = new TranslationCollection;
 
         foreach ($rawTranslations as $row) {
             $key = $row['key'];
@@ -165,6 +164,7 @@ class CsvFileHandler implements FileHandlerInterface
         if (empty($fileName)) {
             throw new \InvalidArgumentException('csvFileName cannot be empty');
         }
+
         return "{$path}/{$fileName}.csv";
     }
 

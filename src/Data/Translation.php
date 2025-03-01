@@ -66,7 +66,7 @@ class Translation
 
     public static function fake(?TranslationOptions $options = null): self
     {
-        $options ??= new TranslationOptions();
+        $options ??= new TranslationOptions;
 
         $filename = fake()->randomElement($options->phpFileNames);
         $key = $filename.$options->keyDelimiter.str(fake()->slug())->replace('-', $options->keyDelimiter)->toString();

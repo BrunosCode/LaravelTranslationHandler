@@ -145,7 +145,7 @@ class TranslationCollection extends Collection
 
     public static function fake(int $count = 10): self
     {
-        $collection = new self();
+        $collection = new self;
 
         foreach (range(1, $count) as $index) {
             $collection->addTranslation(Translation::fake());

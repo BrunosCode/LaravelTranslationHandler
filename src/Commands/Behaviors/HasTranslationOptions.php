@@ -4,14 +4,13 @@ namespace BrunosCode\TranslationHandler\Commands\Behaviors;
 
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-use PHPUnit\Event\Runtime\PHP;
 
 trait HasTranslationOptions
 {
     protected function getTranslationTypeOption(string $optionName, string $default, bool $ask = false): ?string
     {
         if (! $this->hasOption($optionName)) {
-            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
+            throw new \InvalidArgumentException('--'.$optionName.' option is not allowed in this command: '.self::class);
         }
 
         $type = $this->option($optionName);
@@ -28,10 +27,10 @@ trait HasTranslationOptions
         }
 
         if (! in_array($type, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException('Invalid to type argument type: ' . $type);
+            throw new \InvalidArgumentException('Invalid to type argument type: '.$type);
         }
 
-        $this->comment('- type ' . $type);
+        $this->comment('- type '.$type);
 
         return $type;
     }
@@ -39,7 +38,7 @@ trait HasTranslationOptions
     protected function getTranslationPathOption(string $optionName, string $type, bool $ask = false): ?string
     {
         if (! $this->hasOption($optionName)) {
-            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
+            throw new \InvalidArgumentException('--'.$optionName.' option is not allowed in this command: '.self::class);
         }
 
         $path = $this->option($optionName);
@@ -59,10 +58,10 @@ trait HasTranslationOptions
         }
 
         if (empty($path)) {
-            throw new \InvalidArgumentException('--' . $optionName . ' cannot be empty');
+            throw new \InvalidArgumentException('--'.$optionName.' cannot be empty');
         }
 
-        $this->comment('- path ' . $path);
+        $this->comment('- path '.$path);
 
         return $path ?: null;
     }
@@ -70,7 +69,7 @@ trait HasTranslationOptions
     protected function getTranslationFileNamesOption(string $optionName, string $type, bool $ask = false): array
     {
         if (! $this->hasOption($optionName)) {
-            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
+            throw new \InvalidArgumentException('--'.$optionName.' option is not allowed in this command: '.self::class);
         }
 
         $fileNames = $this->option($optionName) ?? [];
@@ -90,25 +89,25 @@ trait HasTranslationOptions
                 null,
                 true
             );
-        } else if (is_string($default) && empty($fileNames) && $ask) {
+        } elseif (is_string($default) && empty($fileNames) && $ask) {
             $fileNames = $this->ask(
                 'Which file?',
                 $default
             );
-        } else if (empty($fileNames)) {
+        } elseif (empty($fileNames)) {
             $fileNames = $default;
         }
 
         if (is_array($default) && ! is_array($fileNames)) {
-            throw new \InvalidArgumentException('--' . $optionName . ' option must be an array');
-        } else if (is_string($default) && ! is_string($fileNames)) {
-            throw new \InvalidArgumentException('--' . $optionName . ' option must be a string');
-        } else if ($default === null && empty($fileNames)) {
-            throw new \InvalidArgumentException('--' . $optionName . ' option cannot be empty');
+            throw new \InvalidArgumentException('--'.$optionName.' option must be an array');
+        } elseif (is_string($default) && ! is_string($fileNames)) {
+            throw new \InvalidArgumentException('--'.$optionName.' option must be a string');
+        } elseif ($default === null && empty($fileNames)) {
+            throw new \InvalidArgumentException('--'.$optionName.' option cannot be empty');
         }
 
-        if (!empty($fileNames)) {
-            $this->comment('- files:' . PHP_EOL . implode(PHP_EOL . '   ', $fileNames));
+        if (! empty($fileNames)) {
+            $this->comment('- files:'.PHP_EOL.implode(PHP_EOL.'   ', $fileNames));
         }
 
         return $fileNames;
@@ -117,7 +116,7 @@ trait HasTranslationOptions
     protected function getTranslationLocalesOption(string $optionName, bool $ask = false): array
     {
         if (! $this->hasOption($optionName)) {
-            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
+            throw new \InvalidArgumentException('--'.$optionName.' option is not allowed in this command: '.self::class);
         }
 
         $locales = $this->option($optionName) ?? [];
@@ -133,13 +132,13 @@ trait HasTranslationOptions
         }
 
         if (! is_array($locales)) {
-            throw new \InvalidArgumentException('Invalid ' . $optionName . ' option, must be an array');
+            throw new \InvalidArgumentException('Invalid '.$optionName.' option, must be an array');
         }
 
         if (empty($locales)) {
             $locales = TranslationHandler::getOptions()->locales;
         }
-        $this->comment('- locales:' . PHP_EOL . implode(PHP_EOL . '   ', $locales));
+        $this->comment('- locales:'.PHP_EOL.implode(PHP_EOL.'   ', $locales));
 
         return $locales;
     }
@@ -147,7 +146,7 @@ trait HasTranslationOptions
     protected function getTranslationForceOption(string $optionName, bool $ask = false): bool
     {
         if (! $this->hasOption($optionName)) {
-            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
+            throw new \InvalidArgumentException('--'.$optionName.' option is not allowed in this command: '.self::class);
         }
 
         $force = $this->option($optionName) ?? false;
@@ -160,7 +159,7 @@ trait HasTranslationOptions
         }
 
         if (! is_bool($force)) {
-            throw new \InvalidArgumentException('Invalid ' . $optionName . ' option, must be a boolean');
+            throw new \InvalidArgumentException('Invalid '.$optionName.' option, must be a boolean');
         }
 
         if ($force) {
@@ -173,7 +172,7 @@ trait HasTranslationOptions
     protected function getTranslationGuidedOption(string $optionName, bool $ask = false): bool
     {
         if (! $this->hasOption($optionName)) {
-            throw new \InvalidArgumentException('--' . $optionName . ' option is not allowed in this command: ' . self::class);
+            throw new \InvalidArgumentException('--'.$optionName.' option is not allowed in this command: '.self::class);
         }
 
         return $this->option($optionName);

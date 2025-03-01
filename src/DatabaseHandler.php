@@ -14,12 +14,11 @@ class DatabaseHandler implements DatabaseHandlerInterface
 {
     public function __construct(
         protected TranslationOptions $options
-    ) {
-    }
+    ) {}
 
     public function get(?string $connection = null): TranslationCollection
     {
-        $collection = new TranslationCollection();
+        $collection = new TranslationCollection;
 
         $db = $this->getDB($connection);
 

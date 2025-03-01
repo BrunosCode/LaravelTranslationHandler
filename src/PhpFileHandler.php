@@ -13,14 +13,13 @@ class PhpFileHandler implements FileHandlerInterface
 {
     public function __construct(
         protected TranslationOptions $options
-    ) {
-    }
+    ) {}
 
     public function get(
         ?string $path = null,
         null|string|array $fileNames = null
     ): TranslationCollection {
-        $translations = new TranslationCollection();
+        $translations = new TranslationCollection;
         $fileNames = $this->getFileNames($path, $fileNames);
 
         foreach ($fileNames as $filename) {

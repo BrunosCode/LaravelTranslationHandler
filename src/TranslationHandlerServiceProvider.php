@@ -44,6 +44,6 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
 
     public function packageRegistered(): void
     {
-        $this->app->singleton(TranslationHandlerService::class, fn () => new TranslationHandlerService());
+        $this->app->singleton(TranslationHandlerService::class, fn () => new TranslationHandlerService);
     }
 }

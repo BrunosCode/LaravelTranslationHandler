@@ -48,166 +48,6 @@ This will create a `translation-handler.php` file in your `config` directory.
 - `jsonNested`: Whether JSON output should be nested like PHP files (default: `false`).
 - `jsonFormat`: Whether JSON output should be formatted (default: `true`).
 
-## Usage
-
-### Import Translations
-
-To import translations from one format to another:
-
-```php
-use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-use BrunosCode\TranslationHandler\Data\TranslationOptions;
-
-// Import translations from PHP files to JSON files
-TranslationHandler::import(TranslationOptions::PHP, TranslationOptions::JSON);
-
-// Import translations from CSV files to database
-TranslationHandler::import(TranslationOptions::CSV, TranslationOptions::DB);
-```
-
-#### Parameters:
-- `from` (string|null): The format to import translations from. Default is `TranslationOptions::PHP`.
-- `to` (string|null): The format to import translations to. Default is `TranslationOptions::JSON`.
-- `force` (bool): Whether to force the import, overwriting existing translations. Default is `false`.
-- `fromPath` (string|null): The path to the source translations. Default is `null`.
-- `toPath` (string|null): The path to the destination translations. Default is `null`.
-
-### Export Translations
-
-To export translations from one format to another:
-
-```php
-use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-use BrunosCode\TranslationHandler\Data\TranslationOptions;
-
-// Export translations from JSON files to PHP files
-TranslationHandler::export(TranslationOptions::JSON, TranslationOptions::PHP);
-
-// Export translations from database to CSV files
-TranslationHandler::export(TranslationOptions::DB, TranslationOptions::CSV);
-```
-
-#### Parameters:
-- `from` (string|null): The format to export translations from. Default is `TranslationOptions::PHP`.
-- `to` (string|null): The format to export translations to. Default is `TranslationOptions::JSON`.
-- `force` (bool): Whether to force the export, overwriting existing translations. Default is `false`.
-- `fromPath` (string|null): The path to the source translations. Default is `null`.
-- `toPath` (string|null): The path to the destination translations. Default is `null`.
-
-### Get Translations
-
-To get translations from a specific format:
-
-```php
-use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-use BrunosCode\TranslationHandler\Data\TranslationOptions;
-
-// Get translations from PHP files
-$translations = TranslationHandler::get(TranslationOptions::PHP);
-
-// Get translations from JSON files
-$translations = TranslationHandler::get(TranslationOptions::JSON);
-```
-
-#### Parameters:
-- `from` (string): The format to get translations from.
-- `path` (string|null): The path to the source translations. Default is `null`.
-
-### Set Translations
-
-To set translations to a specific format:
-
-```php
-use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-use BrunosCode\TranslationHandler\Collections\TranslationCollection;
-use BrunosCode\TranslationHandler\Data\Translation;
-use BrunosCode\TranslationHandler\Data\TranslationOptions;
-
-// Create a new translation
-$translation = new Translation('key', 'en', 'value');
-
-// Add the translation to a collection
-$collection = new TranslationCollection([$translation]);
-
-// Set translations to JSON files
-TranslationHandler::set($collection, TranslationOptions::JSON);
-
-// Set translations to database
-TranslationHandler::set($collection, TranslationOptions::DB);
-```
-
-#### Parameters:
-- `translations` (TranslationCollection): The collection of translations to set.
-- `to` (string): The format to set translations to.
-- `path` (string|null): The path to the destination translations. Default is `null`.
-- `force` (bool): Whether to force the set, overwriting existing translations. Default is `false`.
-
-### Delete Translations
-
-To delete translations from a specific format:
-
-```php
-use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-use BrunosCode\TranslationHandler\Data\TranslationOptions;
-
-// Delete translations from PHP files
-TranslationHandler::delete(TranslationOptions::PHP);
-
-// Delete translations from CSV files
-TranslationHandler::delete(TranslationOptions::CSV);
-```
-
-#### Parameters:
-- `from` (string): The format to delete translations from.
-- `path` (string|null): The path to the source translations. Default is `null`.
-
-### Advanced Usage
-
-#### Setting Options
-
-You can set specific options for the `TranslationHandler`:
-
-```php
-use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-use BrunosCode\TranslationHandler\Data\TranslationOptions;
-
-// Set a specific option
-TranslationHandler::setOption('keyDelimiter', '_');
-
-// Set multiple options
-$options = new TranslationOptions(array_merge(
-    config('translation-handler'), 
-    ['keyDelimiter' => '_',]
-));
-TranslationHandler::setOptions($options);
-```
-
-#### Parameters:
-- `name` (string): The name of the option to set.
-- `value` (mixed): The value of the option to set.
-
-#### Resetting Options
-
-To reset options to their default values:
-
-```php
-use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-
-// Reset all options to default
-TranslationHandler::resetOptions();
-```
-
-#### Getting Default Options
-
-To get the default options:
-
-```php
-use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-
-// Get default options
-$defaultOptions = TranslationHandler::getDefaultOptions();
-```
-
 ## Commands
 
 The package provides several Artisan commands to manage translations:
@@ -311,6 +151,166 @@ php artisan translation-handler:set {to?} {key?} {locale?} {value?} {--to-path=}
 #### Options:
 - `--to-path` (string|null): The path to the destination translations. Default is the default path for the choose format.
 - `--force` (bool): Whether to force the set, overwriting existing translations. Default is `false`.
+
+## Facade
+
+### Import Translations
+
+To import translations from one format to another:
+
+```php
+use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
+
+// Import translations from PHP files to JSON files
+TranslationHandler::import(TranslationOptions::PHP, TranslationOptions::JSON);
+
+// Import translations from CSV files to database
+TranslationHandler::import(TranslationOptions::CSV, TranslationOptions::DB);
+```
+
+#### Parameters:
+- `from` (string|null): The format to import translations from. Default is `defaultImportFrom` option.
+- `to` (string|null): The format to import translations to. Default is `defaultImportTo` option.
+- `force` (bool): Whether to force the import, overwriting existing translations. Default is `false`.
+- `fromPath` (string|null): The path to the source translations. Default is the default path for the choose format.
+- `toPath` (string|null): The path to the destination translations. Default is the default path for the choose format.
+
+### Export Translations
+
+To export translations from one format to another:
+
+```php
+use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
+
+// Export translations from JSON files to PHP files
+TranslationHandler::export(TranslationOptions::JSON, TranslationOptions::PHP);
+
+// Export translations from database to CSV files
+TranslationHandler::export(TranslationOptions::DB, TranslationOptions::CSV);
+```
+
+#### Parameters:
+- `from` (string|null): The format to export translations from. Default is `defaultExportFrom` option.
+- `to` (string|null): The format to export translations to. Default is `defaultExportTo` option.
+- `force` (bool): Whether to force the export, overwriting existing translations. Default is `false`.
+- `fromPath` (string|null): The path to the source translations. Default is the default path for the choose format.
+- `toPath` (string|null): The path to the destination translations. Default is the default path for the choose format.
+
+### Get Translations
+
+To get translations from a specific format:
+
+```php
+use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
+
+// Get translations from PHP files
+$translations = TranslationHandler::get(TranslationOptions::PHP);
+
+// Get translations from JSON files
+$translations = TranslationHandler::get(TranslationOptions::JSON);
+```
+
+#### Parameters:
+- `from` (string): The format to get translations from.
+- `path` (string|null): The path to the source translations. Default is the default path for the choose format.
+
+### Set Translations
+
+To set translations to a specific format:
+
+```php
+use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use BrunosCode\TranslationHandler\Collections\TranslationCollection;
+use BrunosCode\TranslationHandler\Data\Translation;
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
+
+// Create a new translation
+$translation = new Translation('key', 'en', 'value');
+
+// Add the translation to a collection
+$collection = new TranslationCollection([$translation]);
+
+// Set translations to JSON files
+TranslationHandler::set($collection, TranslationOptions::JSON);
+
+// Set translations to database
+TranslationHandler::set($collection, TranslationOptions::DB);
+```
+
+#### Parameters:
+- `translations` (TranslationCollection): The collection of translations to set.
+- `to` (string): The format to set translations to.
+- `path` (string|null): The path to the destination translations. Default is the default path for the choose format.
+- `force` (bool): Whether to force the set, overwriting existing translations. Default is `false`.
+
+### Delete Translations
+
+To delete translations from a specific format:
+
+```php
+use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
+
+// Delete translations from PHP files
+TranslationHandler::delete(TranslationOptions::PHP);
+
+// Delete translations from CSV files
+TranslationHandler::delete(TranslationOptions::CSV);
+```
+
+#### Parameters:
+- `from` (string): The format to delete translations from.
+- `path` (string|null): The path to the source translations. Default is the default path for the choose format.
+
+### Advanced Usage
+
+#### Setting Options
+
+You can set specific options for the `TranslationHandler`:
+
+```php
+use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
+
+// Set a specific option
+TranslationHandler::setOption('keyDelimiter', '_');
+
+// Set multiple options
+$options = new TranslationOptions(array_merge(
+    config('translation-handler'), 
+    ['keyDelimiter' => '_',]
+));
+TranslationHandler::setOptions($options);
+```
+
+#### Parameters:
+- `name` (string): The name of the option to set.
+- `value` (mixed): The value of the option to set.
+
+#### Resetting Options
+
+To reset options to their default values:
+
+```php
+use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+
+// Reset all options to default
+TranslationHandler::resetOptions();
+```
+
+#### Getting Default Options
+
+To get the default options:
+
+```php
+use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+
+// Get default options
+$defaultOptions = TranslationHandler::getDefaultOptions();
+```
 
 ## Contributing
 

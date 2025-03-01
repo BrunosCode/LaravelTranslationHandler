@@ -2,30 +2,6 @@
 
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 
-// Mock configuration data
-function validConfig(): array
-{
-    return [
-        'keyDelimiter' => '.',
-        'fileNames' => ['app', 'auth', 'validation'],
-        'locales' => ['en', 'es', 'fr'],
-        'phpHandlerClass' => 'App\\Handlers\\PhpHandler',
-        'dbHandlerClass' => 'App\\Handlers\\DbHandler',
-        'csvHandlerClass' => 'App\\Handlers\\CsvHandler',
-        'jsonHandlerClass' => 'App\\Handlers\\JsonHandler',
-        'defaultImportFrom' => TranslationOptions::PHP,
-        'defaultImportTo' => TranslationOptions::JSON,
-        'defaultExportFrom' => TranslationOptions::CSV,
-        'defaultExportTo' => TranslationOptions::DB,
-        'phpPath' => 'resources/lang',
-        'phpFormat' => true,
-        'jsonPath' => 'resources/lang/json',
-        'csvPath' => 'storage/csv',
-        'csvFileName' => 'translations.csv',
-        'csvDelimiter' => ',',
-    ];
-}
-
 describe('TranslationOptions', function () {
 
     it('constructs successfully with valid configuration', function () {
@@ -47,13 +23,16 @@ describe('TranslationOptions', function () {
             ->phpPath->toBe($this->config()['phpPath'])
             ->phpFormat->toBe($this->config()['phpFormat'])
             ->jsonPath->toBe($this->config()['jsonPath'])
+            ->jsonFileName->toBe($this->config()['jsonFileName'])
+            ->jsonNested->toBe($this->config()['jsonNested'])
+            ->jsonFormat->toBe($this->config()['jsonFormat'])
             ->csvPath->toBe($this->config()['csvPath'])
             ->csvFileName->toBe($this->config()['csvFileName'])
             ->csvDelimiter->toBe($this->config()['csvDelimiter']);
     });
 
     it('throws an exception with invalid configuration', function () {
-        config()->set('translation-handler', array_merge(validConfig(), [
+        config()->set('translation-handler', array_merge($this->config(), [
             'keyDelimiter' => '', // Invalid key delimiter
         ]));
 
@@ -61,7 +40,7 @@ describe('TranslationOptions', function () {
     })->throws(InvalidArgumentException::class, 'The key delimiter field is required.');
 
     it('validates configuration with the validator', function () {
-        $data = validConfig();
+        $data = $this->config();
 
         $validator = (new TranslationOptions)->validator($data);
 
@@ -69,7 +48,7 @@ describe('TranslationOptions', function () {
     });
 
     it('fails validation with incorrect configuration', function () {
-        $data = array_merge(validConfig(), [
+        $data = array_merge($this->config(), [
             'locales' => ['en', 'e'], // Locale too short
         ]);
 

@@ -21,17 +21,19 @@ class ImportCommand extends Command
 
         $force = $this->getTranslationForceOption($guided);
 
-        $from = $this->getTranslationFromOption($guided);
+        $options = TranslationHandler::getOptions();
 
-        $to = $this->getTranslationToOption($guided);
+        $from = $this->getTranslationFromOption($options->defaultImportFrom, $guided);
+
+        $to = $this->getTranslationToOption($options->defaultImportTo, $guided);
 
         $fromPath = $this->getTranslationFromPathOption($guided);
 
         $toPath = $this->getTranslationToPathOption($guided);
 
-        $fileNames = $this->getTranslationFileNamesOption($guided);
+        $fileNames = $this->getTranslationFileNamesOption($options->fileNames, $guided);
 
-        $locales = $this->getTranslationLocalesOption($guided);
+        $locales = $this->getTranslationLocalesOption($options->locales, $guided);
 
         $this->comment(__('Starting Import...'));
 

@@ -26,4 +26,11 @@ return [
     'csvPath' => storage_path('lang'),
 
     'jsonPath' => lang_path(),
+    // if jsonFileName is empty locale will be used
+    // if jsonFileName is not empty locale will be used as folder
+    'jsonFileName' => '',
+    // if jsonNested is true json output will be nested as php file
+    'jsonNested' => false,
+    // if jsonFormat is true json output will be formatted
+    'jsonFormat' => true,
 ];

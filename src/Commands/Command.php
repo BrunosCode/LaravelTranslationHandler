@@ -13,25 +13,27 @@ class Command extends BaseCommand
 
     public $signature = 'translation-handler {from?} {to?} {--force} {--file-names=*} {--locales=*} {--from-path} {--to-path} {--guided}';
 
-    public $description = 'Move translations';
+    public $description = 'Handle translations';
 
     public function handle(): int
     {
         $guided = $this->getTranslationGuidedOption();
 
-        $from = $this->getTranslationFromArgument();
+        $force = $this->getTranslationForceOption($guided);
+
+        $from = $this->getTranslationFromArgument($guided);
 
         $fromPath = $this->getTranslationFromPathOption($guided);
 
-        $to = $this->getTranslationToArgument();
+        $to = $this->getTranslationToArgument($guided);
 
         $toPath = $this->getTranslationToPathOption($guided);
 
-        $fileNames = $this->getTranslationFileNamesOption($guided);
+        $options = TranslationHandler::getOptions();
 
-        $locales = $this->getTranslationLocalesOption($guided);
+        $fileNames = $this->getTranslationFileNamesOption($options->fileNames, $guided);
 
-        $force = $this->getTranslationForceOption($guided);
+        $locales = $this->getTranslationLocalesOption($options->locales, $guided);
 
         $this->comment(__('Starting...'));
 

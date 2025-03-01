@@ -21,5 +21,5 @@ workbench:
         --seed: false
   assets:
     - laravel-assets
-    - laravel-translation-handler-config
-    - laravel-translation-handler-migrations
+    - translation-handler-config
+    - translation-handler-migrations

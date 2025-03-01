@@ -24,10 +24,6 @@ class JsonFileHandler implements FileHandlerInterface
             $translations->addTranslations($this->build($locale, $rawTranslations));
         }
 
-        // if (!empty($this->options->fileNames)) {
-        //     $translations = $translations->whereGroupIn($this->options->fileNames);
-        // }
-
         return $translations;
     }
 
@@ -35,7 +31,30 @@ class JsonFileHandler implements FileHandlerInterface
     {
         $translations = new TranslationCollection;
 
+        if ($this->options->jsonNested) {
+            return $this->buildFromNestedArray($translations, '', $locale, $rawTranslations);
+        }
+
+        return $this->buildFromFlatArray($translations, $locale, $rawTranslations);
+    }
+
+    private function buildFromFlatArray(TranslationCollection $translations, string $locale, array $rawTranslations)
+    {
         foreach ($rawTranslations as $key => $value) {
+            $translations->addTranslation(new Translation($key, $locale, $value));
+        }
+
+        return $translations;
+    }
+
+    private function buildFromNestedArray(TranslationCollection $translations, string $key, string $locale, string|array &$value): TranslationCollection
+    {
+        if (is_array($value)) {
+            foreach ($value as $childKey => $childValue) {
+                $currentKey = $key ? $key.$this->options->keyDelimiter.$childKey : $childKey;
+                $translations = $this->buildFromNestedArray($translations, $currentKey, $locale, $childValue);
+            }
+        } else {
             $translations->addTranslation(new Translation($key, $locale, $value));
         }
 
@@ -69,10 +88,6 @@ class JsonFileHandler implements FileHandlerInterface
     {
         $counter = 0;
 
-        // if (!empty($this->options->fileNames)) {
-        //     $translations = $translations->whereGroupIn($this->options->fileNames);
-        // }
-
         foreach ($this->options->locales as $locale) {
             $filteredTranslations = $translations->whereLocale($locale);
 
@@ -82,9 +97,9 @@ class JsonFileHandler implements FileHandlerInterface
 
             $rawTranslations = $this->buildForFile($filteredTranslations, $locale);
 
-            $currentRawTranslations = $this->read($path, $locale);
+            // $currentRawTranslations = $this->read($path, $locale);
 
-            $rawTranslations = array_replace_recursive($currentRawTranslations, $rawTranslations);
+            // $rawTranslations = array_replace_recursive($currentRawTranslations, $rawTranslations);
 
             $this->write($rawTranslations, $path, $locale);
 
@@ -98,12 +113,42 @@ class JsonFileHandler implements FileHandlerInterface
     {
         $fileTranslations = [];
 
+        if ($this->options->jsonNested) {
+            return $this->buildForNestedFile($fileTranslations, $locale, $translations);
+        }
+
+        return $this->buildForFlatFile($fileTranslations, $locale, $translations);
+    }
+
+    private function buildForFlatFile(array $fileTranslations, string $locale, TranslationCollection $translations): array
+    {
         foreach ($translations as $translation) {
             if ($translation->locale != $locale) {
                 continue;
             }
 
             $fileTranslations[$translation->key] = $translation->value;
+        }
+
+        return $fileTranslations;
+    }
+
+    private function buildForNestedFile(array $fileTranslations, string $locale, TranslationCollection $translations): array
+    {
+        foreach ($translations as $translation) {
+            if ($translation->locale !== $locale) {
+                continue;
+            }
+
+            $keys = explode($this->options->keyDelimiter, $translation->key);
+
+            $current = &$fileTranslations;
+
+            foreach ($keys as $key) {
+                $current = &$current[$key];
+            }
+
+            $current = $translation->value;
         }
 
         return $fileTranslations;
@@ -119,8 +164,8 @@ class JsonFileHandler implements FileHandlerInterface
 
         return (bool) File::put(
             $filePath,
-            json_encode($translations),
-            // 0664
+            json_encode($translations, $this->options->jsonFormat ? JSON_PRETTY_PRINT : 0),
+            false
         );
     }
 
@@ -145,6 +190,11 @@ class JsonFileHandler implements FileHandlerInterface
 
         $path ??= $this->options->jsonPath;
 
-        return "{$path}/{$locale}.json";
+        $fileName = $this->options->jsonFileName;
+        if (empty($fileName)) {
+            return "{$path}/{$locale}.json";
+        }
+
+        return "{$path}/{$locale}/{$fileName}.json";
     }
 }

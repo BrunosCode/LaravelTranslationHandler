@@ -98,6 +98,9 @@ class TestCase extends Orchestra
                     "{$options->phpPath}/{$locale}/{$filename}.php",
                     '<?php return '.var_export([
                         'get' => "get-1-{$locale}",
+                        'nested' => [
+                            'get' => "get-2-{$locale}",
+                        ],
                     ], true).';'
                 );
             }
@@ -131,6 +134,16 @@ class TestCase extends Orchestra
                 json_encode([
                     'test1.get' => "get-1-{$locale}",
                     'test2.get' => "get-2-{$locale}",
+                    'test1' => [
+                        'nested' => [
+                            'get' => "get-1-{$locale}",
+                        ],
+                    ],
+                    'test2' => [
+                        'nested' => [
+                            'get' => "get-2-{$locale}",
+                        ],
+                    ],
                 ]),
                 false
             );

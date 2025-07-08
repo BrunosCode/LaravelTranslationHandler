@@ -22,7 +22,7 @@ describe('PhpFileHandler get', function () {
         $translations = TranslationHandler::getPhpHandler()->get();
 
         expect($translations)->toBeInstanceOf(TranslationCollection::class);
-        expect($translations->count())->toBe(4);
+        expect($translations->count())->toBe(8);
     });
 })->group('PhpFileHandler');
 
@@ -68,7 +68,7 @@ describe('PhpFileHandler delete', function () {
         $options = TranslationHandler::getOptions();
         $result = TranslationHandler::getPhpHandler()->delete();
 
-        expect($result)->toBe(4);
+        expect($result)->toBe(8);
         foreach ($options->locales as $locale) {
             foreach ($options->fileNames as $filename) {
                 expect(File::exists("{$options->phpPath}/{$locale}/{$filename}.php"))->toBeFalse();

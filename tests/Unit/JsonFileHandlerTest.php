@@ -24,12 +24,21 @@ describe('JsonFileHandler get', function () {
         $translations = TranslationHandler::getJsonHandler()->get();
 
         expect($translations)->toBeInstanceOf(TranslationCollection::class);
-        expect($translations)->toHaveCount(4);
+        expect($translations)->toHaveCount(8);
 
-        $firstTranslation = $translations->first();
+        $firstTranslation = $translations->where('key', 'test1.get')->where('locale', 'en')->first();
         expect($firstTranslation)->toBeInstanceOf(Translation::class);
-        expect($firstTranslation->key)->toBe('test1.get');
-        expect($firstTranslation->locale)->toBe('en');
+        expect($firstTranslation->value)->toBe('get-1-en');
+    });
+
+    it('reads translations from a nested JSON file', function () {
+        $translations = TranslationHandler::getJsonHandler()->get();
+
+        expect($translations)->toBeInstanceOf(TranslationCollection::class);
+        expect($translations)->toHaveCount(8);
+
+        $firstTranslation = $translations->where('key', 'test1.nested.get')->where('locale', 'en')->first();
+        expect($firstTranslation)->toBeInstanceOf(Translation::class);
         expect($firstTranslation->value)->toBe('get-1-en');
     });
 })->group('JsonFileHandler');
@@ -61,6 +70,19 @@ describe('JsonFileHandler put', function () {
 
         expect($count)->toBe(4);
     });
+
+    it('writes translations to a nested JSON file', function () {
+        $translations = new TranslationCollection([
+            new Translation('test1.nested.put', 'en', 'put-1-en'),
+            new Translation('test1.nested.put', 'it', 'put-2-it'),
+            new Translation('test2.nested.put', 'en', 'put-1-en'),
+            new Translation('test2.nested.put', 'it', 'put-2-it'),
+        ]);
+
+        $count = TranslationHandler::getJsonHandler()->put($translations);
+
+        expect($count)->toBe(4);
+    });
 })->group('JsonFileHandler');
 
 describe('JsonFileHandler delete', function () {
@@ -74,6 +96,6 @@ describe('JsonFileHandler delete', function () {
     it('deletes the JSON file', function () {
         $result = TranslationHandler::getJsonHandler()->delete();
 
-        expect($result)->toBe(4);
+        expect($result)->toBe(8);
     });
 })->group('JsonFileHandler');

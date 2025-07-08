@@ -31,21 +31,21 @@ class JsonFileHandler implements FileHandlerInterface
     {
         $translations = new TranslationCollection;
 
-        if ($this->options->jsonNested) {
-            return $this->buildFromNestedArray($translations, '', $locale, $rawTranslations);
-        }
+        // if ($this->options->jsonNested) {
+        //     return $this->buildFromFlatArray($translations, $locale, $rawTranslations);
+        // }
 
-        return $this->buildFromFlatArray($translations, $locale, $rawTranslations);
+        return $this->buildFromNestedArray($translations, '', $locale, $rawTranslations);
     }
 
-    private function buildFromFlatArray(TranslationCollection $translations, string $locale, array $rawTranslations)
-    {
-        foreach ($rawTranslations as $key => $value) {
-            $translations->addTranslation(new Translation($key, $locale, $value));
-        }
+    // private function buildFromFlatArray(TranslationCollection $translations, string $locale, array $rawTranslations)
+    // {
+    //     foreach ($rawTranslations as $key => $value) {
+    //         $translations->addTranslation(new Translation($key, $locale, $value));
+    //     }
 
-        return $translations;
-    }
+    //     return $translations;
+    // }
 
     private function buildFromNestedArray(TranslationCollection $translations, string $key, string $locale, string|array &$value): TranslationCollection
     {

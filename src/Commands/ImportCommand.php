@@ -11,15 +11,26 @@ class ImportCommand extends Command
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler:import {--force} {--from} {--from-path} {--to} {--to-path} {--file-names=*} {--locales=*} {--guided}';
+    public $signature = 'translation-handler:import 
+                            {--force} 
+                            {--fresh} 
+                            {--from} 
+                            {--from-path} 
+                            {--to} 
+                            {--to-path} 
+                            {--file-names=*} 
+                            {--locales=*} 
+                            {--guided}';
 
-    public $description = 'Import translations';
+    public $description = 'Import translations from one format to another.';
 
     public function handle(): int
     {
         $guided = $this->getTranslationGuidedOption();
 
         $force = $this->getTranslationForceOption($guided);
+
+        $fresh = $this->getTranslationFreshOption($guided);
 
         $options = TranslationHandler::getOptions();
 
@@ -37,16 +48,27 @@ class ImportCommand extends Command
 
         $this->comment(__('Starting Import...'));
 
-        $success = TranslationHandler::resetOptions()
+        TranslationHandler::resetOptions()
             ->setOption('fileNames', $fileNames)
-            ->setOption('locales', $locales)
-            ->import(
-                from: $from,
-                to: $to,
-                force: $force,
-                fromPath: $fromPath,
-                toPath: $toPath,
+            ->setOption('locales', $locales);
+
+        if ($fresh) {
+            $int = TranslationHandler::delete(
+                from: $to,
+                path: $toPath,
             );
+            if ($int > 0) {
+                $this->comment(__('Old translations deleted!'));
+            }
+        }
+
+        $success = TranslationHandler::import(
+            from: $from,
+            to: $to,
+            force: $force,
+            fromPath: $fromPath,
+            toPath: $toPath,
+        );
 
         if (! $success) {
             $this->error(__('Import failed!'));

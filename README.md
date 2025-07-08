@@ -56,18 +56,21 @@ The package provides several Artisan commands to manage translations:
 
 Move translations from one format to another.
 
-#### Usage:
+#### Usage
 
 ```bash
-php artisan translation-handler {from?} {to?} {--force} {--file-names=*} {--locales=*} {--from-path} {--to-path} {--guided}
+php artisan translation-handler {from?} {to?} {--force} {--fresh} {--file-names=*} {--locales=*} {--from-path} {--to-path} {--guided}
 ```
 
-#### Parameters:
+#### Parameters
+
 - `from` (string|null): The format to move translations from. If not provided, you will be prompted to enter it.
 - `to` (string|null): The format to move translations to. If not provided, you will be prompted to enter it.
 
-#### Options:
+#### Options
+
 - `--force` (bool): Whether to force the move, overwriting existing translations. Default is `false`.
+- `--fresh` (bool): Whether to delete old translations. Default is `false`.
 - `--file-names` (array): An array of translation file names. Default is `fileNames` option.
 - `--locales` (array): An array of supported locales. Default is `locales` option.
 - `--from-path` (string|null): The path to the source translations. Default is the default path for the choose format.
@@ -78,14 +81,16 @@ php artisan translation-handler {from?} {to?} {--force} {--file-names=*} {--loca
 
 Import translations from one format to another.
 
-#### Usage:
+#### Usage
 
 ```bash
 php artisan translation-handler:import {--force} {--from} {--from-path} {--to} {--to-path} {--file-names=*} {--locales=*} {--guided}
 ```
 
-#### Options:
+#### Options
+
 - `--force` (bool): Whether to force the import, overwriting existing translations. Default is `false`.
+- `--fresh` (bool): Whether to delete old translations. Default is `false`.
 - `--from` (string|null): The format to import translations from. Default is `defaultImportFrom` option.
 - `--from-path` (string|null): The path to the source translations. Default is the default path for the choose format.
 - `--to` (string|null): The format to import translations to. Default is `defaultImportTo` option.
@@ -98,14 +103,16 @@ php artisan translation-handler:import {--force} {--from} {--from-path} {--to} {
 
 Export translations from one format to another.
 
-#### Usage:
+#### Usage
 
 ```bash
 php artisan translation-handler:export {--force} {--from} {--from-path} {--file-names=*} {--locales=*} {--to} {--to-path} {--guided}
 ```
 
-#### Options:
+#### Options
+
 - `--force` (bool): Whether to force the export, overwriting existing translations. Default is `false`.
+- `--fresh` (bool): Whether to delete old translations. Default is `false`.
 - `--from` (string|null): The format to export translations from. Default is `defaultExportFrom` option.
 - `--from-path` (string|null): The path to the source translations. Default is the default path for the choose format.
 - `--to` (string|null): The format to export translations to. Default is `defaultExportTo` option.
@@ -118,37 +125,41 @@ php artisan translation-handler:export {--force} {--from} {--from-path} {--file-
 
 Get a specific translation.
 
-#### Usage:
+#### Usage
 
 ```bash
 php artisan translation-handler:get {from?} {key?} {locale?} {--from-path=}
 ```
 
-#### Parameters:
+#### Parameters
+
 - `from` (string|null): The format to get translations from. If not provided, you will be prompted to enter it.
 - `key` (string|null): The translation key. If not provided, you will be prompted to enter it.
 - `locale` (string|null): The translation locale. If not provided, you will be prompted to enter it.
 
-#### Options:
+#### Options
+
 - `--from-path` (string|null): The path to the source translations. Default is the default path for the choose format
 
 ### `translation-handler:set`
 
 Set a specific translation.
 
-#### Usage:
+#### Usage
 
 ```bash
 php artisan translation-handler:set {to?} {key?} {locale?} {value?} {--to-path=} {--force}
 ```
 
-#### Parameters:
+#### Parameters
+
 - `to` (string|null): The format to set translations to. If not provided, you will be prompted to enter it.
 - `key` (string|null): The translation key. If not provided, you will be prompted to enter it.
 - `locale` (string|null): The translation locale. If not provided, you will be prompted to enter it.
 - `value` (string|null): The translation value. If not provided, you will be prompted to enter it.
 
-#### Options:
+#### Options
+
 - `--to-path` (string|null): The path to the destination translations. Default is the default path for the choose format.
 - `--force` (bool): Whether to force the set, overwriting existing translations. Default is `false`.
 
@@ -169,7 +180,8 @@ TranslationHandler::import(TranslationOptions::PHP, TranslationOptions::JSON);
 TranslationHandler::import(TranslationOptions::CSV, TranslationOptions::DB);
 ```
 
-#### Parameters:
+#### Parameters
+
 - `from` (string|null): The format to import translations from. Default is `defaultImportFrom` option.
 - `to` (string|null): The format to import translations to. Default is `defaultImportTo` option.
 - `force` (bool): Whether to force the import, overwriting existing translations. Default is `false`.
@@ -191,7 +203,8 @@ TranslationHandler::export(TranslationOptions::JSON, TranslationOptions::PHP);
 TranslationHandler::export(TranslationOptions::DB, TranslationOptions::CSV);
 ```
 
-#### Parameters:
+#### Parameters
+
 - `from` (string|null): The format to export translations from. Default is `defaultExportFrom` option.
 - `to` (string|null): The format to export translations to. Default is `defaultExportTo` option.
 - `force` (bool): Whether to force the export, overwriting existing translations. Default is `false`.
@@ -213,7 +226,8 @@ $translations = TranslationHandler::get(TranslationOptions::PHP);
 $translations = TranslationHandler::get(TranslationOptions::JSON);
 ```
 
-#### Parameters:
+#### Parameters
+
 - `from` (string): The format to get translations from.
 - `path` (string|null): The path to the source translations. Default is the default path for the choose format.
 
@@ -240,7 +254,8 @@ TranslationHandler::set($collection, TranslationOptions::JSON);
 TranslationHandler::set($collection, TranslationOptions::DB);
 ```
 
-#### Parameters:
+#### Parameters
+
 - `translations` (TranslationCollection): The collection of translations to set.
 - `to` (string): The format to set translations to.
 - `path` (string|null): The path to the destination translations. Default is the default path for the choose format.
@@ -261,7 +276,8 @@ TranslationHandler::delete(TranslationOptions::PHP);
 TranslationHandler::delete(TranslationOptions::CSV);
 ```
 
-#### Parameters:
+#### Parameters
+
 - `from` (string): The format to delete translations from.
 - `path` (string|null): The path to the source translations. Default is the default path for the choose format.
 
@@ -286,7 +302,8 @@ $options = new TranslationOptions(array_merge(
 TranslationHandler::setOptions($options);
 ```
 
-#### Parameters:
+#### Parameters
+
 - `name` (string): The name of the option to set.
 - `value` (mixed): The value of the option to set.
 

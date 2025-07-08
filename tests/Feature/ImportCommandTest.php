@@ -38,6 +38,22 @@ describe('ImportCommand common', function () {
             ->expectsOutput('Overwriting existing translations');
     });
 
+    it('will delete old translations if fresh is used', function () {
+        $options = TranslationHandler::getOptions();
+
+        $this
+            ->artisan('translation-handler:export', [
+                '--fresh' => true,
+            ])
+            ->expectsOutput('Deleting existing translations before creating new ones')
+            ->expectsOutput('Exporting translations from '.$options->defaultExportFrom)
+            ->expectsOutput('Exporting translations to '.$options->defaultExportTo)
+            ->expectsOutput('Exporting files: '.implode(', ', $options->fileNames))
+            ->expectsOutput('Exporting locales: '.implode(', ', $options->locales))
+            ->expectsOutput('Starting Export...')
+            ->expectsOutput('Old translations deleted!');
+    });
+
     it('asks questions if guided is used', function () {
         $options = TranslationHandler::getOptions();
 
@@ -46,6 +62,7 @@ describe('ImportCommand common', function () {
                 '--guided' => true,
             ])
             ->expectsQuestion('Do you want to overwrite the existing translations?', false)
+            ->expectsQuestion('Do you want to delete the existing translations before creating new ones?', false)
             ->expectsQuestion('From where do you want to import translations?', TranslationOptions::PHP)
             ->expectsOutput('Exporting translations from '.TranslationOptions::PHP)
             ->expectsQuestion('To where do you want to export translations?', TranslationOptions::JSON)
@@ -69,6 +86,7 @@ describe('ImportCommand common', function () {
                 '--guided' => true,
             ])
             ->expectsQuestion('Do you want to overwrite the existing translations?', false)
+            ->expectsQuestion('Do you want to delete the existing translations before creating new ones?', false)
             ->expectsQuestion('From where do you want to import translations?', 'error');
     })->throws(InvalidArgumentException::class);
 
@@ -78,6 +96,7 @@ describe('ImportCommand common', function () {
                 '--guided' => true,
             ])
             ->expectsQuestion('Do you want to overwrite the existing translations?', false)
+            ->expectsQuestion('Do you want to delete the existing translations before creating new ones?', false)
             ->expectsQuestion('From where do you want to import translations?', '')
             ->expectsQuestion('To where do you want to export translations?', 'error');
     })->throws(InvalidArgumentException::class);

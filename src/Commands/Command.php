@@ -11,7 +11,16 @@ class Command extends BaseCommand
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler {from?} {to?} {--force} {--file-names=*} {--locales=*} {--from-path} {--to-path} {--guided}';
+    public $signature = 'translation-handler 
+                            {from?} 
+                            {to?} 
+                            {--fresh} 
+                            {--force} 
+                            {--file-names=*} 
+                            {--locales=*} 
+                            {--from-path} 
+                            {--to-path} 
+                            {--guided}';
 
     public $description = 'Handle translations';
 
@@ -21,11 +30,13 @@ class Command extends BaseCommand
 
         $force = $this->getTranslationForceOption($guided);
 
-        $from = $this->getTranslationFromArgument($guided);
+        $fresh = $this->getTranslationFreshOption($guided);
+
+        $from = $this->getTranslationFromArgument();
 
         $fromPath = $this->getTranslationFromPathOption($guided);
 
-        $to = $this->getTranslationToArgument($guided);
+        $to = $this->getTranslationToArgument();
 
         $toPath = $this->getTranslationToPathOption($guided);
 
@@ -37,16 +48,28 @@ class Command extends BaseCommand
 
         $this->comment(__('Starting...'));
 
-        $success = TranslationHandler::resetOptions()
+        TranslationHandler::resetOptions()
             ->setOption('fileNames', $fileNames)
-            ->setOption('locales', $locales)
-            ->export(
-                from: $from,
-                to: $to,
-                force: $force,
-                fromPath: $fromPath,
-                toPath: $toPath
+            ->setOption('locales', $locales);
+
+        if ($fresh) {
+            $int = TranslationHandler::delete(
+                from: $to,
+                path: $toPath,
             );
+
+            if ($int > 0) {
+                $this->comment(__('Old translations deleted!'));
+            }
+        }
+
+        $success = TranslationHandler::export(
+            from: $from,
+            to: $to,
+            force: $force,
+            fromPath: $fromPath,
+            toPath: $toPath
+        );
 
         if (! $success) {
             $this->error(__('Failed!'));

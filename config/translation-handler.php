@@ -9,8 +9,8 @@ return [
     'locales' => ['en'],
 
     'defaultImportFrom' => \BrunosCode\TranslationHandler\Data\TranslationOptions::PHP,
-    'defaultImportTo' => \BrunosCode\TranslationHandler\Data\TranslationOptions::PHP,
-    'defaultExportFrom' => \BrunosCode\TranslationHandler\Data\TranslationOptions::PHP,
+    'defaultImportTo' => \BrunosCode\TranslationHandler\Data\TranslationOptions::JSON,
+    'defaultExportFrom' => \BrunosCode\TranslationHandler\Data\TranslationOptions::JSON,
     'defaultExportTo' => \BrunosCode\TranslationHandler\Data\TranslationOptions::PHP,
 
     'phpHandlerClass' => \BrunosCode\TranslationHandler\PhpFileHandler::class,

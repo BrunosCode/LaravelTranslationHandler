@@ -21,7 +21,7 @@ trait HasTranslationArguments
             throw new \InvalidArgumentException('Invalid from argument type: '.$from);
         }
 
-        $this->comment('Importing translations from '.$from);
+        $this->comment('Exporting translations from '.$from);
 
         return $from;
     }

@@ -190,6 +190,32 @@ trait HasTranslationOptions
         return $force;
     }
 
+    protected function getTranslationFreshOption(bool $ask = false): bool
+    {
+        if (! $this->hasOption('fresh')) {
+            throw new \InvalidArgumentException('--fresh option is not allowed in this command: '.self::class);
+        }
+
+        $fresh = $this->option('fresh') ?? false;
+
+        if (! $fresh && $ask) {
+            $fresh = $this->confirm(
+                'Do you want to delete the existing translations before creating new ones?',
+                false
+            );
+        }
+
+        if (! is_bool($fresh)) {
+            throw new \InvalidArgumentException('Invalid fresh option, must be a boolean');
+        }
+
+        if ($fresh) {
+            $this->comment('Deleting existing translations before creating new ones');
+        }
+
+        return $fresh;
+    }
+
     protected function getTranslationGuidedOption(): bool
     {
         if (! $this->hasOption('guided')) {

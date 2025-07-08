@@ -11,7 +11,16 @@ class ExportCommand extends Command
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler:export {--force} {--from} {--from-path} {--file-names=*} {--locales=*} {--to} {--to-path} {--guided}';
+    public $signature = 'translation-handler:export 
+                            {--force} 
+                            {--fresh} 
+                            {--from} 
+                            {--from-path} 
+                            {--file-names=*} 
+                            {--locales=*} 
+                            {--to} 
+                            {--to-path} 
+                            {--guided}';
 
     public $description = 'Export translations';
 
@@ -20,6 +29,8 @@ class ExportCommand extends Command
         $guided = $this->getTranslationGuidedOption();
 
         $force = $this->getTranslationForceOption($guided);
+
+        $fresh = $this->getTranslationFreshOption($guided);
 
         $options = TranslationHandler::getOptions();
 
@@ -37,16 +48,28 @@ class ExportCommand extends Command
 
         $this->comment(__('Starting Export...'));
 
-        $success = TranslationHandler::resetOptions()
+        TranslationHandler::resetOptions()
             ->setOption('fileNames', $fileNames)
-            ->setOption('locales', $locales)
-            ->export(
-                from: $from,
-                to: $to,
-                force: $force,
-                fromPath: $fromPath,
-                toPath: $toPath,
+            ->setOption('locales', $locales);
+
+        if ($fresh) {
+            $int = TranslationHandler::delete(
+                from: $to,
+                path: $toPath,
             );
+
+            if ($int > 0) {
+                $this->comment(__('Old translations deleted!'));
+            }
+        }
+
+        $success = TranslationHandler::export(
+            from: $from,
+            to: $to,
+            force: $force,
+            fromPath: $fromPath,
+            toPath: $toPath,
+        );
 
         if (! $success) {
             $this->error(__('Export failed!'));

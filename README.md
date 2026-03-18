@@ -7,6 +7,13 @@ Manage translations in Laravel across PHP files, JSON files, CSV files, and data
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/brunoscode/laravel-translation-handler/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/brunoscode/laravel-translation-handler/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/brunoscode/laravel-translation-handler.svg?style=flat-square)](https://packagist.org/packages/brunoscode/laravel-translation-handler)
 
+## Requirements
+
+| Laravel | PHP |
+|---------|-----|
+| 11.x | 8.2, 8.3 |
+| 10.x | 8.2, 8.3 |
+
 ## Supported Formats
 
 | Format | Constant | Description |

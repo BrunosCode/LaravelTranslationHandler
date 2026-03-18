@@ -50,9 +50,17 @@ class CsvFileHandler implements FileHandlerInterface
 
         $rawTranslations = [];
 
+        $line = 1;
+
         while ($data = fgetcsv($handler, 0, $this->options->csvDelimiter)) {
-            if (count($data) <= 1 || count($data) != count($headers)) {
-                throw new \InvalidArgumentException('Invalid CSV file');
+            $line++;
+
+            if (count($data) <= 1) {
+                throw new \InvalidArgumentException("Invalid CSV at line {$line}: expected at least 2 columns, got ".count($data).'. Check that the delimiter is "'.$this->options->csvDelimiter.'"');
+            }
+
+            if (count($data) != count($headers)) {
+                throw new \InvalidArgumentException("Invalid CSV at line {$line}: expected ".count($headers).' columns (matching headers), got '.count($data));
             }
 
             $rawTranslations[$data[0]] = array_combine($headers, $data);
@@ -152,7 +160,7 @@ class CsvFileHandler implements FileHandlerInterface
     public function getFilePath(?string $path = null): string
     {
         if (is_string($path) && empty($path)) {
-            throw new \InvalidArgumentException('Path cannot be empty');
+            throw new \InvalidArgumentException('CSV handler path cannot be an empty string');
         }
 
         $path ??= $this->options->csvPath;

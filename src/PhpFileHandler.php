@@ -143,7 +143,7 @@ class PhpFileHandler implements FileHandlerInterface
         $formattedExport = preg_replace(array_keys($patterns), array_values($patterns), $export);
 
         if ($formattedExport === null) {
-            throw new \RuntimeException('preg_replace failed');
+            throw new \RuntimeException('Failed to format PHP export: preg_replace returned null (error code: '.preg_last_error().')');
         }
 
         return $formattedExport;
@@ -165,7 +165,7 @@ class PhpFileHandler implements FileHandlerInterface
     public function getFilePath(?string $path, string $filename, string $locale): string
     {
         if (is_string($path) && empty($path)) {
-            throw new \InvalidArgumentException('Path cannot be empty');
+            throw new \InvalidArgumentException('PHP handler path cannot be an empty string');
         }
 
         $path ??= $this->options->phpPath;

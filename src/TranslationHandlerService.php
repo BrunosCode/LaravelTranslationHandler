@@ -62,7 +62,7 @@ class TranslationHandlerService
             TranslationOptions::DB => $this->getDbHandler()->get(
                 connection: $path
             ),
-            default => throw new \InvalidArgumentException('Invalid $from type'),
+            default => throw new \InvalidArgumentException("Invalid from type '{$from}'. Valid types: ".implode(', ', TranslationOptions::TYPES)),
         };
 
         return $translations
@@ -99,7 +99,7 @@ class TranslationHandlerService
                 translations: $newTranslations,
                 connection: $path
             ),
-            default => throw new \InvalidArgumentException('Invalid $to type'),
+            default => throw new \InvalidArgumentException("Invalid to type '{$to}'. Valid types: ".implode(', ', TranslationOptions::TYPES)),
         };
     }
 
@@ -118,7 +118,7 @@ class TranslationHandlerService
             TranslationOptions::DB => $this->getDbHandler()->delete(
                 connection: $path
             ),
-            default => throw new \InvalidArgumentException('Invalid $from type'),
+            default => throw new \InvalidArgumentException("Invalid from type '{$from}'. Valid types: ".implode(', ', TranslationOptions::TYPES)),
         };
     }
 

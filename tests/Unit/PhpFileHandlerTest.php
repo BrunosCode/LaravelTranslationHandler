@@ -62,7 +62,7 @@ describe('PhpFileHandler put', function () {
 describe('PhpFileHandler delete', function () {
     it('delete should throw exception when path is empty', function () {
         TranslationHandler::getPhpHandler()->delete(path: '');
-    })->throws(InvalidArgumentException::class, 'Path cannot be empty');
+    })->throws(InvalidArgumentException::class, 'PHP handler path cannot be an empty string');
 
     test('delete should return the number of translations deleted', function () {
         $options = TranslationHandler::getOptions();

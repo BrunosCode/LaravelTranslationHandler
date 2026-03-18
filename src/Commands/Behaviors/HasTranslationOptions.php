@@ -26,7 +26,7 @@ trait HasTranslationOptions
         }
 
         if (! in_array($from, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException('Invalid from argument type: '.$from);
+            throw new \InvalidArgumentException("Invalid --from type '{$from}'. Valid types: ".implode(', ', TranslationHandler::getTypes()));
         }
 
         $this->comment('Reading translations from '.$from);
@@ -54,7 +54,7 @@ trait HasTranslationOptions
         }
 
         if (! in_array($to, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException('Invalid to argument type: '.$to);
+            throw new \InvalidArgumentException("Invalid --to type '{$to}'. Valid types: ".implode(', ', TranslationHandler::getTypes()));
         }
 
         $this->comment('Writing translations to '.$to);
@@ -123,7 +123,7 @@ trait HasTranslationOptions
         }
 
         if (! is_array($fileNames)) {
-            throw new \InvalidArgumentException('Invalid file names option, must be an array');
+            throw new \InvalidArgumentException('--file-names must be an array, got: '.gettype($fileNames));
         }
 
         if (empty($fileNames)) {
@@ -153,7 +153,7 @@ trait HasTranslationOptions
         }
 
         if (! is_array($locales)) {
-            throw new \InvalidArgumentException('Invalid locales option, must be an array');
+            throw new \InvalidArgumentException('--locales must be an array, got: '.gettype($locales));
         }
 
         if (empty($locales)) {
@@ -180,7 +180,7 @@ trait HasTranslationOptions
         }
 
         if (! is_bool($force)) {
-            throw new \InvalidArgumentException('Invalid force option, must be a boolean');
+            throw new \InvalidArgumentException('--force must be a boolean, got: '.gettype($force));
         }
 
         if ($force) {
@@ -206,7 +206,7 @@ trait HasTranslationOptions
         }
 
         if (! is_bool($fresh)) {
-            throw new \InvalidArgumentException('Invalid fresh option, must be a boolean');
+            throw new \InvalidArgumentException('--fresh must be a boolean, got: '.gettype($fresh));
         }
 
         if ($fresh) {

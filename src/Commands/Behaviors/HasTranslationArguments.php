@@ -18,7 +18,7 @@ trait HasTranslationArguments
         }
 
         if (empty($from) || ! in_array($from, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException('Invalid from argument type: '.$from);
+            throw new \InvalidArgumentException("Invalid from type '{$from}'. Valid types: ".implode(', ', TranslationHandler::getTypes()));
         }
 
         $this->comment('Reading translations from '.$from);
@@ -38,7 +38,7 @@ trait HasTranslationArguments
         }
 
         if (empty($to) || ! in_array($to, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException('Invalid to argument type: '.$to);
+            throw new \InvalidArgumentException("Invalid to type '{$to}'. Valid types: ".implode(', ', TranslationHandler::getTypes()));
         }
 
         $this->comment('Writing translations to '.$to);
@@ -55,7 +55,7 @@ trait HasTranslationArguments
         }
 
         if (empty($key)) {
-            throw new \InvalidArgumentException('Invalid key argument: '.$key);
+            throw new \InvalidArgumentException('Translation key cannot be empty');
         }
 
         return $key;
@@ -70,7 +70,7 @@ trait HasTranslationArguments
         }
 
         if (empty($locale) || ! in_array($locale, TranslationHandler::getOptions()->locales)) {
-            throw new \InvalidArgumentException('Invalid locale argument: '.$locale);
+            throw new \InvalidArgumentException("Invalid locale '{$locale}'. Configured locales: ".implode(', ', TranslationHandler::getOptions()->locales));
         }
 
         return $locale;
@@ -88,7 +88,7 @@ trait HasTranslationArguments
             $confirm = $this->confirm('Are you sure you want to use a empty value?', false);
 
             if (! $confirm) {
-                throw new \InvalidArgumentException('Invalid value argument: '.$value);
+                throw new \InvalidArgumentException('Translation value cannot be empty');
             }
         }
 

@@ -52,6 +52,12 @@ class Translation
             'key' => 'string|required|min:1',
             'locale' => 'string|required|min:2|max:7',
             'value' => 'string|nullable',
+        ], [
+            'key.required' => 'Translation key is required',
+            'key.min' => 'Translation key cannot be empty',
+            'locale.required' => 'Translation locale is required',
+            'locale.min' => 'Translation locale ":input" is too short (min 2 characters)',
+            'locale.max' => 'Translation locale ":input" is too long (max 7 characters)',
         ]);
     }
 

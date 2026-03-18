@@ -185,7 +185,7 @@ class JsonFileHandler implements FileHandlerInterface
     public function getFilePath(?string $path, string $locale): string
     {
         if (is_string($path) && empty($path)) {
-            throw new \InvalidArgumentException('Path cannot be empty');
+            throw new \InvalidArgumentException('JSON handler path cannot be an empty string');
         }
 
         $path ??= $this->options->jsonPath;

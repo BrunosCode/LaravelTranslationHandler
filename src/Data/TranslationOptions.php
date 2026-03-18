@@ -102,6 +102,8 @@ class TranslationOptions
 
     public function validator(array $data): ValidatorContract
     {
+        $validTypes = implode(', ', self::TYPES);
+
         return Validator::make($data, [
             'keyDelimiter' => 'required|string|min:1',
 
@@ -132,6 +134,14 @@ class TranslationOptions
             'csvPath' => 'required|string|min:1',
             'csvFileName' => 'required|string|min:1',
             'csvDelimiter' => 'required|string|min:1|different:'.$data['keyDelimiter'],
+        ], [
+            'fileNames.*.distinct' => 'Duplicate file name ":input" in fileNames',
+            'locales.*.distinct' => 'Duplicate locale ":input" in locales',
+            'csvDelimiter.different' => 'csvDelimiter (":input") must be different from keyDelimiter ("'.$data['keyDelimiter'].'")',
+            'defaultImportFrom.in' => 'Invalid defaultImportFrom ":input". Valid types: '.$validTypes,
+            'defaultImportTo.in' => 'Invalid defaultImportTo ":input". Valid types: '.$validTypes,
+            'defaultExportFrom.in' => 'Invalid defaultExportFrom ":input". Valid types: '.$validTypes,
+            'defaultExportTo.in' => 'Invalid defaultExportTo ":input". Valid types: '.$validTypes,
         ]);
     }
 }

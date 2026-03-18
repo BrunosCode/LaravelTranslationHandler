@@ -11,8 +11,8 @@ Manage translations in Laravel across PHP files, JSON files, CSV files, and data
 
 | Laravel | PHP |
 |---------|-----|
-| 11.x | 8.2, 8.3 |
-| 10.x | 8.2, 8.3 |
+| 12.x | 8.2, 8.3, 8.4 |
+| 11.x | 8.2, 8.3, 8.4 |
 
 ## Supported Formats
 

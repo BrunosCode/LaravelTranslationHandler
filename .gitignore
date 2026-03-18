@@ -9,3 +9,4 @@ phpstan.neon
 vendor
 node_modules
 .DS_Store
+.claude

@@ -2,8 +2,12 @@
 
 namespace BrunosCode\TranslationHandler\Tests;
 
+use BrunosCode\TranslationHandler\CsvFileHandler;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
+use BrunosCode\TranslationHandler\DatabaseHandler;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use BrunosCode\TranslationHandler\JsonFileHandler;
+use BrunosCode\TranslationHandler\PhpFileHandler;
 use BrunosCode\TranslationHandler\TranslationHandlerServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\DB;
@@ -30,14 +34,14 @@ class TestCase extends Orchestra
 
             'fileNames' => ['test1', 'test2'],
             'locales' => ['en', 'it'],
-            'defaultImportFrom' => \BrunosCode\TranslationHandler\Data\TranslationOptions::PHP,
-            'defaultImportTo' => \BrunosCode\TranslationHandler\Data\TranslationOptions::JSON,
-            'defaultExportFrom' => \BrunosCode\TranslationHandler\Data\TranslationOptions::JSON,
-            'defaultExportTo' => \BrunosCode\TranslationHandler\Data\TranslationOptions::PHP,
-            'phpHandlerClass' => \BrunosCode\TranslationHandler\PhpFileHandler::class,
-            'csvHandlerClass' => \BrunosCode\TranslationHandler\CsvFileHandler::class,
-            'jsonHandlerClass' => \BrunosCode\TranslationHandler\JsonFileHandler::class,
-            'dbHandlerClass' => \BrunosCode\TranslationHandler\DatabaseHandler::class,
+            'defaultImportFrom' => TranslationOptions::PHP,
+            'defaultImportTo' => TranslationOptions::JSON,
+            'defaultExportFrom' => TranslationOptions::JSON,
+            'defaultExportTo' => TranslationOptions::PHP,
+            'phpHandlerClass' => PhpFileHandler::class,
+            'csvHandlerClass' => CsvFileHandler::class,
+            'jsonHandlerClass' => JsonFileHandler::class,
+            'dbHandlerClass' => DatabaseHandler::class,
             'phpPath' => lang_path('php-test'),
             'phpFormat' => false,
             'csvDelimiter' => ';',

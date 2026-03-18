@@ -2,6 +2,7 @@
 
 namespace BrunosCode\TranslationHandler\Facades;
 
+use BrunosCode\TranslationHandler\TranslationHandlerService;
 use Illuminate\Support\Facades\Facade;
 
 /**
@@ -25,7 +26,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static self setDefaultOption(string $name, mixed $value)
  * @method static mixed getDefaultOption(string $name)
  *
- * @see \BrunosCode\TranslationHandler\TranslationHandlerService
+ * @see TranslationHandlerService
  */
 class TranslationHandler extends Facade
 {
@@ -41,6 +42,6 @@ class TranslationHandler extends Facade
      */
     protected static function getFacadeAccessor()
     {
-        return \BrunosCode\TranslationHandler\TranslationHandlerService::class;
+        return TranslationHandlerService::class;
     }
 }

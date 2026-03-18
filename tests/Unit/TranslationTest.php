@@ -15,11 +15,11 @@ describe('Translation', function () {
 
     it('throws an exception for invalid key', function () {
         new Translation('', 'en', 'Hello');
-    })->throws(\InvalidArgumentException::class);
+    })->throws(InvalidArgumentException::class);
 
     it('throws an exception for invalid locale', function () {
         new Translation('key1', 'e', 'Hello');
-    })->throws(\InvalidArgumentException::class);
+    })->throws(InvalidArgumentException::class);
 
     it('can convert to array', function () {
         $translation = new Translation('key1', 'en', 'Hello');

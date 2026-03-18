@@ -9,7 +9,7 @@ uses(RefreshDatabase::class);
 describe('SetCommand common', function () {
     it('asks questions if no arguments are provided', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::PHP)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::PHP)
             ->expectsQuestion('What is the translation key?', 'test1.put')
             ->expectsQuestion('What is the translation locale?', 'it')
             ->expectsQuestion('What is the translation value?', 'put-1-it');
@@ -17,20 +17,20 @@ describe('SetCommand common', function () {
 
     it('throws error if no from argument is provided', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', '')
+            ->expectsQuestion('To where do you want to write translations?', '')
             ->expect();
     })->throws(InvalidArgumentException::class);
 
     it('throws error if no key argument is provided', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::PHP)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::PHP)
             ->expectsQuestion('What is the translation key?', '')
             ->assertFailed();
     })->throws(InvalidArgumentException::class);
 
     it('throws error if no locale argument is provided', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::PHP)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::PHP)
             ->expectsQuestion('What is the translation key?', 'test1.put')
             ->expectsQuestion('What is the translation locale?', '')
             ->assertFailed();
@@ -48,7 +48,7 @@ describe('SetCommand php', function () {
 
     it('can set translation if it does not exist', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::PHP)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::PHP)
             ->expectsQuestion('What is the translation key?', 'test1.put')
             ->expectsQuestion('What is the translation locale?', 'it')
             ->expectsQuestion('What is the translation value?', 'new-translation')
@@ -67,7 +67,7 @@ describe('SetCommand php', function () {
 
     it('cannot set translation if it exists', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::PHP)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::PHP)
             ->expectsQuestion('What is the translation key?', 'test1.put')
             ->expectsQuestion('What is the translation locale?', 'it')
             ->expectsQuestion('What is the translation value?', 'new-translation')
@@ -96,7 +96,7 @@ describe('SetCommand json', function () {
 
     it('can set translation if it does not exist', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::JSON)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::JSON)
             ->expectsQuestion('What is the translation key?', 'test1.put')
             ->expectsQuestion('What is the translation locale?', 'it')
             ->expectsQuestion('What is the translation value?', 'new-translation')
@@ -115,7 +115,7 @@ describe('SetCommand json', function () {
 
     it('cannot set translation if it exists', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::JSON)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::JSON)
             ->expectsQuestion('What is the translation key?', 'test1.put')
             ->expectsQuestion('What is the translation locale?', 'it')
             ->expectsQuestion('What is the translation value?', 'new-translation')
@@ -144,7 +144,7 @@ describe('SetCommand csv', function () {
 
     it('can set translation if it does not exist', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::CSV)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::CSV)
             ->expectsQuestion('What is the translation key?', 'test1.put')
             ->expectsQuestion('What is the translation locale?', 'it')
             ->expectsQuestion('What is the translation value?', 'new-translation')
@@ -163,7 +163,7 @@ describe('SetCommand csv', function () {
 
     it('cannot set translation if it exists', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::CSV)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::CSV)
             ->expectsQuestion('What is the translation key?', 'test1.put')
             ->expectsQuestion('What is the translation locale?', 'it')
             ->expectsQuestion('What is the translation value?', 'new-translation')
@@ -192,7 +192,7 @@ describe('SetCommand database', function () {
 
     it('can set translation if it does not exist', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::DB)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::DB)
             ->expectsQuestion('What is the translation key?', 'test1.put')
             ->expectsQuestion('What is the translation locale?', 'it')
             ->expectsQuestion('What is the translation value?', 'new-translation')
@@ -211,7 +211,7 @@ describe('SetCommand database', function () {
 
     it('cannot set translation if it exists', function () {
         $this->artisan('translation-handler:set')
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::DB)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::DB)
             ->expectsQuestion('What is the translation key?', 'test1.put')
             ->expectsQuestion('What is the translation locale?', 'it')
             ->expectsQuestion('What is the translation value?', 'new-translation')

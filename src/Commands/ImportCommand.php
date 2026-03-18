@@ -11,15 +11,15 @@ class ImportCommand extends Command
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler:import 
-                            {--force} 
-                            {--fresh} 
-                            {--from} 
-                            {--from-path} 
-                            {--to} 
-                            {--to-path} 
-                            {--file-names=*} 
-                            {--locales=*} 
+    public $signature = 'translation-handler:import
+                            {--force}
+                            {--fresh}
+                            {--from=}
+                            {--from-path=}
+                            {--to=}
+                            {--to-path=}
+                            {--file-names=*}
+                            {--locales=*}
                             {--guided}';
 
     public $description = 'Import translations from one format to another.';

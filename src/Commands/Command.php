@@ -11,18 +11,18 @@ class Command extends BaseCommand
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler 
-                            {from?} 
-                            {to?} 
-                            {--fresh} 
-                            {--force} 
-                            {--file-names=*} 
-                            {--locales=*} 
-                            {--from-path} 
-                            {--to-path} 
+    public $signature = 'translation-handler
+                            {from?}
+                            {to?}
+                            {--fresh}
+                            {--force}
+                            {--file-names=*}
+                            {--locales=*}
+                            {--from-path=}
+                            {--to-path=}
                             {--guided}';
 
-    public $description = 'Handle translations';
+    public $description = 'Import and export translations between formats';
 
     public function handle(): int
     {

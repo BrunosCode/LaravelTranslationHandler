@@ -29,7 +29,7 @@ trait HasTranslationOptions
             throw new \InvalidArgumentException('Invalid from argument type: '.$from);
         }
 
-        $this->comment('Exporting translations from '.$from);
+        $this->comment('Reading translations from '.$from);
 
         return $from;
     }
@@ -44,7 +44,7 @@ trait HasTranslationOptions
 
         if (empty($to) && $ask) {
             $to = $this->choice(
-                'To where do you want to export translations?',
+                'To where do you want to write translations?',
                 TranslationHandler::getTypes(),
             );
         }
@@ -57,7 +57,7 @@ trait HasTranslationOptions
             throw new \InvalidArgumentException('Invalid to argument type: '.$to);
         }
 
-        $this->comment('Exporting translations to '.$to);
+        $this->comment('Writing translations to '.$to);
 
         return $to;
     }
@@ -77,7 +77,7 @@ trait HasTranslationOptions
         }
 
         if (! empty($fromPath)) {
-            $this->comment('Importing translations from path '.$fromPath);
+            $this->comment('Reading translations from path '.$fromPath);
         }
 
         return $fromPath ?: null;
@@ -98,7 +98,7 @@ trait HasTranslationOptions
         }
 
         if (! empty($toPath)) {
-            $this->comment('Exporting translations to path '.$toPath);
+            $this->comment('Writing translations to path '.$toPath);
         }
 
         return $toPath ?: null;
@@ -129,7 +129,7 @@ trait HasTranslationOptions
         if (empty($fileNames)) {
             $fileNames = $default;
         }
-        $this->comment('Exporting files: '.implode(', ', $fileNames));
+        $this->comment('Files: '.implode(', ', $fileNames));
 
         return $fileNames;
     }
@@ -159,7 +159,7 @@ trait HasTranslationOptions
         if (empty($locales)) {
             $locales = $default;
         }
-        $this->comment('Exporting locales: '.implode(', ', $locales));
+        $this->comment('Locales: '.implode(', ', $locales));
 
         return $locales;
     }

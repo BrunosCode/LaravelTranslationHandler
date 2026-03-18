@@ -11,18 +11,18 @@ class ExportCommand extends Command
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler:export 
-                            {--force} 
-                            {--fresh} 
-                            {--from} 
-                            {--from-path} 
-                            {--file-names=*} 
-                            {--locales=*} 
-                            {--to} 
-                            {--to-path} 
+    public $signature = 'translation-handler:export
+                            {--force}
+                            {--fresh}
+                            {--from=}
+                            {--from-path=}
+                            {--file-names=*}
+                            {--locales=*}
+                            {--to=}
+                            {--to-path=}
                             {--guided}';
 
-    public $description = 'Export translations';
+    public $description = 'Export translations from one format to another';
 
     public function handle(): int
     {

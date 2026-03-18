@@ -23,11 +23,11 @@ describe('Command common', function () {
         $this
             ->artisan('translation-handler', [])
             ->expectsQuestion('From where do you want to import translations?', $options->defaultExportFrom)
-            ->expectsOutput('Exporting translations from '.$options->defaultExportFrom)
-            ->expectsQuestion('To where do you want to export translations?', $options->defaultExportTo)
-            ->expectsOutput('Exporting translations to '.$options->defaultExportTo)
-            ->expectsOutput('Exporting files: '.implode(', ', $options->fileNames))
-            ->expectsOutput('Exporting locales: '.implode(', ', $options->locales))
+            ->expectsOutput('Reading translations from '.$options->defaultExportFrom)
+            ->expectsQuestion('To where do you want to write translations?', $options->defaultExportTo)
+            ->expectsOutput('Writing translations to '.$options->defaultExportTo)
+            ->expectsOutput('Files: '.implode(', ', $options->fileNames))
+            ->expectsOutput('Locales: '.implode(', ', $options->locales))
             ->expectsOutput('Starting...')
             ->expectsOutput('Finished!')
             ->assertSuccessful();
@@ -65,17 +65,17 @@ describe('Command common', function () {
             ->expectsQuestion('Do you want to overwrite the existing translations?', false)
             ->expectsQuestion('Do you want to delete the existing translations before creating new ones?', false)
             ->expectsQuestion('From where do you want to import translations?', TranslationOptions::PHP)
-            ->expectsOutput('Exporting translations from '.TranslationOptions::PHP)
+            ->expectsOutput('Reading translations from '.TranslationOptions::PHP)
             ->expectsQuestion('From which path do you want to import translations?', $options->phpPath)
-            ->expectsOutput('Importing translations from path '.$options->phpPath)
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::JSON)
-            ->expectsOutput('Exporting translations to '.TranslationOptions::JSON)
+            ->expectsOutput('Reading translations from path '.$options->phpPath)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::JSON)
+            ->expectsOutput('Writing translations to '.TranslationOptions::JSON)
             ->expectsQuestion('To which path do you want to export translations?', $options->jsonPath)
-            ->expectsOutput('Exporting translations to path '.$options->jsonPath)
+            ->expectsOutput('Writing translations to path '.$options->jsonPath)
             ->expectsQuestion('Which files do you want to export?', ['test1'])
-            ->expectsOutput('Exporting files: '.implode(', ', ['test1']))
+            ->expectsOutput('Files: '.implode(', ', ['test1']))
             ->expectsQuestion('Which locales do you want to export?', ['it'])
-            ->expectsOutput('Exporting locales: '.implode(', ', ['it']))
+            ->expectsOutput('Locales: '.implode(', ', ['it']))
             ->expectsOutput('Starting...')
             ->expectsOutput('Finished!')
             ->assertSuccessful();
@@ -105,8 +105,8 @@ describe('Command common', function () {
                 '--file-names' => ['test13'],
                 '--locales' => ['pt'],
             ])
-            ->expectsOutput('Exporting files: '.implode(', ', ['test13']))
-            ->expectsOutput('Exporting locales: '.implode(', ', ['pt']))
+            ->expectsOutput('Files: '.implode(', ', ['test13']))
+            ->expectsOutput('Locales: '.implode(', ', ['pt']))
             ->assertFailed();
     });
 })->group('Command');

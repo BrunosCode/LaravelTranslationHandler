@@ -21,7 +21,7 @@ trait HasTranslationArguments
             throw new \InvalidArgumentException('Invalid from argument type: '.$from);
         }
 
-        $this->comment('Exporting translations from '.$from);
+        $this->comment('Reading translations from '.$from);
 
         return $from;
     }
@@ -32,7 +32,7 @@ trait HasTranslationArguments
 
         if (empty($to)) {
             $to = $this->choice(
-                'To where do you want to export translations?',
+                'To where do you want to write translations?',
                 TranslationHandler::getTypes()
             );
         }
@@ -41,7 +41,7 @@ trait HasTranslationArguments
             throw new \InvalidArgumentException('Invalid to argument type: '.$to);
         }
 
-        $this->comment('Exporting translations to '.$to);
+        $this->comment('Writing translations to '.$to);
 
         return $to;
     }

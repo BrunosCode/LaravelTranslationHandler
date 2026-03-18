@@ -13,7 +13,7 @@ class GetCommand extends Command
 
     public $signature = 'translation-handler:get {from?} {key?} {locale?} {--from-path=}';
 
-    public $description = 'Export translations';
+    public $description = 'Get a single translation value';
 
     public function handle(): int
     {

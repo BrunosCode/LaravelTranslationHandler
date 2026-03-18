@@ -21,10 +21,10 @@ describe('ImportCommand common', function () {
         $options = TranslationHandler::getOptions();
 
         $this->artisan('translation-handler:import')
-            ->expectsOutput('Exporting translations from '.$options->defaultImportFrom)
-            ->expectsOutput('Exporting translations to '.$options->defaultImportTo)
-            ->expectsOutput('Exporting files: '.implode(', ', $options->fileNames))
-            ->expectsOutput('Exporting locales: '.implode(', ', $options->locales))
+            ->expectsOutput('Reading translations from '.$options->defaultImportFrom)
+            ->expectsOutput('Writing translations to '.$options->defaultImportTo)
+            ->expectsOutput('Files: '.implode(', ', $options->fileNames))
+            ->expectsOutput('Locales: '.implode(', ', $options->locales))
             ->expectsOutput('Starting Import...')
             ->expectsOutput('Import successful!')
             ->assertSuccessful();
@@ -46,10 +46,10 @@ describe('ImportCommand common', function () {
                 '--fresh' => true,
             ])
             ->expectsOutput('Deleting existing translations before creating new ones')
-            ->expectsOutput('Exporting translations from '.$options->defaultExportFrom)
-            ->expectsOutput('Exporting translations to '.$options->defaultExportTo)
-            ->expectsOutput('Exporting files: '.implode(', ', $options->fileNames))
-            ->expectsOutput('Exporting locales: '.implode(', ', $options->locales))
+            ->expectsOutput('Reading translations from '.$options->defaultExportFrom)
+            ->expectsOutput('Writing translations to '.$options->defaultExportTo)
+            ->expectsOutput('Files: '.implode(', ', $options->fileNames))
+            ->expectsOutput('Locales: '.implode(', ', $options->locales))
             ->expectsOutput('Starting Export...')
             ->expectsOutput('Old translations deleted!');
     });
@@ -64,17 +64,17 @@ describe('ImportCommand common', function () {
             ->expectsQuestion('Do you want to overwrite the existing translations?', false)
             ->expectsQuestion('Do you want to delete the existing translations before creating new ones?', false)
             ->expectsQuestion('From where do you want to import translations?', TranslationOptions::PHP)
-            ->expectsOutput('Exporting translations from '.TranslationOptions::PHP)
-            ->expectsQuestion('To where do you want to export translations?', TranslationOptions::JSON)
-            ->expectsOutput('Exporting translations to '.TranslationOptions::JSON)
+            ->expectsOutput('Reading translations from '.TranslationOptions::PHP)
+            ->expectsQuestion('To where do you want to write translations?', TranslationOptions::JSON)
+            ->expectsOutput('Writing translations to '.TranslationOptions::JSON)
             ->expectsQuestion('From which path do you want to import translations?', $options->phpPath)
-            ->expectsOutput('Importing translations from path '.$options->phpPath)
+            ->expectsOutput('Reading translations from path '.$options->phpPath)
             ->expectsQuestion('To which path do you want to export translations?', $options->jsonPath)
-            ->expectsOutput('Exporting translations to path '.$options->jsonPath)
+            ->expectsOutput('Writing translations to path '.$options->jsonPath)
             ->expectsQuestion('Which files do you want to export?', ['test1'])
-            ->expectsOutput('Exporting files: '.implode(', ', ['test1']))
+            ->expectsOutput('Files: '.implode(', ', ['test1']))
             ->expectsQuestion('Which locales do you want to export?', ['it'])
-            ->expectsOutput('Exporting locales: '.implode(', ', ['it']))
+            ->expectsOutput('Locales: '.implode(', ', ['it']))
             ->expectsOutput('Starting Import...')
             ->expectsOutput('Import successful!')
             ->assertSuccessful();
@@ -98,7 +98,7 @@ describe('ImportCommand common', function () {
             ->expectsQuestion('Do you want to overwrite the existing translations?', false)
             ->expectsQuestion('Do you want to delete the existing translations before creating new ones?', false)
             ->expectsQuestion('From where do you want to import translations?', '')
-            ->expectsQuestion('To where do you want to export translations?', 'error');
+            ->expectsQuestion('To where do you want to write translations?', 'error');
     })->throws(InvalidArgumentException::class);
 
     it('fails if no translations are imported', function () {
@@ -107,8 +107,8 @@ describe('ImportCommand common', function () {
                 '--file-names' => ['test13'],
                 '--locales' => ['pt'],
             ])
-            ->expectsOutput('Exporting files: '.implode(', ', ['test13']))
-            ->expectsOutput('Exporting locales: '.implode(', ', ['pt']))
+            ->expectsOutput('Files: '.implode(', ', ['test13']))
+            ->expectsOutput('Locales: '.implode(', ', ['pt']))
             ->expectsOutput('Starting Import...')
             ->expectsOutput('Import failed!')
             ->assertFailed();

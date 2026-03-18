@@ -15,7 +15,7 @@ class SetCommand extends Command
 
     public $signature = 'translation-handler:set {to?} {key?} {locale?} {value?} {--to-path=} {--force}';
 
-    public $description = 'Import translations';
+    public $description = 'Set a single translation value';
 
     public function handle(): int
     {

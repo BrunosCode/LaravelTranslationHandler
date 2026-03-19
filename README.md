@@ -11,17 +11,17 @@ Manage translations in Laravel across PHP files, JSON files, CSV files, and data
 
 | Laravel | PHP |
 |---------|-----|
-| 11.x | 8.2, 8.3 |
-| 10.x | 8.2, 8.3 |
+| 12.x | 8.2, 8.3, 8.4 |
+| 11.x | 8.2, 8.3, 8.4 |
 
 ## Supported Formats
 
 | Format | Constant | Description |
 |--------|----------|-------------|
-| PHP | `TranslationOptions::PHP` | Standard Laravel PHP translation files |
-| JSON | `TranslationOptions::JSON` | JSON translation files |
-| CSV | `TranslationOptions::CSV` | CSV translation files |
-| Database | `TranslationOptions::DB` | Database-backed translations |
+| php_file | `TranslationOptions::PHP` | Standard Laravel PHP translation files |
+| json_file | `TranslationOptions::JSON` | JSON translation files |
+| csv_file | `TranslationOptions::CSV` | CSV translation files |
+| db | `TranslationOptions::DB` | Database-backed translations |
 
 ## Installation
 

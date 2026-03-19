@@ -2,6 +2,40 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.0.1 — Laravel 11 container compatibility fix - 2026-03-19
+
+**Bug fix**: `setOption` / `setOptions` overrides were silently ignored when resolving file and database handlers under Laravel 11.
+
+### What changed
+
+`TranslationHandlerService` instantiates handlers by passing a `TranslationOptions` object to the Laravel service container:
+
+```php
+// before
+app($class, [$this->getOptions()]);
+
+// after
+app($class, ['options' => $this->getOptions()]);
+
+```
+Laravel 11 removed the automatic conversion of positional parameters to named ones (`keyParametersByArgument`). As a result, the container ignored the provided `TranslationOptions` instance and auto-resolved a fresh one from config — discarding any runtime overrides set via `setOption()` or `setOptions()`.
+
+### Impact
+
+Any option overridden at runtime was silently ignored. The most visible symptom was the CSV delimiter: selecting `,` in the import/export UI still used the default `;` from config, causing:
+
+```
+Invalid CSV at line 2: expected at least 2 columns, got 1.
+Check that the delimiter is ";"
+
+```
+The same issue affected all four handler factories (`getPhpHandler`, `getCsvHandler`, `getJsonHandler`, `getDbHandler`).
+
+### Affected versions
+
+- `^2.0` on **Laravel 11** (which ships with Illuminate 11.x).
+- Laravel 10 was not affected because its container still supported positional parameter overrides.
+
 ## v2.0.0 — Laravel 12 & PHP 8.4 Support** - 2026-03-18
 
 > **Breaking change**: Laravel 10 is no longer supported. Please upgrade to Laravel 11 or 12.
@@ -33,6 +67,7 @@ If you are on Laravel 11 or 12, no code changes are required — update the pack
 
 ```bash
 composer require brunoscode/laravel-translation-handler:^2.0
+
 
 ```
 If you are on Laravel 10, you must upgrade Laravel before updating this package.

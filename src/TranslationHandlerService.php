@@ -129,22 +129,22 @@ class TranslationHandlerService
 
     public function getPhpHandler(): FileHandlerInterface
     {
-        return app($this->getOptions()->phpHandlerClass, [$this->getOptions()]);
+        return app($this->getOptions()->phpHandlerClass, ['options' => $this->getOptions()]);
     }
 
     public function getCsvHandler(): FileHandlerInterface
     {
-        return app($this->getOptions()->csvHandlerClass, [$this->getOptions()]);
+        return app($this->getOptions()->csvHandlerClass, ['options' => $this->getOptions()]);
     }
 
     public function getJsonHandler(): FileHandlerInterface
     {
-        return app($this->getOptions()->jsonHandlerClass, [$this->getOptions()]);
+        return app($this->getOptions()->jsonHandlerClass, ['options' => $this->getOptions()]);
     }
 
     public function getDbHandler(): DatabaseHandlerInterface
     {
-        return app($this->getOptions()->dbHandlerClass, [$this->getOptions()]);
+        return app($this->getOptions()->dbHandlerClass, ['options' => $this->getOptions()]);
     }
 
     public function getOptions(): TranslationOptions

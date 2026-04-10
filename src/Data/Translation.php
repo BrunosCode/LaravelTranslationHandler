@@ -11,7 +11,7 @@ class Translation
 
     public string $locale;
 
-    public string $value;
+    public ?string $value;
 
     public ?string $keyId = null;
 

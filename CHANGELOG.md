@@ -2,6 +2,12 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## ## v2.0.3 - 2026-04-10 - 2026-04-10
+
+### Fixed
+
+- Allow nullable `value` property on `Translation` data class to match existing validator rule
+
 ## v2.0.3 - 2026-04-10
 
 ### Fixed
@@ -14,6 +20,7 @@ All notable changes to `laravel-translation-handler` will be documented in this 
 
 - Allow nullable `value` property on `Translation` data class to match existing validator rule
 - 
+
 ## v2.0.1 — Laravel 11 container compatibility fix - 2026-03-19
 
 **Bug fix**: `setOption` / `setOptions` overrides were silently ignored when resolving file and database handlers under Laravel 11.
@@ -29,6 +36,7 @@ app($class, [$this->getOptions()]);
 // after
 app($class, ['options' => $this->getOptions()]);
 
+
 ```
 Laravel 11 removed the automatic conversion of positional parameters to named ones (`keyParametersByArgument`). As a result, the container ignored the provided `TranslationOptions` instance and auto-resolved a fresh one from config — discarding any runtime overrides set via `setOption()` or `setOptions()`.
 
@@ -39,6 +47,7 @@ Any option overridden at runtime was silently ignored. The most visible symptom 
 ```
 Invalid CSV at line 2: expected at least 2 columns, got 1.
 Check that the delimiter is ";"
+
 
 ```
 The same issue affected all four handler factories (`getPhpHandler`, `getCsvHandler`, `getJsonHandler`, `getDbHandler`).
@@ -79,6 +88,7 @@ If you are on Laravel 11 or 12, no code changes are required — update the pack
 
 ```bash
 composer require brunoscode/laravel-translation-handler:^2.0
+
 
 
 ```
@@ -138,6 +148,7 @@ Laravel Translation Handler is a Laravel package to move, import, and export tra
 
 - Test matrix covers PHP 8.2, 8.3 × Laravel 10, 11
 - Removed `prefer-lowest` stability from matrix (tests realistic dependency combinations only)
+
 
 ---
 

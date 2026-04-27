@@ -46,4 +46,11 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
     {
         $this->app->singleton(TranslationHandlerService::class, fn () => new TranslationHandlerService);
     }
+
+    public function packageBooted(): void
+    {
+        $this->publishes([
+            __DIR__.'/../resources/boost' => base_path('resources/boost'),
+        ], 'translation-handler-boost');
+    }
 }

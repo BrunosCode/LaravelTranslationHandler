@@ -52,5 +52,18 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
         $this->publishes([
             __DIR__.'/../resources/boost' => base_path('resources/boost'),
         ], 'translation-handler-boost');
+
+        if (class_exists(\Laravel\Boost\Mcp\ToolRegistry::class)) {
+            config(['boost.mcp.tools.include' => array_merge(
+                config('boost.mcp.tools.include', []),
+                [
+                    \BrunosCode\TranslationHandler\Mcp\Tools\GetTranslationConfigTool::class,
+                    \BrunosCode\TranslationHandler\Mcp\Tools\ListTranslationsTool::class,
+                    \BrunosCode\TranslationHandler\Mcp\Tools\FindTranslationTool::class,
+                    \BrunosCode\TranslationHandler\Mcp\Tools\SetTranslationTool::class,
+                    \BrunosCode\TranslationHandler\Mcp\Tools\SyncTranslationsTool::class,
+                ]
+            )]);
+        }
     }
 }

@@ -245,6 +245,60 @@ $base->addTranslations($extra);  // DB keys not already in $base are added
 TranslationHandler::set($base, TranslationOptions::JSON, force: true);
 ```
 
+## MCP Tools (available when laravel/boost is installed)
+
+The following tools are injected automatically into Boost's MCP server. No configuration required — they register on detection of `laravel/boost`.
+
+Format values for `format` / `from` / `to` parameters: `php_file`, `json_file`, `csv_file`, `db`.
+
+### `get-translation-config-tool` (read-only, idempotent)
+
+Returns current config: locales, fileNames, key delimiter, default formats, and storage paths.
+
+No parameters.
+
+### `list-translations-tool` (read-only, idempotent)
+
+Lists translations from a storage format with optional filters.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string (enum) | yes | One of the format values |
+| `locale` | string | no | Filter by locale (e.g. `en`, `it`) |
+| `group` | string | no | Filter by key prefix (e.g. `auth` matches `auth.*`) |
+
+### `find-translation-tool` (read-only, idempotent)
+
+Finds a specific translation by key + locale.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string (enum) | yes | One of the format values |
+| `key` | string | yes | Dot-delimited translation key (e.g. `auth.welcome`) |
+| `locale` | string | yes | Locale to look up |
+
+### `set-translation-tool` (write)
+
+Sets or updates a single translation value.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string (enum) | yes | One of the format values |
+| `key` | string | yes | Dot-delimited translation key |
+| `locale` | string | yes | Locale to write |
+| `value` | string | yes | Translation value |
+| `force` | boolean | no | Overwrite existing value (default `false`) |
+
+### `sync-translations-tool` (write)
+
+Copies translations from one storage format to another.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `from` | string (enum) | yes | Source format |
+| `to` | string (enum) | yes | Destination format (must differ from `from`) |
+| `force` | boolean | no | Overwrite existing translations in destination (default `false`) |
+
 ## Configuration (`config/translation-handler.php`)
 
 Publish with `php artisan vendor:publish --provider="BrunosCode\TranslationHandler\TranslationHandlerServiceProvider"`.

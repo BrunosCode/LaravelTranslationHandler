@@ -66,6 +66,25 @@ class TestCase extends Orchestra
         config()->set('database.default', 'sqlite');
     }
 
+    protected function defineDatabaseMigrations(): void
+    {
+        $stubsPath = __DIR__.'/../database/migrations';
+        $tmpPath = sys_get_temp_dir().'/laravel-translation-handler-migrations';
+
+        if (! is_dir($tmpPath)) {
+            mkdir($tmpPath, 0777, true);
+        }
+
+        foreach (glob($stubsPath.'/*.stub') as $stubFile) {
+            $phpFile = $tmpPath.'/'.pathinfo($stubFile, PATHINFO_FILENAME).'.php';
+            if (! file_exists($phpFile)) {
+                copy($stubFile, $phpFile);
+            }
+        }
+
+        $this->loadMigrationsFrom($tmpPath);
+    }
+
     public function prepareService()
     {
         $options = new TranslationOptions;

@@ -7,6 +7,12 @@ use BrunosCode\TranslationHandler\Commands\ExportCommand;
 use BrunosCode\TranslationHandler\Commands\GetCommand;
 use BrunosCode\TranslationHandler\Commands\ImportCommand;
 use BrunosCode\TranslationHandler\Commands\SetCommand;
+use BrunosCode\TranslationHandler\Mcp\Tools\FindTranslationTool;
+use BrunosCode\TranslationHandler\Mcp\Tools\GetTranslationConfigTool;
+use BrunosCode\TranslationHandler\Mcp\Tools\ListTranslationsTool;
+use BrunosCode\TranslationHandler\Mcp\Tools\SetTranslationTool;
+use BrunosCode\TranslationHandler\Mcp\Tools\SyncTranslationsTool;
+use Laravel\Boost\Mcp\ToolRegistry;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -53,15 +59,15 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
             __DIR__.'/../resources/boost' => base_path('resources/boost'),
         ], 'translation-handler-boost');
 
-        if (class_exists(\Laravel\Boost\Mcp\ToolRegistry::class)) {
+        if (class_exists(ToolRegistry::class)) {
             config(['boost.mcp.tools.include' => array_merge(
                 config('boost.mcp.tools.include', []),
                 [
-                    \BrunosCode\TranslationHandler\Mcp\Tools\GetTranslationConfigTool::class,
-                    \BrunosCode\TranslationHandler\Mcp\Tools\ListTranslationsTool::class,
-                    \BrunosCode\TranslationHandler\Mcp\Tools\FindTranslationTool::class,
-                    \BrunosCode\TranslationHandler\Mcp\Tools\SetTranslationTool::class,
-                    \BrunosCode\TranslationHandler\Mcp\Tools\SyncTranslationsTool::class,
+                    GetTranslationConfigTool::class,
+                    ListTranslationsTool::class,
+                    FindTranslationTool::class,
+                    SetTranslationTool::class,
+                    SyncTranslationsTool::class,
                 ]
             )]);
         }

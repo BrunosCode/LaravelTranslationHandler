@@ -64,6 +64,16 @@ class TestCase extends Orchestra
     public function getEnvironmentSetUp($app)
     {
         config()->set('database.default', 'sqlite');
+
+        static $cleanedOnce = false;
+        if (! $cleanedOnce) {
+            $dbPath = config('database.connections.sqlite.database');
+            if (is_string($dbPath) && file_exists($dbPath)) {
+                unlink($dbPath);
+                touch($dbPath);
+            }
+            $cleanedOnce = true;
+        }
     }
 
     protected function defineDatabaseMigrations(): void

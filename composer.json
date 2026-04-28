@@ -23,7 +23,7 @@
         "laravel/boost": "Required to expose translation MCP tools to AI agents via boost:mcp."
     },
     "require-dev": {
-        "laravel/mcp": "*",
+        "laravel/mcp": "^0.7.0",
         "orchestra/testbench": "^9.0 || ^10.0",
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.0",

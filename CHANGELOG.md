@@ -2,6 +2,24 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.1.1 — Laravel Boost subprocess compatibility - 2026-04-30
+
+### Fixed
+
+- MCP tools now return `Response` (text content with JSON-encoded payload) instead of `ResponseFactory` (structured content). This fixes a `BadMethodCallException: Method Laravel\Mcp\ResponseFactory::isError does not exist` raised when the tools are executed in a subprocess by `laravel/boost`'s `ExecuteToolCommand`, which assumes a `Response` return value and calls `->isError()` on it directly.
+
+The payload is preserved — clients that read the `content[0].text` field can still `json_decode` it. The trade-off is the loss of the formal MCP `structuredContent` field in the JSON-RPC response, which is required until `laravel/boost` is patched upstream to handle `ResponseFactory` (see `vendor/laravel/boost/src/Console/ExecuteToolCommand.php`).
+
+### Tests
+
+- All 7 MCP tools updated and re-tested (`Response` instead of `ResponseFactory`, payload extracted via `json_decode((string) $response->content(), true)`)
+- New `BoostExecuteToolCompatibilityTest` simulates the boost subprocess flow: invokes `handle()` then `isError()` on every tool
+
+### Compatibility
+
+- No breaking changes for direct MCP server usage
+- The 7 tools introduced in v2.1.0 keep their schemas and parameter contracts
+
 ## v2.1.2 - 2026-04-30
 
 ### Added
@@ -23,6 +41,7 @@ All notable changes to `laravel-translation-handler` will be documented in this 
 ### Added
 
 - **Laravel Boost MCP tools** for AI-assisted translation management. When `laravel/boost` is installed, the package auto-registers **seven tools** into Boost's MCP server (`packageBooted()` in `TranslationHandlerServiceProvider`):
+  
   - `get-translation-config` — read the active translation handler config
   - `list-translations` — list translations from a storage format, optionally filtered by locale or key group prefix
   - `list-translation-groups` — list unique key groups at a given depth level (number of delimiters), with optional case-insensitive search; useful for exploring large key hierarchies before reading or writing
@@ -32,7 +51,9 @@ All notable changes to `laravel-translation-handler` will be documented in this 
   - `sync-translations` — sync translations between storage formats (PHP / JSON / CSV / DB)
   
 - **DB-first workflow recommendation** documented in the skill and README: write individual changes to `db` (row-level I/O), then flush to files with a single `sync-translations` call at the end, avoiding repeated full-file rewrites.
+  
 - **AI development skill + Boost guideline** under `resources/boost/guidelines/core.blade.php` and `resources/boost/skills/translation-handler-development/SKILL.md`, documenting tool contracts, translation handler conventions, and the DB-first workflow for AI agents.
+  
 
 ### Dev
 
@@ -85,6 +106,7 @@ app($class, ['options' => $this->getOptions()]);
 
 
 
+
 ```
 Laravel 11 removed the automatic conversion of positional parameters to named ones (`keyParametersByArgument`). As a result, the container ignored the provided `TranslationOptions` instance and auto-resolved a fresh one from config — discarding any runtime overrides set via `setOption()` or `setOptions()`.
 
@@ -95,6 +117,7 @@ Any option overridden at runtime was silently ignored. The most visible symptom 
 ```
 Invalid CSV at line 2: expected at least 2 columns, got 1.
 Check that the delimiter is ";"
+
 
 
 
@@ -137,6 +160,7 @@ If you are on Laravel 11 or 12, no code changes are required — update the pack
 
 ```bash
 composer require brunoscode/laravel-translation-handler:^2.0
+
 
 
 

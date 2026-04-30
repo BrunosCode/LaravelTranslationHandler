@@ -2,6 +2,37 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.1.0 — Laravel Boost MCP integration - 2026-04-30
+
+### Added
+
+- **Laravel Boost MCP tools** for AI-assisted translation management. When `laravel/boost` is installed, the package auto-registers **seven tools** into Boost's MCP server (`packageBooted()` in `TranslationHandlerServiceProvider`):
+  - `get-translation-config` — read the active translation handler config
+  - `list-translations` — list translations from a storage format, optionally filtered by locale or key group prefix
+  - `list-translation-groups` — list unique key groups at a given depth level (number of delimiters), with optional case-insensitive search; useful for exploring large key hierarchies before reading or writing
+  - `find-translation` — look up a single translation by key and locale
+  - `set-translation` — create or update a translation for a single locale
+  - `set-all-locales-translation` — create or update a translation key for **all locales at once** in a single call
+  - `sync-translations` — sync translations between storage formats (PHP / JSON / CSV / DB)
+  
+- **DB-first workflow recommendation** documented in the skill and README: write individual changes to `db` (row-level I/O), then flush to files with a single `sync-translations` call at the end, avoiding repeated full-file rewrites.
+- **AI development skill + Boost guideline** under `resources/boost/guidelines/core.blade.php` and `resources/boost/skills/translation-handler-development/SKILL.md`, documenting tool contracts, translation handler conventions, and the DB-first workflow for AI agents.
+
+### Dev
+
+- `laravel/mcp ^0.7.0` added as a dev dependency. The runtime requirement is unchanged — Boost integration only activates when the host app installs `laravel/boost`.
+- Feature test suite for each MCP tool covering all storage backends (PHP, JSON, CSV, DB).
+- CI: `composer require ... --dev` so the new MCP dep resolves on the matrix.
+
+### Fixed
+
+- Test suite duplicated the package migrations (Spatie's published copies in the testbench app vs. a manual `loadMigrationsFrom` of `/tmp` stubs), causing `migrate:fresh` to fail with `table "translation_keys" already exists`. Removed the redundant `defineDatabaseMigrations()` override so tests rely on the workbench-published migrations only.
+
+### Compatibility
+
+- No breaking changes. Boost tools are opt-in via `laravel/boost`; without it, the service provider behaves exactly as in v2.0.3.
+- Composer suggest entry: `laravel/boost — Required to expose translation MCP tools to AI agents via boost:mcp`.
+
 ## ## v2.0.3 - 2026-04-10 - 2026-04-10
 
 ### Fixed
@@ -37,6 +68,7 @@ app($class, [$this->getOptions()]);
 app($class, ['options' => $this->getOptions()]);
 
 
+
 ```
 Laravel 11 removed the automatic conversion of positional parameters to named ones (`keyParametersByArgument`). As a result, the container ignored the provided `TranslationOptions` instance and auto-resolved a fresh one from config — discarding any runtime overrides set via `setOption()` or `setOptions()`.
 
@@ -47,6 +79,7 @@ Any option overridden at runtime was silently ignored. The most visible symptom 
 ```
 Invalid CSV at line 2: expected at least 2 columns, got 1.
 Check that the delimiter is ";"
+
 
 
 ```
@@ -88,6 +121,7 @@ If you are on Laravel 11 or 12, no code changes are required — update the pack
 
 ```bash
 composer require brunoscode/laravel-translation-handler:^2.0
+
 
 
 

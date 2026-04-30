@@ -1,6 +1,6 @@
 # Laravel Translation Handler
 
-Manage translations in Laravel across PHP files, JSON files, CSV files, and database.
+Manage translations in Laravel across PHP files, JSON files, CSV files, and database — and let an AI agent handle them for you via [Laravel Boost](https://github.com/laravel/boost) MCP tools.
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/brunoscode/laravel-translation-handler.svg?style=flat-square)](https://packagist.org/packages/brunoscode/laravel-translation-handler)
 [![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/brunoscode/laravel-translation-handler/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/brunoscode/laravel-translation-handler/actions?query=workflow%3Arun-tests+branch%3Amain)
@@ -34,6 +34,134 @@ Publish the configuration file:
 ```bash
 php artisan vendor:publish --provider="BrunosCode\TranslationHandler\TranslationHandlerServiceProvider"
 ```
+
+---
+
+## AI-Powered Translation Management with Laravel Boost
+
+When [Laravel Boost](https://github.com/laravel/boost) is installed, this package automatically registers **7 MCP tools** into Boost's MCP server. This lets any MCP-compatible AI agent (Claude, Cursor, GitHub Copilot, etc.) read and write your translations directly — no manual commands, no copy-pasting.
+
+### What the AI can do
+
+- Browse your translation keys by group and depth level
+- Look up a specific key in any locale
+- Add or update a single translation in any format
+- Add or update a key across **all locales at once**
+- Sync translations between storage formats
+- Read the full translation configuration
+
+### Setup
+
+Install Laravel Boost, then connect your AI assistant to its MCP server. No further configuration is required — the tools register automatically on package detection.
+
+```bash
+composer require laravel/boost
+```
+
+### Available MCP Tools
+
+Format values for `format` / `from` / `to` parameters: `php_file`, `json_file`, `csv_file`, `db`.
+
+#### `get-translation-config-tool` (read-only)
+
+Returns the active configuration: locales, file names, key delimiter, default formats, and storage paths. Useful as a first call to understand the project's translation setup.
+
+No parameters.
+
+#### `list-translations-tool` (read-only)
+
+Lists translations from a format with optional filters.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to read from |
+| `locale` | string | no | Filter by locale (e.g. `en`) |
+| `group` | string | no | Filter by key prefix (e.g. `auth` returns all `auth.*` keys) |
+
+#### `list-translation-groups-tool` (read-only)
+
+Lists unique key groups at a given depth. Use this to explore the key hierarchy before reading or writing translations — especially useful in large projects.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to read from |
+| `level` | integer | no | Number of delimiters in the group name. `0` = top-level (e.g. `auth`), `1` = second-level (e.g. `auth.messages`). Defaults to `0`. |
+| `search` | string | no | Case-insensitive filter on group names |
+
+#### `find-translation-tool` (read-only)
+
+Finds a specific translation by key and locale.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to read from |
+| `key` | string | yes | Dot-delimited key (e.g. `auth.welcome`) |
+| `locale` | string | yes | Locale to look up |
+
+#### `set-translation-tool` (write)
+
+Sets or updates a single translation value.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to write to |
+| `key` | string | yes | Dot-delimited key |
+| `locale` | string | yes | Target locale |
+| `value` | string | yes | Translation value |
+| `force` | boolean | no | Overwrite existing value (default `false`) |
+
+#### `set-all-locales-translation-tool` (write)
+
+Sets or updates a translation key for **all locales at once**. Ideal when the AI generates translations for every supported language in a single step.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to write to |
+| `key` | string | yes | Dot-delimited key |
+| `values` | object | yes | Map of locale → value, e.g. `{"en": "Hello", "it": "Ciao"}` |
+| `force` | boolean | no | Overwrite existing values (default `false`) |
+
+#### `sync-translations-tool` (write)
+
+Copies translations from one storage format to another.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `from` | string | yes | Source format |
+| `to` | string | yes | Destination format (must differ from `from`) |
+| `force` | boolean | no | Overwrite existing translations in destination (default `false`) |
+
+### Recommended workflow for editing translations
+
+**Use `db` as the working format for all writes, then sync to files at the end.**
+
+File-based formats (PHP, JSON, CSV) rewrite the entire file on every write operation. The database format writes only the affected rows, making each change significantly faster. Once all edits are done, a single sync pushes everything to the target file format.
+
+```
+1. Read/browse   → db (or any format for read-only queries)
+2. Write keys    → always db
+3. Finalise      → sync-translations-tool  from: db  to: <target format>
+```
+
+When no database is configured, write directly to the file format but batch all locales for a key into a single `set-all-locales-translation-tool` call rather than one call per locale.
+
+### Example AI workflow
+
+> **You:** "Add a `auth.too_many_attempts` key in English and Italian to the JSON files."
+
+The AI will:
+1. Call `get-translation-config-tool` to confirm the locales and format
+2. Call `set-all-locales-translation-tool` with `{"en": "Too many attempts. Please try again later.", "it": "Troppi tentativi. Riprova più tardi."}` targeting `json_file`
+
+> **You:** "Migrate all translations from PHP files to the database."
+
+The AI will call `sync-translations-tool` with `from: php_file`, `to: db`.
+
+> **You:** "What translation groups exist at the top level?"
+
+The AI will call `list-translation-groups-tool` with `format: php_file`, `level: 0`.
+
+---
 
 ## Quick Start
 

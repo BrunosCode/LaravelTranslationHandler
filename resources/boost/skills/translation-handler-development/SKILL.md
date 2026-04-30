@@ -251,6 +251,24 @@ The following tools are injected automatically into Boost's MCP server. No confi
 
 Format values for `format` / `from` / `to` parameters: `php_file`, `json_file`, `csv_file`, `db`.
 
+### Recommended workflow for editing translations
+
+**Always use `db` as the working format for individual reads and writes, then sync to files at the end.**
+
+File-based formats (PHP, JSON, CSV) rewrite the entire file on every `set` call. When adding or updating multiple keys, this means repeated full-file I/O. The database format writes only the affected rows, making each operation significantly faster.
+
+Preferred pattern:
+
+```
+1. read/browse   → use db (or any format for read-only queries)
+2. write keys    → always use db
+3. finalise      → call sync-translations-tool from: db, to: <target file format>
+```
+
+**When to deviate:**
+- You are making a single change and no DB is configured → write directly to the file format.
+- The project does not use DB translations at all → write to the file format directly, but batch as many keys as possible in a single `set-all-locales-translation-tool` call rather than one call per locale.
+
 ### `get-translation-config-tool` (read-only, idempotent)
 
 Returns current config: locales, fileNames, key delimiter, default formats, and storage paths.
@@ -288,6 +306,27 @@ Sets or updates a single translation value.
 | `locale` | string | yes | Locale to write |
 | `value` | string | yes | Translation value |
 | `force` | boolean | no | Overwrite existing value (default `false`) |
+
+### `list-translation-groups-tool` (read-only, idempotent)
+
+Lists unique translation key groups at a given depth level. A group is a key prefix — `auth` is a level-0 group, `auth.messages` is a level-1 group. Level equals the number of delimiters in the group name.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string (enum) | yes | One of the format values |
+| `level` | integer | no | Number of delimiters in the group name. `0` = top-level (e.g. `auth`), `1` = second-level (e.g. `auth.messages`). Defaults to `0`. |
+| `search` | string | no | Case-insensitive filter — only groups whose name contains this string are returned. |
+
+### `set-all-locales-translation-tool` (write)
+
+Sets or updates a translation key for all locales at once.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string (enum) | yes | One of the format values |
+| `key` | string | yes | Dot-delimited translation key (e.g. `auth.welcome`) |
+| `values` | object | yes | Map of locale → value (e.g. `{"en": "Hello", "it": "Ciao"}`) |
+| `force` | boolean | no | Overwrite existing values (default `false`) |
 
 ### `sync-translations-tool` (write)
 

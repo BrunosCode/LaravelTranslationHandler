@@ -328,6 +328,17 @@ Sets or updates a translation key for all locales at once.
 | `values` | object | yes | Map of locale → value (e.g. `{"en": "Hello", "it": "Ciao"}`) |
 | `force` | boolean | no | Overwrite existing values (default `false`) |
 
+### `set-translation-group-tool` (write)
+
+Sets or updates every translation under a group prefix in a single call. Use this when localising an entire group at once — the tool joins each subkey to the group with the configured delimiter and writes all locale values for every subkey.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string (enum) | yes | One of the format values |
+| `group` | string | yes | Group prefix (e.g. `auth`). A trailing delimiter is tolerated. |
+| `translations` | object | yes | Map of subkey → locale=>value object, e.g. `{"welcome": {"en": "Welcome", "it": "Benvenuto"}, "logout": {"en": "Logout", "it": "Esci"}}`. Subkeys may contain the delimiter (e.g. `nested.deep`). |
+| `force` | boolean | no | Overwrite existing values (default `false`) |
+
 ### `sync-translations-tool` (write)
 
 Copies translations from one storage format to another.

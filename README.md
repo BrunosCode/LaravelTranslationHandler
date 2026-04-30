@@ -39,7 +39,7 @@ php artisan vendor:publish --provider="BrunosCode\TranslationHandler\Translation
 
 ## AI-Powered Translation Management with Laravel Boost
 
-When [Laravel Boost](https://github.com/laravel/boost) is installed, this package automatically registers **7 MCP tools** into Boost's MCP server. This lets any MCP-compatible AI agent (Claude, Cursor, GitHub Copilot, etc.) read and write your translations directly — no manual commands, no copy-pasting.
+When [Laravel Boost](https://github.com/laravel/boost) is installed, this package automatically registers **8 MCP tools** into Boost's MCP server. This lets any MCP-compatible AI agent (Claude, Cursor, GitHub Copilot, etc.) read and write your translations directly — no manual commands, no copy-pasting.
 
 ### What the AI can do
 
@@ -47,6 +47,7 @@ When [Laravel Boost](https://github.com/laravel/boost) is installed, this packag
 - Look up a specific key in any locale
 - Add or update a single translation in any format
 - Add or update a key across **all locales at once**
+- Translate **an entire group** in one call (every subkey, every locale)
 - Sync translations between storage formats
 - Read the full translation configuration
 
@@ -121,6 +122,17 @@ Sets or updates a translation key for **all locales at once**. Ideal when the AI
 | `values` | object | yes | Map of locale → value, e.g. `{"en": "Hello", "it": "Ciao"}` |
 | `force` | boolean | no | Overwrite existing values (default `false`) |
 
+#### `set-translation-group-tool` (write)
+
+Translates **an entire group** in a single call. The AI provides a group prefix and an object of `subkey → {locale: value}`; the tool joins each subkey to the group and writes all locales for all subkeys in one DB transaction.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to write to |
+| `group` | string | yes | Group prefix (e.g. `auth`). Trailing delimiter is tolerated. |
+| `translations` | object | yes | Map of subkey → locale=>value, e.g. `{"welcome": {"en": "Welcome", "it": "Benvenuto"}, "logout": {"en": "Logout", "it": "Esci"}}`. Subkeys may contain the delimiter (`nested.deep`). |
+| `force` | boolean | no | Overwrite existing values (default `false`) |
+
 #### `sync-translations-tool` (write)
 
 Copies translations from one storage format to another.
@@ -152,6 +164,10 @@ When no database is configured, write directly to the file format but batch all 
 The AI will:
 1. Call `get-translation-config-tool` to confirm the locales and format
 2. Call `set-all-locales-translation-tool` with `{"en": "Too many attempts. Please try again later.", "it": "Troppi tentativi. Riprova più tardi."}` targeting `json_file`
+
+> **You:** "Translate the entire `auth` group into English, Italian, and Spanish."
+
+The AI will call `set-translation-group-tool` with `format: db`, `group: auth`, and a `translations` object containing every auth subkey mapped to all three locales — written in a single DB transaction.
 
 > **You:** "Migrate all translations from PHP files to the database."
 

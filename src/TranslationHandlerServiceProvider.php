@@ -12,6 +12,7 @@ use BrunosCode\TranslationHandler\Mcp\Tools\GetTranslationConfigTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\ListTranslationGroupsTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\ListTranslationsTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\SetAllLocalesTranslationTool;
+use BrunosCode\TranslationHandler\Mcp\Tools\SetTranslationGroupTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\SetTranslationTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\SyncTranslationsTool;
 use Laravel\Boost\Mcp\ToolRegistry;
@@ -71,6 +72,7 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
                     FindTranslationTool::class,
                     SetTranslationTool::class,
                     SetAllLocalesTranslationTool::class,
+                    SetTranslationGroupTool::class,
                     SyncTranslationsTool::class,
                 ]
             )]);

@@ -64,35 +64,6 @@ class TestCase extends Orchestra
     public function getEnvironmentSetUp($app)
     {
         config()->set('database.default', 'sqlite');
-
-        static $cleanedOnce = false;
-        if (! $cleanedOnce) {
-            $dbPath = config('database.connections.sqlite.database');
-            if (is_string($dbPath) && file_exists($dbPath)) {
-                unlink($dbPath);
-                touch($dbPath);
-            }
-            $cleanedOnce = true;
-        }
-    }
-
-    protected function defineDatabaseMigrations(): void
-    {
-        $stubsPath = __DIR__.'/../database/migrations';
-        $tmpPath = sys_get_temp_dir().'/laravel-translation-handler-migrations';
-
-        if (! is_dir($tmpPath)) {
-            mkdir($tmpPath, 0777, true);
-        }
-
-        foreach (glob($stubsPath.'/*.stub') as $stubFile) {
-            $phpFile = $tmpPath.'/'.pathinfo($stubFile, PATHINFO_FILENAME).'.php';
-            if (! file_exists($phpFile)) {
-                copy($stubFile, $phpFile);
-            }
-        }
-
-        $this->loadMigrationsFrom($tmpPath);
     }
 
     public function prepareService()

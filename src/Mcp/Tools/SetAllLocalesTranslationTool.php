@@ -9,7 +9,6 @@ use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
-use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Tool;
 
 class SetAllLocalesTranslationTool extends Tool
@@ -34,7 +33,7 @@ class SetAllLocalesTranslationTool extends Tool
         ];
     }
 
-    public function handle(Request $request): Response|ResponseFactory
+    public function handle(Request $request): Response
     {
         $format = $request->get('format');
         $key = $request->get('key');
@@ -59,11 +58,11 @@ class SetAllLocalesTranslationTool extends Tool
             return Response::error('Failed to set translations: '.$e->getMessage());
         }
 
-        return Response::structured([
+        return Response::text(json_encode([
             'written' => $count,
             'key' => $key,
             'locales' => array_keys($values),
             'format' => $format,
-        ]);
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }

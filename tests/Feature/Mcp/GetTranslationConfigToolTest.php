@@ -4,7 +4,7 @@ use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use BrunosCode\TranslationHandler\Mcp\Tools\GetTranslationConfigTool;
 use Laravel\Mcp\Request;
-use Laravel\Mcp\ResponseFactory;
+use Laravel\Mcp\Response;
 
 describe('GetTranslationConfigTool', function () {
     beforeEach(function () {
@@ -14,7 +14,12 @@ describe('GetTranslationConfigTool', function () {
     it('returns a structured response', function () {
         $response = $this->tool->handle(new Request);
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
+
+        $data = json_decode((string) $response->content(), true);
+        expect($data)->toBeArray();
+        expect($data)->toHaveKey('locales');
     });
 
     it('reads locales from config', function () {

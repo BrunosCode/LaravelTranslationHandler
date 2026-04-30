@@ -6,7 +6,6 @@ use BrunosCode\TranslationHandler\Mcp\Tools\SyncTranslationsTool;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
-use Laravel\Mcp\ResponseFactory;
 
 uses(RefreshDatabase::class);
 
@@ -24,7 +23,8 @@ describe('SyncTranslationsTool php to json', function () {
     it('syncs all translations from php to json', function () {
         $response = $this->tool->handle(new Request(['from' => TranslationOptions::PHP, 'to' => TranslationOptions::JSON]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
         $phpCount = TranslationHandler::get(TranslationOptions::PHP)->count();
         $jsonCount = TranslationHandler::get(TranslationOptions::JSON)->count();
@@ -59,7 +59,8 @@ describe('SyncTranslationsTool json to php', function () {
     it('syncs all translations from json to php', function () {
         $response = $this->tool->handle(new Request(['from' => TranslationOptions::JSON, 'to' => TranslationOptions::PHP]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(TranslationHandler::get(TranslationOptions::PHP))->not->toBeEmpty();
     });
 })->group('Mcp', 'SyncTranslationsTool', 'JsonFileHandler', 'PhpFileHandler');
@@ -77,7 +78,8 @@ describe('SyncTranslationsTool php to database', function () {
     it('syncs all translations from php to database', function () {
         $response = $this->tool->handle(new Request(['from' => TranslationOptions::PHP, 'to' => TranslationOptions::DB]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(TranslationHandler::get(TranslationOptions::DB))->not->toBeEmpty();
     });
 })->group('Mcp', 'SyncTranslationsTool', 'PhpFileHandler', 'DatabaseHandler');

@@ -6,7 +6,6 @@ use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
-use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Tool;
 use Laravel\Mcp\Server\Tools\Annotations\IsIdempotent;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
@@ -17,11 +16,11 @@ class GetTranslationConfigTool extends Tool
 {
     protected string $description = 'Get the current translation-handler configuration: locales, file names, key delimiter, default formats, and paths for each storage format.';
 
-    public function handle(Request $request): Response|ResponseFactory
+    public function handle(Request $request): Response
     {
         $options = TranslationHandler::getOptions();
 
-        return Response::structured([
+        return Response::text(json_encode([
             'locales' => $options->locales,
             'fileNames' => $options->fileNames,
             'keyDelimiter' => $options->keyDelimiter,
@@ -37,6 +36,6 @@ class GetTranslationConfigTool extends Tool
                 TranslationOptions::CSV => ['path' => $options->csvPath, 'fileName' => $options->csvFileName, 'delimiter' => $options->csvDelimiter],
                 TranslationOptions::DB => ['handler' => $options->dbHandlerClass],
             ],
-        ]);
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }

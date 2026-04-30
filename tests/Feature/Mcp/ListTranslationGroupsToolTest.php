@@ -5,7 +5,6 @@ use BrunosCode\TranslationHandler\Mcp\Tools\ListTranslationGroupsTool;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
-use Laravel\Mcp\ResponseFactory;
 
 uses(RefreshDatabase::class);
 
@@ -22,18 +21,20 @@ describe('ListTranslationGroupsTool php', function () {
     it('returns level-0 groups by default', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
-        $data = $response->getStructuredContent();
+        $data = json_decode((string) $response->content(), true);
         expect($data['level'])->toBe(0);
     });
 
     it('returns correct level-0 groups', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'level' => 0]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
-        $data = $response->getStructuredContent();
+        $data = json_decode((string) $response->content(), true);
 
         expect($data['level'])->toBe(0);
         expect($data['groups'])->toContain('test1');
@@ -48,9 +49,10 @@ describe('ListTranslationGroupsTool php', function () {
     it('returns correct level-1 groups', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'level' => 1]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
-        $data = $response->getStructuredContent();
+        $data = json_decode((string) $response->content(), true);
 
         expect($data['level'])->toBe(1);
         expect($data['groups'])->toContain('test1.nested');
@@ -64,9 +66,10 @@ describe('ListTranslationGroupsTool php', function () {
     it('returns empty groups for level higher than available depth', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'level' => 99]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
-        $data = $response->getStructuredContent();
+        $data = json_decode((string) $response->content(), true);
 
         expect($data['total'])->toBe(0);
         expect($data['groups'])->toBe([]);
@@ -75,9 +78,10 @@ describe('ListTranslationGroupsTool php', function () {
     it('filters groups by search', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'level' => 0, 'search' => 'test1']));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
-        $data = $response->getStructuredContent();
+        $data = json_decode((string) $response->content(), true);
 
         expect($data['groups'])->toContain('test1');
         expect($data['groups'])->not->toContain('test2');
@@ -87,15 +91,19 @@ describe('ListTranslationGroupsTool php', function () {
         $lower = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'level' => 0, 'search' => 'test1']));
         $upper = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'level' => 0, 'search' => 'TEST1']));
 
-        expect($lower->getStructuredContent()['groups'])->toBe($upper->getStructuredContent()['groups']);
+        $lowerData = json_decode((string) $lower->content(), true);
+        $upperData = json_decode((string) $upper->content(), true);
+
+        expect($lowerData['groups'])->toBe($upperData['groups']);
     });
 
     it('returns empty groups when search matches nothing', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'level' => 0, 'search' => 'no-match-xyz']));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
-        $data = $response->getStructuredContent();
+        $data = json_decode((string) $response->content(), true);
 
         expect($data['total'])->toBe(0);
         expect($data['groups'])->toBe([]);
@@ -104,7 +112,7 @@ describe('ListTranslationGroupsTool php', function () {
     it('returns groups sorted alphabetically', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'level' => 0]));
 
-        $data = $response->getStructuredContent();
+        $data = json_decode((string) $response->content(), true);
 
         $sorted = $data['groups'];
         sort($sorted);
@@ -126,9 +134,10 @@ describe('ListTranslationGroupsTool csv', function () {
     it('returns correct level-0 groups', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::CSV]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
-        $data = $response->getStructuredContent();
+        $data = json_decode((string) $response->content(), true);
 
         expect($data['groups'])->toContain('test1');
         expect($data['groups'])->toContain('test2');
@@ -144,9 +153,10 @@ describe('ListTranslationGroupsTool database', function () {
     it('returns correct level-0 groups', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::DB]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
-        $data = $response->getStructuredContent();
+        $data = json_decode((string) $response->content(), true);
 
         expect($data['groups'])->toContain('test1');
         expect($data['groups'])->toContain('test2');

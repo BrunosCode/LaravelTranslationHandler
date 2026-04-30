@@ -6,7 +6,6 @@ use BrunosCode\TranslationHandler\Mcp\Tools\SetTranslationTool;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
-use Laravel\Mcp\ResponseFactory;
 
 uses(RefreshDatabase::class);
 
@@ -23,7 +22,8 @@ describe('SetTranslationTool php', function () {
     it('writes a new translation', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'key' => 'test1.new', 'locale' => 'en', 'value' => 'New Value']));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(
             TranslationHandler::get(TranslationOptions::PHP)->whereKey('test1.new')->whereLocale('en')->first()?->value
         )->toBe('New Value');
@@ -40,7 +40,8 @@ describe('SetTranslationTool php', function () {
     it('overwrites existing translation with force', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'key' => 'test1.get', 'locale' => 'en', 'value' => 'Overwritten', 'force' => true]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(
             TranslationHandler::get(TranslationOptions::PHP)->whereKey('test1.get')->whereLocale('en')->first()?->value
         )->toBe('Overwritten');
@@ -49,7 +50,8 @@ describe('SetTranslationTool php', function () {
     it('writes translation for italian locale', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'key' => 'test1.nuovo', 'locale' => 'it', 'value' => 'Nuovo valore']));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(
             TranslationHandler::get(TranslationOptions::PHP)->whereKey('test1.nuovo')->whereLocale('it')->first()?->value
         )->toBe('Nuovo valore');
@@ -68,7 +70,8 @@ describe('SetTranslationTool csv', function () {
     it('writes a new translation', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::CSV, 'key' => 'test1.new', 'locale' => 'en', 'value' => 'New CSV Value']));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(
             TranslationHandler::get(TranslationOptions::CSV)->whereKey('test1.new')->whereLocale('en')->first()?->value
         )->toBe('New CSV Value');
@@ -84,7 +87,8 @@ describe('SetTranslationTool database', function () {
     it('writes a new translation', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::DB, 'key' => 'test1.new', 'locale' => 'en', 'value' => 'New DB Value']));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(
             TranslationHandler::get(TranslationOptions::DB)->whereKey('test1.new')->whereLocale('en')->first()?->value
         )->toBe('New DB Value');
@@ -93,7 +97,8 @@ describe('SetTranslationTool database', function () {
     it('overwrites existing translation with force', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::DB, 'key' => 'test1.get', 'locale' => 'en', 'value' => 'Overwritten', 'force' => true]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(
             TranslationHandler::get(TranslationOptions::DB)->whereKey('test1.get')->whereLocale('en')->first()?->value
         )->toBe('Overwritten');

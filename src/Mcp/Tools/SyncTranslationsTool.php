@@ -7,7 +7,6 @@ use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
-use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Tool;
 
 class SyncTranslationsTool extends Tool
@@ -30,7 +29,7 @@ class SyncTranslationsTool extends Tool
         ];
     }
 
-    public function handle(Request $request): Response|ResponseFactory
+    public function handle(Request $request): Response
     {
         $from = $request->get('from');
         $to = $request->get('to');
@@ -46,11 +45,11 @@ class SyncTranslationsTool extends Tool
             return Response::error('Failed to sync translations: '.$e->getMessage());
         }
 
-        return Response::structured([
+        return Response::text(json_encode([
             'success' => $success,
             'from' => $from,
             'to' => $to,
             'force' => $force,
-        ]);
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }

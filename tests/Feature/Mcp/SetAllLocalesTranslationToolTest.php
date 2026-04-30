@@ -6,7 +6,6 @@ use BrunosCode\TranslationHandler\Mcp\Tools\SetAllLocalesTranslationTool;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
-use Laravel\Mcp\ResponseFactory;
 
 uses(RefreshDatabase::class);
 
@@ -27,7 +26,8 @@ describe('SetAllLocalesTranslationTool php', function () {
             'values' => ['en' => 'New EN', 'it' => 'Nuovo IT'],
         ]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
         expect(
             TranslationHandler::get(TranslationOptions::PHP)->whereKey('test1.new')->whereLocale('en')->first()?->value
@@ -62,7 +62,8 @@ describe('SetAllLocalesTranslationTool php', function () {
             'force' => true,
         ]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
         expect(
             TranslationHandler::get(TranslationOptions::PHP)->whereKey('test1.get')->whereLocale('en')->first()?->value
@@ -90,7 +91,8 @@ describe('SetAllLocalesTranslationTool csv', function () {
             'values' => ['en' => 'New CSV EN', 'it' => 'Nuovo CSV IT'],
         ]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
         expect(
             TranslationHandler::get(TranslationOptions::CSV)->whereKey('test1.new')->whereLocale('en')->first()?->value
@@ -111,7 +113,8 @@ describe('SetAllLocalesTranslationTool database', function () {
             'values' => ['en' => 'New DB EN', 'it' => 'Nuovo DB IT'],
         ]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
         expect(
             TranslationHandler::get(TranslationOptions::DB)->whereKey('test1.new')->whereLocale('en')->first()?->value

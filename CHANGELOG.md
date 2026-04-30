@@ -2,6 +2,12 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.1.1 - 2026-04-30
+
+### Fixed
+
+- MCP tools now return `Response` (text with JSON-encoded payload) instead of `ResponseFactory` (structured content). This fixes a `BadMethodCallException: Method Laravel\Mcp\ResponseFactory::isError does not exist` when the tools are executed in subprocess by `laravel/boost`'s `ExecuteToolCommand`, which expects a `Response` return value.
+
 ## v2.1.0 — Laravel Boost MCP integration - 2026-04-30
 
 ### Added

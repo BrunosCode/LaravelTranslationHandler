@@ -7,7 +7,6 @@ use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
-use Laravel\Mcp\ResponseFactory;
 use Laravel\Mcp\Server\Tool;
 use Laravel\Mcp\Server\Tools\Annotations\IsIdempotent;
 use Laravel\Mcp\Server\Tools\Annotations\IsReadOnly;
@@ -32,7 +31,7 @@ class ListTranslationsTool extends Tool
         ];
     }
 
-    public function handle(Request $request): Response|ResponseFactory
+    public function handle(Request $request): Response
     {
         $format = $request->get('format');
         $locale = $request->get('locale');
@@ -57,10 +56,10 @@ class ListTranslationsTool extends Tool
             ->values()
             ->all();
 
-        return Response::structured([
+        return Response::text(json_encode([
             'format' => $format,
             'total' => count($translations),
             'translations' => $translations,
-        ]);
+        ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }

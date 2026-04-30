@@ -6,7 +6,6 @@ use BrunosCode\TranslationHandler\Mcp\Tools\ListTranslationsTool;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
-use Laravel\Mcp\ResponseFactory;
 
 uses(RefreshDatabase::class);
 
@@ -23,14 +22,16 @@ describe('ListTranslationsTool php', function () {
     it('returns all translations', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(TranslationHandler::get(TranslationOptions::PHP))->not->toBeEmpty();
     });
 
     it('filters by locale', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'locale' => 'en']));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
         $collection = TranslationHandler::get(TranslationOptions::PHP)->whereLocale('en');
         expect($collection)->not->toBeEmpty();
@@ -40,7 +41,8 @@ describe('ListTranslationsTool php', function () {
     it('filters by group', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'group' => 'test1']));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
         $collection = TranslationHandler::get(TranslationOptions::PHP)->whereGroup('test1');
         expect($collection)->not->toBeEmpty();
@@ -50,7 +52,8 @@ describe('ListTranslationsTool php', function () {
     it('combines locale and group filters', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'locale' => 'it', 'group' => 'test1']));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
 
         $collection = TranslationHandler::get(TranslationOptions::PHP)->whereLocale('it')->whereGroup('test1');
         expect($collection->every(fn ($t) => $t->locale === 'it' && str_starts_with($t->key, 'test1.')))->toBeTrue();
@@ -70,7 +73,8 @@ describe('ListTranslationsTool json', function () {
     it('returns all translations', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::JSON]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(TranslationHandler::get(TranslationOptions::JSON))->not->toBeEmpty();
     });
 })->group('Mcp', 'ListTranslationsTool', 'JsonFileHandler');
@@ -88,7 +92,8 @@ describe('ListTranslationsTool csv', function () {
     it('returns all translations', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::CSV]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(TranslationHandler::get(TranslationOptions::CSV))->not->toBeEmpty();
     });
 })->group('Mcp', 'ListTranslationsTool', 'CsvFileHandler');
@@ -102,7 +107,8 @@ describe('ListTranslationsTool database', function () {
     it('returns all translations', function () {
         $response = $this->tool->handle(new Request(['format' => TranslationOptions::DB]));
 
-        expect($response)->toBeInstanceOf(ResponseFactory::class);
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
         expect(TranslationHandler::get(TranslationOptions::DB))->not->toBeEmpty();
     });
 })->group('Mcp', 'ListTranslationsTool', 'DatabaseHandler');

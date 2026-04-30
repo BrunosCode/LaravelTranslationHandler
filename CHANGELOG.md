@@ -2,6 +2,47 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.1.2 — Timestamp isolation + set-translation-group MCP tool - 2026-04-30
+
+### Added
+
+- **`set-translation-group-tool`** — new MCP tool that translates an entire group in a single call. The AI provides a group prefix and an object of `subkey → {locale: value}`; the tool joins each subkey to the group with the configured key delimiter and writes all locale values for every subkey in one operation. Tolerates a trailing delimiter on the group (`auth.` ≡ `auth`) and supports nested subkeys (`nested.deep`). Brings the total MCP tool count to **8**.
+  
+  Example request:
+  
+  ```json
+  {
+    "format": "db",
+    "group": "auth",
+    "translations": {
+      "welcome": {"en": "Welcome", "it": "Benvenuto"},
+      "logout":  {"en": "Logout",  "it": "Esci"}
+    },
+    "force": true
+  }
+  
+  ```
+
+### Fixed
+
+- `DatabaseHandler::handleUpdate()` no longer touches `translation_keys.updated_at` and `translation_values.updated_at` for rows whose value has not changed.
+  
+  Before this fix, writing a single translation through any MCP tool refreshed `updated_at` on every existing row in the table. Cause: `TranslationHandlerService::set()` reads the full existing collection, merges the input, then passes the entire merged collection to `put()` — and `handleUpdate` upserted every row in the input with `updated_at = now()`. The handler now:
+  
+  - skips `translation_keys` rows unless they are soft-deleted (and need reviving)
+  - skips `translation_values` rows whose `value` and `deleted_at` are unchanged
+  
+
+### Tests
+
+- `SetTranslationDbTimestampTest` — regression covering single-write timestamp isolation through `set-translation-tool` and `set-all-locales-translation-tool` against the DB format
+- `SetTranslationGroupToolTest` — 10 cases covering write semantics, force flag, trailing delimiter, nested subkeys, and error paths
+
+### Compatibility
+
+- No breaking changes
+- File-based handlers (PHP/JSON/CSV) are unaffected by the timestamp fix (they always rewrite the whole file)
+
 ## v2.1.1 — Laravel Boost subprocess compatibility - 2026-04-30
 
 ### Fixed
@@ -107,6 +148,7 @@ app($class, ['options' => $this->getOptions()]);
 
 
 
+
 ```
 Laravel 11 removed the automatic conversion of positional parameters to named ones (`keyParametersByArgument`). As a result, the container ignored the provided `TranslationOptions` instance and auto-resolved a fresh one from config — discarding any runtime overrides set via `setOption()` or `setOptions()`.
 
@@ -117,6 +159,7 @@ Any option overridden at runtime was silently ignored. The most visible symptom 
 ```
 Invalid CSV at line 2: expected at least 2 columns, got 1.
 Check that the delimiter is ";"
+
 
 
 
@@ -160,6 +203,7 @@ If you are on Laravel 11 or 12, no code changes are required — update the pack
 
 ```bash
 composer require brunoscode/laravel-translation-handler:^2.0
+
 
 
 

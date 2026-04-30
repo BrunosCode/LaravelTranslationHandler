@@ -2,6 +2,12 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.1.2 - 2026-04-30
+
+### Fixed
+
+- `DatabaseHandler::handleUpdate()` no longer touches `translation_keys.updated_at` and `translation_values.updated_at` for rows whose value has not changed. Previously, writing a single translation through the MCP tools (or any path that funnels through `TranslationHandlerService::set()`) would refresh `updated_at` on every existing row in the table, because `set()` merges the input with the full existing collection before passing it to `put()`. The handler now skips key rows unless they are soft-deleted (and need reviving) and skips value rows whose `value` and `deleted_at` are unchanged.
+
 ## v2.1.1 - 2026-04-30
 
 ### Fixed

@@ -130,21 +130,24 @@ class DatabaseHandler implements DatabaseHandlerInterface
 
         $keysToUpdate = $translationToInsert
             ->unique('key')
+            ->filter(function (Translation $translation) use ($dbKeys) {
+                $dbKey = $dbKeys->firstWhere('key', $translation->key);
+
+                return $dbKey !== null && $dbKey->deleted_at !== null;
+            })
             ->map(fn (Translation $translation) => [
                 'key' => $translation->key,
                 'updated_at' => now(),
                 'deleted_at' => null,
             ]);
 
-        $updatedKeys = $db->table('translation_keys')
-            ->upsert(
-                $keysToUpdate->toArray(),
-                ['key'],
-                ['updated_at', 'deleted_at']
-            );
-
-        if ($updatedKeys < 0) {
-            return 0;
+        if ($keysToUpdate->isNotEmpty()) {
+            $db->table('translation_keys')
+                ->upsert(
+                    $keysToUpdate->toArray(),
+                    ['key'],
+                    ['updated_at', 'deleted_at']
+                );
         }
 
         $dbValues = $db->table('translation_values')
@@ -167,9 +170,28 @@ class DatabaseHandler implements DatabaseHandlerInterface
                     'created_at' => $dbValue?->created_at ?? now(),
                     'updated_at' => now(),
                     'deleted_at' => null,
+                    '_dbValue' => $dbValue,
                 ];
             })
-            ->filter(fn (array $translation) => $translation['translation_key_id'] !== null);
+            ->filter(fn (array $row) => $row['translation_key_id'] !== null)
+            ->filter(function (array $row) {
+                $dbValue = $row['_dbValue'];
+
+                if ($dbValue === null) {
+                    return true;
+                }
+
+                return $dbValue->value !== $row['value'] || $dbValue->deleted_at !== null;
+            })
+            ->map(function (array $row) {
+                unset($row['_dbValue']);
+
+                return $row;
+            });
+
+        if ($valuesToUpdate->isEmpty()) {
+            return 0;
+        }
 
         return $db->table('translation_values')
             ->upsert(

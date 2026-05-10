@@ -22,6 +22,12 @@ class TranslationOptions
         self::DB,
     ];
 
+    const SORTABLE_TYPES = [
+        self::PHP,
+        self::CSV,
+        self::JSON,
+    ];
+
     public string $keyDelimiter;
 
     public array $fileNames;

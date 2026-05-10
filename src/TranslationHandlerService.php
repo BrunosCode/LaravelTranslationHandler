@@ -3,9 +3,11 @@
 namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
+use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\DatabaseHandlerInterface;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
+use Illuminate\Support\Collection;
 
 class TranslationHandlerService
 {
@@ -17,6 +19,59 @@ class TranslationHandlerService
     {
         $this->defaultOptions = new TranslationOptions;
         $this->options = null;
+    }
+
+    public function find(string $from, string $key, string $locale, ?string $path = null): ?Translation
+    {
+        return $this->get($from, $path)->whereKey($key)->whereLocale($locale)->first();
+    }
+
+    public function listTranslations(string $from, ?string $path = null, ?string $locale = null, ?string $group = null): TranslationCollection
+    {
+        $collection = $this->get($from, $path);
+
+        if ($locale) {
+            $collection = $collection->whereLocale($locale);
+        }
+
+        if ($group) {
+            $collection = $collection->whereGroup($group);
+        }
+
+        return $collection;
+    }
+
+    public function listGroups(string $from, ?string $path = null, int $level = 0, ?string $search = null): Collection
+    {
+        $delimiter = $this->getOption('keyDelimiter') ?? '.';
+        $depth = $level + 1;
+
+        return $this->get($from, $path)
+            ->map(fn ($t) => $t->key)
+            ->unique()
+            ->map(function ($key) use ($delimiter, $depth) {
+                $segments = explode($delimiter, $key);
+
+                if (count($segments) <= $depth) {
+                    return null;
+                }
+
+                return implode($delimiter, array_slice($segments, 0, $depth));
+            })
+            ->filter()
+            ->unique()
+            ->when($search, fn ($items) => $items->filter(
+                fn ($group) => str_contains(strtolower($group), strtolower($search))
+            ))
+            ->sort()
+            ->values();
+    }
+
+    public function sync(string $from, string $to, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
+    {
+        $translations = $this->get($from, $fromPath);
+
+        return $this->set($translations, $to, $toPath, $force) > 0;
     }
 
     public function import(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
@@ -74,31 +129,88 @@ class TranslationHandlerService
     {
         $oldTranslations = $this->get($to, $path);
 
-        if ($force) {
-            $newTranslations = $oldTranslations->replaceTranslations($translations);
-        } else {
-            $newTranslations = $oldTranslations->addTranslations($translations);
+        $newTranslations = $force
+            ? $oldTranslations->replaceTranslations($translations)
+            : $oldTranslations->addTranslations($translations);
+
+        return $this->putCollection($to, $newTranslations->sortTranslations(), $path);
+    }
+
+    public function sortKeys(string $from, array $locales = [], array $groups = [], ?string $path = null): int
+    {
+        $collection = $this->get($from, $path);
+
+        $target = $collection;
+
+        if (! empty($locales)) {
+            $target = $target->whereLocaleIn($locales);
         }
 
-        $newTranslations = $newTranslations->sortTranslations();
+        if (! empty($groups)) {
+            $target = $target->whereGroupIn($groups);
+        }
 
+        $count = $target->count();
+
+        if ($count === 0) {
+            return 0;
+        }
+
+        $sorted = $target->sortTranslations();
+        $rest = $collection->reject(fn ($t) => $target->contains($t));
+        $merged = new TranslationCollection([...$sorted->values()->all(), ...$rest->values()->all()]);
+
+        $this->putCollection($from, $merged, $path);
+
+        return $count;
+    }
+
+    public function deleteKey(string $from, string $key, ?string $locale = null, ?string $path = null): int
+    {
+        $collection = $this->get($from, $path);
+
+        $survivors = $locale
+            ? $collection->reject(fn ($t) => $t->key === $key && $t->locale === $locale)
+            : $collection->reject(fn ($t) => $t->key === $key);
+
+        $deleted = $collection->count() - $survivors->count();
+
+        if ($deleted === 0) {
+            return 0;
+        }
+
+        $this->putCollection($from, new TranslationCollection($survivors->values()->all()), $path);
+
+        return $deleted;
+    }
+
+    public function deleteGroup(string $from, string $group, ?string $path = null): int
+    {
+        $delimiter = $this->getOption('keyDelimiter') ?? '.';
+        $prefix = str_ends_with($group, $delimiter) ? $group : $group.$delimiter;
+
+        $collection = $this->get($from, $path);
+
+        $survivors = $collection->reject(fn ($t) => str_starts_with($t->key, $prefix));
+
+        $deleted = $collection->count() - $survivors->count();
+
+        if ($deleted === 0) {
+            return 0;
+        }
+
+        $this->putCollection($from, new TranslationCollection($survivors->values()->all()), $path);
+
+        return $deleted;
+    }
+
+    private function putCollection(string $to, TranslationCollection $collection, ?string $path): int
+    {
         return match ($to) {
-            TranslationOptions::PHP => $this->getPhpHandler()->put(
-                translations: $newTranslations,
-                path: $path,
-            ),
-            TranslationOptions::CSV => $this->getCsvHandler()->put(
-                translations: $newTranslations,
-                path: $path,
-            ),
-            TranslationOptions::JSON => $this->getJsonHandler()->put(
-                translations: $newTranslations,
-                path: $path,
-            ),
-            TranslationOptions::DB => $this->getDbHandler()->put(
-                translations: $newTranslations,
-                connection: $path
-            ),
+            TranslationOptions::PHP => $this->getPhpHandler()->put(translations: $collection, path: $path),
+            TranslationOptions::CSV => $this->getCsvHandler()->put(translations: $collection, path: $path),
+            TranslationOptions::JSON => $this->getJsonHandler()->put(translations: $collection, path: $path),
+            TranslationOptions::DB => $this->getDbHandler()->put(translations: $collection, connection: $path),
             default => throw new \InvalidArgumentException("Invalid to type '{$to}'. Valid types: ".implode(', ', TranslationOptions::TYPES)),
         };
     }

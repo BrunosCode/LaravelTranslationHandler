@@ -5,13 +5,13 @@ namespace BrunosCode\TranslationHandler\Commands;
 use BrunosCode\TranslationHandler\Commands\Behaviors\HasTranslationArguments;
 use BrunosCode\TranslationHandler\Commands\Behaviors\HasTranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
-use Illuminate\Console\Command as BaseCommand;
+use Illuminate\Console\Command;
 
-class Command extends BaseCommand
+class SyncCommand extends Command
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler
+    public $signature = 'translation-handler:sync
                             {from?}
                             {to?}
                             {--fresh}
@@ -22,12 +22,10 @@ class Command extends BaseCommand
                             {--to-path=}
                             {--guided}';
 
-    public $description = '[Deprecated] Use translation-handler:sync instead';
+    public $description = 'Sync translations between formats';
 
     public function handle(): int
     {
-        $this->warn('Command "translation-handler" is deprecated. Use "translation-handler:sync" instead.');
-
         $guided = $this->getTranslationGuidedOption();
 
         $force = $this->getTranslationForceOption($guided);
@@ -48,7 +46,7 @@ class Command extends BaseCommand
 
         $locales = $this->getTranslationLocalesOption($options->locales, $guided);
 
-        $this->comment(__('Starting...'));
+        $this->comment(__('Starting sync...'));
 
         TranslationHandler::resetOptions()
             ->setOption('fileNames', $fileNames)
@@ -65,7 +63,7 @@ class Command extends BaseCommand
             }
         }
 
-        $success = TranslationHandler::export(
+        $success = TranslationHandler::sync(
             from: $from,
             to: $to,
             force: $force,
@@ -74,12 +72,12 @@ class Command extends BaseCommand
         );
 
         if (! $success) {
-            $this->error(__('Failed!'));
+            $this->error(__('Sync failed!'));
 
             return self::FAILURE;
         }
 
-        $this->comment(__('Finished!'));
+        $this->comment(__('Sync finished!'));
 
         return self::SUCCESS;
     }

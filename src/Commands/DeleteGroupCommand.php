@@ -7,37 +7,33 @@ use BrunosCode\TranslationHandler\Commands\Behaviors\HasTranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use Illuminate\Console\Command;
 
-class GetCommand extends Command
+class DeleteGroupCommand extends Command
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler:get {from?} {key?} {locale?} {--from-path=}';
+    public $signature = 'translation-handler:delete-group {from?} {group?} {--from-path=}';
 
-    public $description = 'Get a single translation value';
+    public $description = 'Delete all translations in a key group from a storage format';
 
     public function handle(): int
     {
         $from = $this->getTranslationFromArgument();
 
-        $key = $this->getTranslationKeyArgument();
-
-        $locale = $this->getTranslationLocaleArgument();
+        $group = $this->getTranslationGroupArgument();
 
         $fromPath = $this->getTranslationFromPathOption();
 
-        $this->comment(__('Getting translation...'));
+        $this->comment(__('Deleting group...'));
 
-        $translation = TranslationHandler::find($from, $key, $locale, $fromPath);
+        $count = TranslationHandler::deleteGroup($from, $group, $fromPath);
 
-        if (! $translation) {
-            $this->error(__('Translation not found!'));
+        if ($count === 0) {
+            $this->error(__('No translations found for group!'));
 
             return self::FAILURE;
         }
 
-        $this->comment(__('Translation found'));
-
-        $this->info($translation->value);
+        $this->comment(__('Deleted '.$count.' translation(s)!'));
 
         return self::SUCCESS;
     }

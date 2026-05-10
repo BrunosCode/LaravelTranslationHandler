@@ -16,54 +16,42 @@ afterEach(function () {
     $this->cleanJsonTranslations();
 });
 
-describe('Command common', function () {
-    it('shows deprecation warning', function () {
-        $this
-            ->artisan('translation-handler', [
-                'from' => TranslationOptions::PHP,
-                'to' => TranslationOptions::JSON,
-            ])
-            ->expectsOutput('Command "translation-handler" is deprecated. Use "translation-handler:sync" instead.');
-    });
-
+describe('SyncCommand common', function () {
     it('does not ask questions if guided is not used', function () {
         $options = TranslationHandler::getOptions();
 
         $this
-            ->artisan('translation-handler', [])
-            ->expectsOutput('Command "translation-handler" is deprecated. Use "translation-handler:sync" instead.')
+            ->artisan('translation-handler:sync', [])
             ->expectsQuestion('From where do you want to import translations?', $options->defaultExportFrom)
             ->expectsOutput('Reading translations from '.$options->defaultExportFrom)
             ->expectsQuestion('To where do you want to write translations?', $options->defaultExportTo)
             ->expectsOutput('Writing translations to '.$options->defaultExportTo)
             ->expectsOutput('Files: '.implode(', ', $options->fileNames))
             ->expectsOutput('Locales: '.implode(', ', $options->locales))
-            ->expectsOutput('Starting...')
-            ->expectsOutput('Finished!')
+            ->expectsOutput('Starting sync...')
+            ->expectsOutput('Sync finished!')
             ->assertSuccessful();
     });
 
     it('will force translations if force is used', function () {
         $this
-            ->artisan('translation-handler', [
+            ->artisan('translation-handler:sync', [
                 'from' => TranslationOptions::PHP,
                 'to' => TranslationOptions::JSON,
                 '--force' => true,
             ])
-            ->expectsOutput('Command "translation-handler" is deprecated. Use "translation-handler:sync" instead.')
             ->expectsOutput('Overwriting existing translations');
     });
 
     it('will delete old translations if fresh is used', function () {
         $this
-            ->artisan('translation-handler', [
+            ->artisan('translation-handler:sync', [
                 'from' => TranslationOptions::PHP,
                 'to' => TranslationOptions::JSON,
                 '--fresh' => true,
             ])
-            ->expectsOutput('Command "translation-handler" is deprecated. Use "translation-handler:sync" instead.')
             ->expectsOutput('Deleting existing translations before creating new ones')
-            ->expectsOutput('Starting...')
+            ->expectsOutput('Starting sync...')
             ->expectsOutput('Old translations deleted!');
     });
 
@@ -71,10 +59,9 @@ describe('Command common', function () {
         $options = TranslationHandler::getOptions();
 
         $this
-            ->artisan('translation-handler', [
+            ->artisan('translation-handler:sync', [
                 '--guided' => true,
             ])
-            ->expectsOutput('Command "translation-handler" is deprecated. Use "translation-handler:sync" instead.')
             ->expectsQuestion('Do you want to overwrite the existing translations?', false)
             ->expectsQuestion('Do you want to delete the existing translations before creating new ones?', false)
             ->expectsQuestion('From where do you want to import translations?', TranslationOptions::PHP)
@@ -89,17 +76,16 @@ describe('Command common', function () {
             ->expectsOutput('Files: '.implode(', ', ['test1']))
             ->expectsQuestion('Which locales do you want to export?', ['it'])
             ->expectsOutput('Locales: '.implode(', ', ['it']))
-            ->expectsOutput('Starting...')
-            ->expectsOutput('Finished!')
+            ->expectsOutput('Starting sync...')
+            ->expectsOutput('Sync finished!')
             ->assertSuccessful();
     });
 
     it('throws exception if from option does not exist in TranslationHandler::getTypes and is not empty', function () {
         $this
-            ->artisan('translation-handler', [
+            ->artisan('translation-handler:sync', [
                 '--guided' => true,
             ])
-            ->expectsOutput('Command "translation-handler" is deprecated. Use "translation-handler:sync" instead.')
             ->expectsQuestion('Do you want to overwrite the existing translations?', false)
             ->expectsQuestion('Do you want to delete the existing translations before creating new ones?', false)
             ->expectsQuestion('From where do you want to import translations?', 'error');
@@ -107,22 +93,20 @@ describe('Command common', function () {
 
     it('throws exception if to option does not exist in TranslationHandler::getTypes and is not empty', function () {
         $this
-            ->artisan('translation-handler')
-            ->expectsOutput('Command "translation-handler" is deprecated. Use "translation-handler:sync" instead.')
+            ->artisan('translation-handler:sync')
             ->expectsQuestion('From where do you want to import translations?', 'error');
     })->throws(InvalidArgumentException::class);
 
-    it('fails if no translations are exported', function () {
+    it('fails if no translations are synced', function () {
         $this
-            ->artisan('translation-handler', [
+            ->artisan('translation-handler:sync', [
                 'from' => TranslationOptions::PHP,
                 'to' => TranslationOptions::JSON,
                 '--file-names' => ['test13'],
                 '--locales' => ['pt'],
             ])
-            ->expectsOutput('Command "translation-handler" is deprecated. Use "translation-handler:sync" instead.')
             ->expectsOutput('Files: '.implode(', ', ['test13']))
             ->expectsOutput('Locales: '.implode(', ', ['pt']))
             ->assertFailed();
     });
-})->group('Command');
+})->group('SyncCommand');

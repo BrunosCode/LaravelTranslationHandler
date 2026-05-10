@@ -39,7 +39,7 @@ php artisan vendor:publish --provider="BrunosCode\TranslationHandler\Translation
 
 ## AI-Powered Translation Management with Laravel Boost
 
-When [Laravel Boost](https://github.com/laravel/boost) is installed, this package automatically registers **8 MCP tools** into Boost's MCP server. This lets any MCP-compatible AI agent (Claude, Cursor, GitHub Copilot, etc.) read and write your translations directly — no manual commands, no copy-pasting.
+When [Laravel Boost](https://github.com/laravel/boost) is installed, this package automatically registers **11 MCP tools** into Boost's MCP server. This lets any MCP-compatible AI agent (Claude, Cursor, GitHub Copilot, etc.) read and write your translations directly — no manual commands, no copy-pasting.
 
 ### What the AI can do
 
@@ -49,6 +49,9 @@ When [Laravel Boost](https://github.com/laravel/boost) is installed, this packag
 - Add or update a key across **all locales at once**
 - Translate **an entire group** in one call (every subkey, every locale)
 - Sync translations between storage formats
+- Delete a single key (optionally for a specific locale only)
+- Delete all keys under a group prefix
+- Sort keys alphabetically in PHP, JSON, and CSV formats
 - Read the full translation configuration
 
 ### Setup
@@ -143,6 +146,35 @@ Copies translations from one storage format to another.
 | `to` | string | yes | Destination format (must differ from `from`) |
 | `force` | boolean | no | Overwrite existing translations in destination (default `false`) |
 
+#### `delete-translation-tool` (write)
+
+Deletes a translation key from a storage format. Omit `locale` to delete the key for all locales.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to delete from |
+| `key` | string | yes | Dot-delimited key to delete (e.g. `auth.welcome`) |
+| `locale` | string | no | Delete only this locale. Omit to delete all locales for the key. |
+
+#### `delete-translation-group-tool` (write)
+
+Deletes all translation keys under a group prefix from a storage format.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to delete from |
+| `group` | string | yes | Key group prefix to delete (e.g. `auth` removes all `auth.*` keys) |
+
+#### `sort-translations-tool` (write)
+
+Sorts translation keys alphabetically within a storage format. Supports `php_file`, `json_file`, and `csv_file` only.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to sort (`php_file`, `json_file`, or `csv_file`) |
+| `locales` | array | no | Restrict sorting to these locales. Omit to sort all locales. |
+| `groups` | array | no | Restrict sorting to these key group prefixes. Omit to sort all groups. |
+
 ### Recommended workflow for editing translations
 
 **Use `db` as the working format for all writes, then sync to files at the end.**
@@ -182,20 +214,48 @@ The AI will call `list-translation-groups-tool` with `format: php_file`, `level:
 ## Quick Start
 
 ```bash
-# Import translations from PHP to JSON
-php artisan translation-handler:import --from=php_file --to=json_file
+# Sync translations between formats
+php artisan translation-handler:sync php_file json_file
 
-# Export translations from JSON to PHP, overwriting existing
-php artisan translation-handler:export --from=json_file --to=php_file --force
+# Import / export using config defaults
+php artisan translation-handler:import
+php artisan translation-handler:export --force
 
-# Move translations interactively
-php artisan translation-handler php_file json_file --guided
+# List all translations from PHP files
+php artisan translation-handler:list php_file
 
-# Get a specific translation
-php artisan translation-handler:get php_file test.welcome en
+# List translations filtered by locale and group
+php artisan translation-handler:list php_file --locale=en --group=auth
+
+# List top-level key groups
+php artisan translation-handler:list-groups php_file
+
+# List second-level groups, filtered by search
+php artisan translation-handler:list-groups php_file --level=1 --search=messages
+
+# Find a specific translation
+php artisan translation-handler:find php_file auth.welcome en
+
+# Get the raw value of a translation
+php artisan translation-handler:get php_file auth.welcome en
 
 # Set a specific translation
-php artisan translation-handler:set php_file test.welcome en "Welcome!"
+php artisan translation-handler:set php_file auth.welcome en "Welcome!"
+
+# Delete a translation key (all locales)
+php artisan translation-handler:delete php_file auth.welcome
+
+# Delete a translation key for a specific locale
+php artisan translation-handler:delete php_file auth.welcome --locale=en
+
+# Delete all keys under a group
+php artisan translation-handler:delete-group php_file auth
+
+# Sort all keys alphabetically
+php artisan translation-handler:sort php_file
+
+# Sort only specific locales and groups
+php artisan translation-handler:sort php_file --locale=en --group=auth
 ```
 
 Or use the Facade:
@@ -204,11 +264,17 @@ Or use the Facade:
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 
-// Import PHP → JSON
-TranslationHandler::import(TranslationOptions::PHP, TranslationOptions::JSON);
+// Copy PHP → JSON (explicit formats)
+TranslationHandler::sync(TranslationOptions::PHP, TranslationOptions::JSON);
 
-// Export JSON → PHP, overwriting existing
-TranslationHandler::export(TranslationOptions::JSON, TranslationOptions::PHP, force: true);
+// Copy JSON → PHP, overwriting existing
+TranslationHandler::sync(TranslationOptions::JSON, TranslationOptions::PHP, force: true);
+
+// Import using config defaults
+TranslationHandler::import();
+
+// Export using config defaults
+TranslationHandler::export();
 ```
 
 ## Commands
@@ -227,15 +293,23 @@ These options are available on `translation-handler`, `translation-handler:impor
 | `--to-path` | string | format default | Custom destination path |
 | `--guided` | bool | `false` | Interactive mode, prompts for each option |
 
-### `translation-handler`
+### `translation-handler:sync`
 
-Move translations from one format to another. Source and destination are positional arguments.
+Sync translations from one format to another. Source and destination are positional arguments.
+
+```bash
+php artisan translation-handler:sync {from?} {to?} [options]
+```
+
+If `from` or `to` are omitted, you will be prompted to choose.
+
+### `translation-handler` *(deprecated)*
+
+> **Deprecated.** Use `translation-handler:sync` instead.
 
 ```bash
 php artisan translation-handler {from?} {to?} [options]
 ```
-
-If `from` or `to` are omitted, you will be prompted to choose.
 
 ### `translation-handler:import`
 
@@ -253,9 +327,43 @@ Export translations. Source and destination are passed via `--from` and `--to` o
 php artisan translation-handler:export [options]
 ```
 
+### `translation-handler:list`
+
+List translations from a storage format. Optionally filter by locale or key group prefix.
+
+```bash
+php artisan translation-handler:list {from?} {--from-path=} {--locale=} {--group=}
+```
+
+| Option | Description |
+|--------|-------------|
+| `--locale` | Filter by locale (e.g. `en`) |
+| `--group` | Filter by key group prefix (e.g. `auth` returns all `auth.*` keys) |
+
+### `translation-handler:list-groups`
+
+List unique translation key groups from a storage format. A group is a key prefix at a given depth level. Optionally filter by search string.
+
+```bash
+php artisan translation-handler:list-groups {from?} {--from-path=} {--level=0} {--search=}
+```
+
+| Option | Description |
+|--------|-------------|
+| `--level` | Number of delimiters in the group name. `0` = top-level (e.g. `auth`), `1` = second-level (e.g. `auth.messages`). Defaults to `0`. |
+| `--search` | Case-insensitive filter on group names |
+
+### `translation-handler:find`
+
+Find a specific translation by key and locale. Outputs a table with format, key, locale, and value.
+
+```bash
+php artisan translation-handler:find {from?} {key?} {locale?} {--from-path=}
+```
+
 ### `translation-handler:get`
 
-Get a single translation value.
+Get the raw value of a single translation.
 
 ```bash
 php artisan translation-handler:get {from?} {key?} {locale?} {--from-path=}
@@ -269,15 +377,58 @@ Set a single translation value.
 php artisan translation-handler:set {to?} {key?} {locale?} {value?} {--to-path=} {--force}
 ```
 
+### `translation-handler:delete`
+
+Delete a translation key from a storage format. Omit `--locale` to delete all locales for the key.
+
+```bash
+php artisan translation-handler:delete {from?} {key?} {--locale=} {--from-path=}
+```
+
+### `translation-handler:delete-group`
+
+Delete all translation keys under a group prefix from a storage format.
+
+```bash
+php artisan translation-handler:delete-group {from?} {group?} {--from-path=}
+```
+
+### `translation-handler:sort`
+
+Sort translation keys alphabetically. Works on `php_file`, `json_file`, and `csv_file` only.
+
+```bash
+php artisan translation-handler:sort {from?} {--from-path=} {--locale=*} {--group=*}
+```
+
+| Option | Description |
+|--------|-------------|
+| `--locale` | Restrict sorting to this locale (repeatable: `--locale=en --locale=it`) |
+| `--group` | Restrict sorting to this key group prefix (repeatable) |
+
 ## Facade API
 
 ```php
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 ```
 
+### sync
+
+Copies translations from one format to another. Unlike `import`/`export`, `from` and `to` are required — no config defaults are used.
+
+```php
+TranslationHandler::sync(
+    from: string,      // source format
+    to: string,        // destination format
+    force: bool,       // overwrite existing (default: false)
+    fromPath: ?string, // custom source path (default: null)
+    toPath: ?string,   // custom destination path (default: null)
+): bool;
+```
+
 ### import / export
 
-Both methods share the same signature:
+Both methods share the same signature. `from` and `to` fall back to config defaults (`defaultImportFrom`/`defaultImportTo` and `defaultExportFrom`/`defaultExportTo`) when omitted.
 
 ```php
 TranslationHandler::import(
@@ -289,6 +440,45 @@ TranslationHandler::import(
 ): bool;
 
 TranslationHandler::export(/* same signature */): bool;
+```
+
+### find
+
+Finds a single translation by key and locale. Returns `null` if not found.
+
+```php
+$translation = TranslationHandler::find(
+    from: string,      // source format
+    key: string,       // dot-delimited key
+    locale: string,    // locale to look up
+    path: ?string,     // custom path (default: null)
+): ?Translation;
+```
+
+### listTranslations
+
+Returns a filtered `TranslationCollection`. Applies locale and/or group prefix filters on top of `get()`.
+
+```php
+$translations = TranslationHandler::listTranslations(
+    from: string,      // source format
+    path: ?string,     // custom path (default: null)
+    locale: ?string,   // filter by locale (default: null = all)
+    group: ?string,    // filter by key group prefix (default: null = all)
+): TranslationCollection;
+```
+
+### listGroups
+
+Returns a sorted `Collection` of unique key group names at a given depth level.
+
+```php
+$groups = TranslationHandler::listGroups(
+    from: string,      // source format
+    path: ?string,     // custom path (default: null)
+    level: int,        // 0 = top-level groups, 1 = second-level, … (default: 0)
+    search: ?string,   // case-insensitive filter on group names (default: null)
+): Collection;
 ```
 
 ### get
@@ -322,6 +512,44 @@ $translation = new Translation('welcome', 'en', 'Welcome!');
 $collection = new TranslationCollection([$translation]);
 
 TranslationHandler::set($collection, TranslationOptions::JSON);
+```
+
+### deleteKey
+
+Deletes a specific translation key from a format. Pass `locale` to target a single locale; omit to delete all locales.
+
+```php
+$count = TranslationHandler::deleteKey(
+    from: string,      // format to delete from
+    key: string,       // dot-delimited key
+    locale: ?string,   // locale to delete (default: null = all locales)
+    path: ?string,     // custom path (default: null)
+): int;
+```
+
+### deleteGroup
+
+Deletes all keys whose name starts with the given group prefix.
+
+```php
+$count = TranslationHandler::deleteGroup(
+    from: string,      // format to delete from
+    group: string,     // group prefix (e.g. "auth" removes all "auth.*" keys)
+    path: ?string,     // custom path (default: null)
+): int;
+```
+
+### sortKeys
+
+Sorts translation keys alphabetically within a format. Supports `php_file`, `json_file`, and `csv_file`. Optionally restrict by locale and/or group.
+
+```php
+$count = TranslationHandler::sortKeys(
+    from: string,      // format to sort (php_file, json_file, csv_file)
+    locales: array,    // restrict to these locales (default: [] = all)
+    groups: array,     // restrict to these group prefixes (default: [] = all)
+    path: ?string,     // custom path (default: null)
+): int;
 ```
 
 ### delete

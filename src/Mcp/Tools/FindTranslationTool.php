@@ -40,12 +40,10 @@ class FindTranslationTool extends Tool
         $locale = $request->get('locale');
 
         try {
-            $collection = TranslationHandler::get($format);
+            $translation = TranslationHandler::find($format, $key, $locale);
         } catch (\Throwable $e) {
             return Response::error('Failed to read translations: '.$e->getMessage());
         }
-
-        $translation = $collection->whereKey($key)->whereLocale($locale)->first();
 
         if (! $translation) {
             return Response::text(json_encode([

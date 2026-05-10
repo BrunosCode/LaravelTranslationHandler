@@ -7,13 +7,13 @@ use BrunosCode\TranslationHandler\Commands\Behaviors\HasTranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use Illuminate\Console\Command;
 
-class GetCommand extends Command
+class FindCommand extends Command
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler:get {from?} {key?} {locale?} {--from-path=}';
+    public $signature = 'translation-handler:find {from?} {key?} {locale?} {--from-path=}';
 
-    public $description = 'Get a single translation value';
+    public $description = 'Find a specific translation by key and locale';
 
     public function handle(): int
     {
@@ -25,8 +25,6 @@ class GetCommand extends Command
 
         $fromPath = $this->getTranslationFromPathOption();
 
-        $this->comment(__('Getting translation...'));
-
         $translation = TranslationHandler::find($from, $key, $locale, $fromPath);
 
         if (! $translation) {
@@ -35,9 +33,10 @@ class GetCommand extends Command
             return self::FAILURE;
         }
 
-        $this->comment(__('Translation found'));
-
-        $this->info($translation->value);
+        $this->table(
+            ['Format', 'Key', 'Locale', 'Value'],
+            [[$from, $translation->key, $translation->locale, $translation->value]]
+        );
 
         return self::SUCCESS;
     }

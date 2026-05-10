@@ -7,13 +7,13 @@ use BrunosCode\TranslationHandler\Commands\Behaviors\HasTranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use Illuminate\Console\Command;
 
-class GetCommand extends Command
+class DeleteCommand extends Command
 {
     use HasTranslationArguments, HasTranslationOptions;
 
-    public $signature = 'translation-handler:get {from?} {key?} {locale?} {--from-path=}';
+    public $signature = 'translation-handler:delete {from?} {key?} {--locale=} {--from-path=}';
 
-    public $description = 'Get a single translation value';
+    public $description = 'Delete a translation key from a storage format';
 
     public function handle(): int
     {
@@ -21,23 +21,21 @@ class GetCommand extends Command
 
         $key = $this->getTranslationKeyArgument();
 
-        $locale = $this->getTranslationLocaleArgument();
+        $locale = $this->option('locale') ?: null;
 
         $fromPath = $this->getTranslationFromPathOption();
 
-        $this->comment(__('Getting translation...'));
+        $this->comment(__('Deleting translation...'));
 
-        $translation = TranslationHandler::find($from, $key, $locale, $fromPath);
+        $count = TranslationHandler::deleteKey($from, $key, $locale, $fromPath);
 
-        if (! $translation) {
+        if ($count === 0) {
             $this->error(__('Translation not found!'));
 
             return self::FAILURE;
         }
 
-        $this->comment(__('Translation found'));
-
-        $this->info($translation->value);
+        $this->comment(__('Deleted '.$count.' translation(s)!'));
 
         return self::SUCCESS;
     }

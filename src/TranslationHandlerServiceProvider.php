@@ -3,10 +3,19 @@
 namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Commands\Command;
+use BrunosCode\TranslationHandler\Commands\DeleteCommand;
+use BrunosCode\TranslationHandler\Commands\DeleteGroupCommand;
 use BrunosCode\TranslationHandler\Commands\ExportCommand;
+use BrunosCode\TranslationHandler\Commands\FindCommand;
 use BrunosCode\TranslationHandler\Commands\GetCommand;
 use BrunosCode\TranslationHandler\Commands\ImportCommand;
+use BrunosCode\TranslationHandler\Commands\ListCommand;
+use BrunosCode\TranslationHandler\Commands\ListGroupsCommand;
 use BrunosCode\TranslationHandler\Commands\SetCommand;
+use BrunosCode\TranslationHandler\Commands\SortCommand;
+use BrunosCode\TranslationHandler\Commands\SyncCommand;
+use BrunosCode\TranslationHandler\Mcp\Tools\DeleteTranslationGroupTool;
+use BrunosCode\TranslationHandler\Mcp\Tools\DeleteTranslationTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\FindTranslationTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\GetTranslationConfigTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\ListTranslationGroupsTool;
@@ -14,6 +23,7 @@ use BrunosCode\TranslationHandler\Mcp\Tools\ListTranslationsTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\SetAllLocalesTranslationTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\SetTranslationGroupTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\SetTranslationTool;
+use BrunosCode\TranslationHandler\Mcp\Tools\SortTranslationsTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\SyncTranslationsTool;
 use Laravel\Boost\Mcp\ToolRegistry;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -41,7 +51,14 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
                 ImportCommand::class,
                 ExportCommand::class,
                 GetCommand::class,
+                FindCommand::class,
                 SetCommand::class,
+                ListCommand::class,
+                ListGroupsCommand::class,
+                SyncCommand::class,
+                DeleteCommand::class,
+                DeleteGroupCommand::class,
+                SortCommand::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
@@ -74,6 +91,9 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
                     SetAllLocalesTranslationTool::class,
                     SetTranslationGroupTool::class,
                     SyncTranslationsTool::class,
+                    DeleteTranslationTool::class,
+                    DeleteTranslationGroupTool::class,
+                    SortTranslationsTool::class,
                 ]
             )]);
         }

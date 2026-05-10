@@ -205,17 +205,33 @@ class DatabaseHandler implements DatabaseHandlerInterface
     {
         $dbKeys = $dbKeys ?? $this->getCurrentKeys($db, $filename);
 
-        $keysToSoftDelete = $dbKeys->whereNotIn('key', $translations->map(fn (Translation $translation) => $translation->key));
+        $newKeys = $translations->map(fn (Translation $translation) => $translation->key)->unique();
+
+        $keysToSoftDelete = $dbKeys->whereNotIn('key', $newKeys);
 
         $db->table('translation_keys')
             ->whereIn('id', $keysToSoftDelete->pluck('id')->toArray())
             ->whereNull('deleted_at')
             ->update(['deleted_at' => now()]);
 
-        return $db->table('translation_values')
+        $db->table('translation_values')
             ->whereIn('translation_key_id', $keysToSoftDelete->pluck('id')->toArray())
             ->whereNull('deleted_at')
             ->update(['deleted_at' => now()]);
+
+        $keysToKeep = $dbKeys->whereIn('key', $newKeys);
+
+        foreach ($keysToKeep as $dbKey) {
+            $localesForKey = $translations->filter(fn (Translation $t) => $t->key === $dbKey->key)->pluck('locale');
+
+            $db->table('translation_values')
+                ->where('translation_key_id', $dbKey->id)
+                ->whereNull('deleted_at')
+                ->whereNotIn('locale', $localesForKey->toArray())
+                ->update(['deleted_at' => now()]);
+        }
+
+        return $keysToSoftDelete->count();
     }
 
     public function delete(?string $connection = null, bool $hardDelete = false): int

@@ -1,6 +1,8 @@
 <?php
 
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
+use BrunosCode\TranslationHandler\Mcp\Tools\DeleteTranslationGroupTool;
+use BrunosCode\TranslationHandler\Mcp\Tools\DeleteTranslationTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\FindTranslationTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\GetTranslationConfigTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\ListTranslationGroupsTool;
@@ -87,6 +89,26 @@ describe('Boost ExecuteToolCommand compatibility', function () {
             'from' => TranslationOptions::PHP,
             'to' => TranslationOptions::DB,
             'force' => true,
+        ]));
+
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
+    });
+
+    it('DeleteTranslationTool returns Response with callable isError()', function () {
+        $response = (new DeleteTranslationTool)->handle(new Request([
+            'format' => TranslationOptions::PHP,
+            'key' => 'test1.get',
+        ]));
+
+        expect($response)->toBeInstanceOf(Response::class);
+        expect($response->isError())->toBeFalse();
+    });
+
+    it('DeleteTranslationGroupTool returns Response with callable isError()', function () {
+        $response = (new DeleteTranslationGroupTool)->handle(new Request([
+            'format' => TranslationOptions::PHP,
+            'group' => 'test1',
         ]));
 
         expect($response)->toBeInstanceOf(Response::class);

@@ -10,7 +10,7 @@ description: Build and manage Laravel translations across PHP files, JSON files,
 Use this skill when:
 - Migrating translations between formats (PHP ↔ JSON ↔ CSV ↔ DB)
 - Importing or exporting translation files programmatically
-- Reading or writing individual translation keys
+- Reading, writing, deleting, or sorting individual translation keys or groups
 - Configuring multi-locale translation management
 - Working with the `TranslationHandler` facade, `TranslationCollection`, or `Translation` data objects
 
@@ -105,6 +105,83 @@ $count = TranslationHandler::set(
 ): int;
 ```
 
+### sync — copy translations from one format to another
+
+```php
+TranslationHandler::sync(
+    from: TranslationOptions::PHP,
+    to: TranslationOptions::DB,
+    force: false,
+    fromPath: null,
+    toPath: null,
+): bool;
+```
+
+### find — look up a single key+locale
+
+```php
+$translation = TranslationHandler::find(
+    from: TranslationOptions::PHP,
+    key: 'auth.welcome',
+    locale: 'en',
+    path: null,
+): ?Translation;
+```
+
+### listTranslations — filtered collection
+
+```php
+$translations = TranslationHandler::listTranslations(
+    from: TranslationOptions::PHP,
+    path: null,
+    locale: 'en',   // null = all locales
+    group: 'auth',  // null = all groups
+): TranslationCollection;
+```
+
+### listGroups — unique key group names
+
+```php
+$groups = TranslationHandler::listGroups(
+    from: TranslationOptions::PHP,
+    path: null,
+    level: 0,       // 0 = top-level (e.g. "auth"), 1 = second-level, …
+    search: null,   // case-insensitive filter
+): Collection;
+```
+
+### deleteKey — delete a single key (optionally one locale)
+
+```php
+$count = TranslationHandler::deleteKey(
+    from: TranslationOptions::PHP,
+    key: 'auth.welcome',
+    locale: 'en',   // null = delete all locales for the key
+    path: null,
+): int;
+```
+
+### deleteGroup — delete all keys under a group prefix
+
+```php
+$count = TranslationHandler::deleteGroup(
+    from: TranslationOptions::PHP,
+    group: 'auth',  // removes all "auth.*" keys
+    path: null,
+): int;
+```
+
+### sortKeys — sort keys alphabetically (PHP, JSON, CSV only)
+
+```php
+$count = TranslationHandler::sortKeys(
+    from: TranslationOptions::PHP,
+    locales: ['en'],   // [] = all locales
+    groups: ['auth'],  // [] = all groups
+    path: null,
+): int;
+```
+
 ### delete — remove all translations from a format
 
 ```php
@@ -151,37 +228,45 @@ $collection->clone();
 
 ## Artisan Commands
 
-### Move translations between formats
+### Sync translations between formats
 
 ```bash
-php artisan translation-handler {from?} {to?} [options]
-
-# Examples:
-php artisan translation-handler php_file json_file
-php artisan translation-handler php_file json_file --guided
+php artisan translation-handler:sync {from?} {to?} [options]
+php artisan translation-handler:sync php_file db --force
 ```
 
-### Import
+### Import / Export
 
 ```bash
-php artisan translation-handler:import [options]
-# Defaults to config defaultImportFrom → defaultImportTo
-php artisan translation-handler:import --from=php_file --to=json_file --force
+php artisan translation-handler:import [options]   # uses config defaults
+php artisan translation-handler:export [options]   # uses config defaults
 ```
 
-### Export
+### List translations
 
 ```bash
-php artisan translation-handler:export [options]
-# Defaults to config defaultExportFrom → defaultExportTo
-php artisan translation-handler:export --from=json_file --to=php_file --force
+php artisan translation-handler:list {from?} {--from-path=} {--locale=} {--group=}
+php artisan translation-handler:list php_file --locale=en --group=auth
 ```
 
-### Get a single translation
+### List key groups
+
+```bash
+php artisan translation-handler:list-groups {from?} {--from-path=} {--level=0} {--search=}
+php artisan translation-handler:list-groups php_file --level=1 --search=messages
+```
+
+### Find a specific translation
+
+```bash
+php artisan translation-handler:find {from?} {key?} {locale?} {--from-path=}
+php artisan translation-handler:find php_file auth.welcome en
+```
+
+### Get a single translation value
 
 ```bash
 php artisan translation-handler:get {from?} {key?} {locale?} {--from-path=}
-php artisan translation-handler:get php_file auth.welcome en
 ```
 
 ### Set a single translation
@@ -191,7 +276,30 @@ php artisan translation-handler:set {to?} {key?} {locale?} {value?} {--to-path=}
 php artisan translation-handler:set json_file auth.welcome en "Welcome!" --force
 ```
 
-### Shared options
+### Delete a translation key
+
+```bash
+php artisan translation-handler:delete {from?} {key?} {--locale=} {--from-path=}
+php artisan translation-handler:delete php_file auth.welcome          # all locales
+php artisan translation-handler:delete php_file auth.welcome --locale=en
+```
+
+### Delete a translation group
+
+```bash
+php artisan translation-handler:delete-group {from?} {group?} {--from-path=}
+php artisan translation-handler:delete-group php_file auth
+```
+
+### Sort translation keys alphabetically (PHP, JSON, CSV only)
+
+```bash
+php artisan translation-handler:sort {from?} {--from-path=} {--locale=*} {--group=*}
+php artisan translation-handler:sort php_file
+php artisan translation-handler:sort php_file --locale=en --group=auth
+```
+
+### Shared options (sync, import, export)
 
 | Option | Description |
 |--------|-------------|
@@ -243,6 +351,32 @@ $base = TranslationHandler::get(TranslationOptions::PHP);
 $extra = TranslationHandler::get(TranslationOptions::DB);
 $base->addTranslations($extra);  // DB keys not already in $base are added
 TranslationHandler::set($base, TranslationOptions::JSON, force: true);
+```
+
+### Delete a key from all formats
+
+```php
+TranslationHandler::deleteKey(TranslationOptions::PHP, 'auth.old_key');
+TranslationHandler::deleteKey(TranslationOptions::DB, 'auth.old_key');
+```
+
+### Delete a key for one locale only
+
+```php
+TranslationHandler::deleteKey(TranslationOptions::PHP, 'auth.welcome', locale: 'fr');
+```
+
+### Remove a whole group
+
+```php
+TranslationHandler::deleteGroup(TranslationOptions::PHP, 'legacy');
+```
+
+### Sort keys after a bulk import
+
+```php
+TranslationHandler::sortKeys(TranslationOptions::PHP);
+TranslationHandler::sortKeys(TranslationOptions::JSON, locales: ['en', 'it']);
 ```
 
 ## MCP Tools (available when laravel/boost is installed)
@@ -348,6 +482,35 @@ Copies translations from one storage format to another.
 | `from` | string (enum) | yes | Source format |
 | `to` | string (enum) | yes | Destination format (must differ from `from`) |
 | `force` | boolean | no | Overwrite existing translations in destination (default `false`) |
+
+### `delete-translation-tool` (write)
+
+Deletes a single translation key. Omit `locale` to delete all locales for the key.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string (enum) | yes | Storage format to delete from |
+| `key` | string | yes | Dot-delimited key (e.g. `auth.welcome`) |
+| `locale` | string | no | Delete only this locale. Omit to delete all locales. |
+
+### `delete-translation-group-tool` (write)
+
+Deletes all keys under a group prefix.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string (enum) | yes | Storage format to delete from |
+| `group` | string | yes | Group prefix — all keys starting with `{group}.` are removed (e.g. `auth` removes all `auth.*`) |
+
+### `sort-translations-tool` (write)
+
+Sorts translation keys alphabetically within a format. Supports `php_file`, `json_file`, and `csv_file` only — not `db`.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string (enum) | yes | `php_file`, `json_file`, or `csv_file` |
+| `locales` | array | no | Restrict sorting to these locales. Omit to sort all locales. |
+| `groups` | array | no | Restrict sorting to these group prefixes. Omit to sort all groups. |
 
 ## Configuration (`config/translation-handler.php`)
 

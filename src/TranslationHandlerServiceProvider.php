@@ -6,6 +6,8 @@ use BrunosCode\TranslationHandler\Commands\Command;
 use BrunosCode\TranslationHandler\Commands\ExportCommand;
 use BrunosCode\TranslationHandler\Commands\GetCommand;
 use BrunosCode\TranslationHandler\Commands\ImportCommand;
+use BrunosCode\TranslationHandler\Commands\ListCommand;
+use BrunosCode\TranslationHandler\Commands\ListGroupsCommand;
 use BrunosCode\TranslationHandler\Commands\SetCommand;
 use BrunosCode\TranslationHandler\Commands\SyncCommand;
 use BrunosCode\TranslationHandler\Mcp\Tools\FindTranslationTool;
@@ -43,6 +45,8 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
                 ExportCommand::class,
                 GetCommand::class,
                 SetCommand::class,
+                ListCommand::class,
+                ListGroupsCommand::class,
                 SyncCommand::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {

@@ -267,6 +267,32 @@ Export translations. Source and destination are passed via `--from` and `--to` o
 php artisan translation-handler:export [options]
 ```
 
+### `translation-handler:list`
+
+List translations from a storage format. Optionally filter by locale or key group prefix.
+
+```bash
+php artisan translation-handler:list {from?} {--from-path=} {--locale=} {--group=}
+```
+
+| Option | Description |
+|--------|-------------|
+| `--locale` | Filter by locale (e.g. `en`) |
+| `--group` | Filter by key group prefix (e.g. `auth` returns all `auth.*` keys) |
+
+### `translation-handler:list-groups`
+
+List unique translation key groups from a storage format. A group is a key prefix at a given depth level. Optionally filter by search string.
+
+```bash
+php artisan translation-handler:list-groups {from?} {--from-path=} {--level=0} {--search=}
+```
+
+| Option | Description |
+|--------|-------------|
+| `--level` | Number of delimiters in the group name. `0` = top-level (e.g. `auth`), `1` = second-level (e.g. `auth.messages`). Defaults to `0`. |
+| `--search` | Case-insensitive filter on group names |
+
 ### `translation-handler:get`
 
 Get a single translation value.

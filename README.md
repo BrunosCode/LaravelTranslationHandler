@@ -182,20 +182,33 @@ The AI will call `list-translation-groups-tool` with `format: php_file`, `level:
 ## Quick Start
 
 ```bash
-# Import translations from PHP to JSON
-php artisan translation-handler:import --from=php_file --to=json_file
+# Sync translations between formats
+php artisan translation-handler:sync php_file json_file
 
-# Export translations from JSON to PHP, overwriting existing
-php artisan translation-handler:export --from=json_file --to=php_file --force
+# Import / export using config defaults
+php artisan translation-handler:import
+php artisan translation-handler:export --force
 
-# Sync translations interactively
-php artisan translation-handler:sync php_file json_file --guided
+# List all translations from PHP files
+php artisan translation-handler:list php_file
 
-# Get a specific translation
-php artisan translation-handler:get php_file test.welcome en
+# List translations filtered by locale and group
+php artisan translation-handler:list php_file --locale=en --group=auth
+
+# List top-level key groups
+php artisan translation-handler:list-groups php_file
+
+# List second-level groups, filtered by search
+php artisan translation-handler:list-groups php_file --level=1 --search=messages
+
+# Find a specific translation
+php artisan translation-handler:find php_file auth.welcome en
+
+# Get the raw value of a translation
+php artisan translation-handler:get php_file auth.welcome en
 
 # Set a specific translation
-php artisan translation-handler:set php_file test.welcome en "Welcome!"
+php artisan translation-handler:set php_file auth.welcome en "Welcome!"
 ```
 
 Or use the Facade:
@@ -293,9 +306,17 @@ php artisan translation-handler:list-groups {from?} {--from-path=} {--level=0} {
 | `--level` | Number of delimiters in the group name. `0` = top-level (e.g. `auth`), `1` = second-level (e.g. `auth.messages`). Defaults to `0`. |
 | `--search` | Case-insensitive filter on group names |
 
+### `translation-handler:find`
+
+Find a specific translation by key and locale. Outputs a table with format, key, locale, and value.
+
+```bash
+php artisan translation-handler:find {from?} {key?} {locale?} {--from-path=}
+```
+
 ### `translation-handler:get`
 
-Get a single translation value.
+Get the raw value of a single translation.
 
 ```bash
 php artisan translation-handler:get {from?} {key?} {locale?} {--from-path=}
@@ -343,6 +364,45 @@ TranslationHandler::import(
 ): bool;
 
 TranslationHandler::export(/* same signature */): bool;
+```
+
+### find
+
+Finds a single translation by key and locale. Returns `null` if not found.
+
+```php
+$translation = TranslationHandler::find(
+    from: string,      // source format
+    key: string,       // dot-delimited key
+    locale: string,    // locale to look up
+    path: ?string,     // custom path (default: null)
+): ?Translation;
+```
+
+### listTranslations
+
+Returns a filtered `TranslationCollection`. Applies locale and/or group prefix filters on top of `get()`.
+
+```php
+$translations = TranslationHandler::listTranslations(
+    from: string,      // source format
+    path: ?string,     // custom path (default: null)
+    locale: ?string,   // filter by locale (default: null = all)
+    group: ?string,    // filter by key group prefix (default: null = all)
+): TranslationCollection;
+```
+
+### listGroups
+
+Returns a sorted `Collection` of unique key group names at a given depth level.
+
+```php
+$groups = TranslationHandler::listGroups(
+    from: string,      // source format
+    path: ?string,     // custom path (default: null)
+    level: int,        // 0 = top-level groups, 1 = second-level, … (default: 0)
+    search: ?string,   // case-insensitive filter on group names (default: null)
+): Collection;
 ```
 
 ### get

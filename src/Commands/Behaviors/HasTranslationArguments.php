@@ -80,6 +80,21 @@ trait HasTranslationArguments
         return $locale;
     }
 
+    protected function getTranslationGroupArgument(): string
+    {
+        $group = $this->argument('group');
+
+        if (empty($group)) {
+            $group = $this->ask('What is the translation group?');
+        }
+
+        if (empty($group)) {
+            throw new \InvalidArgumentException('Translation group cannot be empty');
+        }
+
+        return $group;
+    }
+
     protected function getTranslationValueArgument(): string
     {
         $value = $this->argument('value');

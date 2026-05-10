@@ -129,34 +129,63 @@ class TranslationHandlerService
     {
         $oldTranslations = $this->get($to, $path);
 
-        if ($force) {
-            $newTranslations = $oldTranslations->replaceTranslations($translations);
-        } else {
-            $newTranslations = $oldTranslations->addTranslations($translations);
+        $newTranslations = $force
+            ? $oldTranslations->replaceTranslations($translations)
+            : $oldTranslations->addTranslations($translations);
+
+        return $this->putCollection($to, $newTranslations->sortTranslations(), $path);
+    }
+
+    public function deleteKey(string $from, string $key, ?string $locale = null, ?string $path = null): int
+    {
+        $collection = $this->get($from, $path);
+
+        $survivors = $locale
+            ? $collection->reject(fn ($t) => $t->key === $key && $t->locale === $locale)
+            : $collection->reject(fn ($t) => $t->key === $key);
+
+        $deleted = $collection->count() - $survivors->count();
+
+        if ($deleted === 0) {
+            return 0;
         }
 
-        $newTranslations = $newTranslations->sortTranslations();
+        $this->putCollection($from, new TranslationCollection($survivors->values()->all()), $path);
 
+        return $deleted;
+    }
+
+    public function deleteGroup(string $from, string $group, ?string $path = null): int
+    {
+        $delimiter = $this->getOption('keyDelimiter') ?? '.';
+        $prefix = str_ends_with($group, $delimiter) ? $group : $group.$delimiter;
+
+        $collection = $this->get($from, $path);
+
+        $survivors = $collection->reject(fn ($t) => str_starts_with($t->key, $prefix));
+
+        $deleted = $collection->count() - $survivors->count();
+
+        if ($deleted === 0) {
+            return 0;
+        }
+
+        $this->putCollection($from, new TranslationCollection($survivors->values()->all()), $path);
+
+        return $deleted;
+    }
+
+    private function putCollection(string $to, TranslationCollection $collection, ?string $path): int
+    {
         return match ($to) {
-            TranslationOptions::PHP => $this->getPhpHandler()->put(
-                translations: $newTranslations,
-                path: $path,
-            ),
-            TranslationOptions::CSV => $this->getCsvHandler()->put(
-                translations: $newTranslations,
-                path: $path,
-            ),
-            TranslationOptions::JSON => $this->getJsonHandler()->put(
-                translations: $newTranslations,
-                path: $path,
-            ),
-            TranslationOptions::DB => $this->getDbHandler()->put(
-                translations: $newTranslations,
-                connection: $path
-            ),
+            TranslationOptions::PHP => $this->getPhpHandler()->put(translations: $collection, path: $path),
+            TranslationOptions::CSV => $this->getCsvHandler()->put(translations: $collection, path: $path),
+            TranslationOptions::JSON => $this->getJsonHandler()->put(translations: $collection, path: $path),
+            TranslationOptions::DB => $this->getDbHandler()->put(translations: $collection, connection: $path),
             default => throw new \InvalidArgumentException("Invalid to type '{$to}'. Valid types: ".implode(', ', TranslationOptions::TYPES)),
         };
     }
+
 
     public function delete(string $from, ?string $path = null): int
     {

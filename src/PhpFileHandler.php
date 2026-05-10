@@ -68,14 +68,12 @@ class PhpFileHandler implements FileHandlerInterface
                     ->whereLocale($locale);
 
                 if ($filteredTranslations->isEmpty()) {
+                    File::delete($this->getFilePath($path, $filename, $locale));
+
                     continue;
                 }
 
                 $rawTranslations = $this->buildForFile($filteredTranslations, $filename, $locale);
-
-                $currentRawTranslations = $this->read($path, $filename, $locale);
-
-                $rawTranslations = array_replace_recursive($currentRawTranslations, $rawTranslations);
 
                 $this->write($rawTranslations, $path, $filename, $locale);
 

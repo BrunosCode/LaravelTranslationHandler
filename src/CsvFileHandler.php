@@ -79,10 +79,6 @@ class CsvFileHandler implements FileHandlerInterface
     {
         $rawTranslations = $this->buildForFile($translations);
 
-        $currentRawTranslations = $this->read($path);
-
-        $rawTranslations = array_replace_recursive($currentRawTranslations, $rawTranslations);
-
         if (! $this->write($rawTranslations, $path)) {
             return 0;
         }

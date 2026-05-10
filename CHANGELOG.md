@@ -2,6 +2,42 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.2.0 - 2026-05-10
+
+### v2.2.0
+
+#### New Commands
+
+- **`translation-handler:sync`** — Syncs translations between formats. The old bare `translation-handler` command is now deprecated in favour of this.
+- **`translation-handler:list`** — Lists translations from a format, with optional `--locale` and `--group` filters.
+- **`translation-handler:list-groups`** — Lists unique key group prefixes at a configurable depth, with optional `--search` filter.
+- **`translation-handler:find`** — Finds a specific key+locale and prints it as a table.
+- **`translation-handler:delete`** — Deletes a translation key. Use `--locale` to target a single locale, omit it to delete all locales.
+- **`translation-handler:delete-group`** — Deletes all keys under a group prefix.
+- **`translation-handler:sort`** — Sorts translation keys alphabetically in PHP, JSON, and CSV formats. Supports `--locale` and `--group` filters to restrict the scope.
+
+#### New MCP Tools
+
+Three new tools are available to AI agents via Laravel Boost:
+
+- **`delete-translation-tool`** — Deletes a single key, optionally for a specific locale only.
+- **`delete-translation-group-tool`** — Deletes all keys under a group prefix.
+- **`sort-translations-tool`** — Sorts keys alphabetically in PHP, JSON, or CSV, with optional locale and group filters.
+
+#### New Facade Methods
+
+```php
+TranslationHandler::deleteKey(from: 'php_file', key: 'auth.welcome', locale: 'en');
+TranslationHandler::deleteGroup(from: 'php_file', group: 'auth');
+TranslationHandler::sortKeys(from: 'php_file', locales: ['en'], groups: ['auth']);
+
+```
+#### Bug Fixes
+
+- **PHP and CSV handlers**: removed a redundant `array_replace_recursive` merge in `put()`. The service already merges the full collection before writing — the file-level re-merge was causing deleted keys to reappear after a write.
+- **PHP handler**: when all translations for a locale file are removed, the file is now deleted instead of silently skipped (which left stale data on disk).
+- **Database handler**: `handleSoftDelete` now also soft-deletes individual locale values when a key is partially deleted (e.g. removing only the `en` value while keeping `it`). Previously only whole-key deletion was supported.
+
 ## v2.1.2 — Timestamp isolation + set-translation-group MCP tool - 2026-04-30
 
 ### Added
@@ -20,6 +56,7 @@ All notable changes to `laravel-translation-handler` will be documented in this 
     },
     "force": true
   }
+  
   
   ```
 
@@ -149,6 +186,7 @@ app($class, ['options' => $this->getOptions()]);
 
 
 
+
 ```
 Laravel 11 removed the automatic conversion of positional parameters to named ones (`keyParametersByArgument`). As a result, the container ignored the provided `TranslationOptions` instance and auto-resolved a fresh one from config — discarding any runtime overrides set via `setOption()` or `setOptions()`.
 
@@ -159,6 +197,7 @@ Any option overridden at runtime was silently ignored. The most visible symptom 
 ```
 Invalid CSV at line 2: expected at least 2 columns, got 1.
 Check that the delimiter is ";"
+
 
 
 
@@ -203,6 +242,7 @@ If you are on Laravel 11 or 12, no code changes are required — update the pack
 
 ```bash
 composer require brunoscode/laravel-translation-handler:^2.0
+
 
 
 

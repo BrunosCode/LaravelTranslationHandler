@@ -4,6 +4,7 @@ namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Commands\Command;
 use BrunosCode\TranslationHandler\Commands\ExportCommand;
+use BrunosCode\TranslationHandler\Commands\FindCommand;
 use BrunosCode\TranslationHandler\Commands\GetCommand;
 use BrunosCode\TranslationHandler\Commands\ImportCommand;
 use BrunosCode\TranslationHandler\Commands\ListCommand;
@@ -44,6 +45,7 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
                 ImportCommand::class,
                 ExportCommand::class,
                 GetCommand::class,
+                FindCommand::class,
                 SetCommand::class,
                 ListCommand::class,
                 ListGroupsCommand::class,

@@ -3,6 +3,7 @@
 namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
+use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\DatabaseHandlerInterface;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
@@ -18,6 +19,11 @@ class TranslationHandlerService
     {
         $this->defaultOptions = new TranslationOptions;
         $this->options = null;
+    }
+
+    public function find(string $from, string $key, string $locale, ?string $path = null): ?Translation
+    {
+        return $this->get($from, $path)->whereKey($key)->whereLocale($locale)->first();
     }
 
     public function listTranslations(string $from, ?string $path = null, ?string $locale = null, ?string $group = null): TranslationCollection

@@ -19,6 +19,15 @@ class TranslationHandlerService
         $this->options = null;
     }
 
+    public function sync(string $from, string $to, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
+    {
+        $options = $this->getOptions();
+
+        $translations = $this->get($from, $fromPath);
+
+        return $this->set($translations, $to, $toPath, $force) > 0;
+    }
+
     public function import(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
     {
         $options = $this->getOptions();

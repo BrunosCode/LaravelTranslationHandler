@@ -6,18 +6,19 @@ use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 
 trait HasTranslationOptions
 {
-    protected function getTranslationFromOption(string $default, bool $ask = false): ?string
+    protected function getTranslationFromOption(string $default, bool $ask = false): string
     {
         if (! $this->hasOption('from')) {
             throw new \InvalidArgumentException('--from option is not allowed in this command: '.self::class);
         }
 
         $from = $this->option('from');
+        $types = TranslationHandler::getTypes();
 
         if (empty($from) && $ask) {
             $from = $this->choice(
                 'From where do you want to import translations?',
-                TranslationHandler::getTypes(),
+                $types,
             );
         }
 
@@ -25,8 +26,8 @@ trait HasTranslationOptions
             $from = $default;
         }
 
-        if (! in_array($from, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException("Invalid --from type '{$from}'. Valid types: ".implode(', ', TranslationHandler::getTypes()));
+        if (! in_array($from, $types)) {
+            throw new \InvalidArgumentException("Invalid --from type '{$from}'. Valid types: ".implode(', ', $types));
         }
 
         $this->comment('Reading translations from '.$from);
@@ -34,18 +35,19 @@ trait HasTranslationOptions
         return $from;
     }
 
-    protected function getTranslationToOption(string $default, bool $ask = false): ?string
+    protected function getTranslationToOption(string $default, bool $ask = false): string
     {
         if (! $this->hasOption('to')) {
             throw new \InvalidArgumentException('--to option is not allowed in this command: '.self::class);
         }
 
         $to = $this->option('to');
+        $types = TranslationHandler::getTypes();
 
         if (empty($to) && $ask) {
             $to = $this->choice(
                 'To where do you want to write translations?',
-                TranslationHandler::getTypes(),
+                $types,
             );
         }
 
@@ -53,8 +55,8 @@ trait HasTranslationOptions
             $to = $default;
         }
 
-        if (! in_array($to, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException("Invalid --to type '{$to}'. Valid types: ".implode(', ', TranslationHandler::getTypes()));
+        if (! in_array($to, $types)) {
+            throw new \InvalidArgumentException("Invalid --to type '{$to}'. Valid types: ".implode(', ', $types));
         }
 
         $this->comment('Writing translations to '.$to);
@@ -113,10 +115,11 @@ trait HasTranslationOptions
         $fileNames = $this->option('file-names') ?? [];
 
         if (empty($fileNames) && $ask) {
+            $available = TranslationHandler::getOptions()->fileNames;
             $fileNames = $this->choice(
                 'Which files do you want to export?',
-                TranslationHandler::getOptions()->fileNames,
-                implode(', ', TranslationHandler::getOptions()->fileNames),
+                $available,
+                implode(', ', $available),
                 null,
                 true
             );
@@ -143,10 +146,11 @@ trait HasTranslationOptions
         $locales = $this->option('locales') ?? [];
 
         if (empty($locales) && $ask) {
+            $available = TranslationHandler::getOptions()->locales;
             $locales = $this->choice(
                 'Which locales do you want to export?',
-                TranslationHandler::getOptions()->locales,
-                implode(', ', TranslationHandler::getOptions()->locales),
+                $available,
+                implode(', ', $available),
                 null,
                 true
             );
@@ -179,10 +183,6 @@ trait HasTranslationOptions
             );
         }
 
-        if (! is_bool($force)) {
-            throw new \InvalidArgumentException('--force must be a boolean, got: '.gettype($force));
-        }
-
         if ($force) {
             $this->comment('Overwriting existing translations');
         }
@@ -203,10 +203,6 @@ trait HasTranslationOptions
                 'Do you want to delete the existing translations before creating new ones?',
                 false
             );
-        }
-
-        if (! is_bool($fresh)) {
-            throw new \InvalidArgumentException('--fresh must be a boolean, got: '.gettype($fresh));
         }
 
         if ($fresh) {

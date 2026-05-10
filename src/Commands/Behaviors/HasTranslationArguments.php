@@ -9,16 +9,17 @@ trait HasTranslationArguments
     protected function getTranslationFromArgument(): string
     {
         $from = $this->argument('from');
+        $types = TranslationHandler::getTypes();
 
         if (empty($from)) {
             $from = $this->choice(
                 'From where do you want to import translations?',
-                TranslationHandler::getTypes()
+                $types
             );
         }
 
-        if (empty($from) || ! in_array($from, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException("Invalid from type '{$from}'. Valid types: ".implode(', ', TranslationHandler::getTypes()));
+        if (empty($from) || ! in_array($from, $types)) {
+            throw new \InvalidArgumentException("Invalid from type '{$from}'. Valid types: ".implode(', ', $types));
         }
 
         $this->comment('Reading translations from '.$from);
@@ -29,16 +30,17 @@ trait HasTranslationArguments
     protected function getTranslationToArgument(): string
     {
         $to = $this->argument('to');
+        $types = TranslationHandler::getTypes();
 
         if (empty($to)) {
             $to = $this->choice(
                 'To where do you want to write translations?',
-                TranslationHandler::getTypes()
+                $types
             );
         }
 
-        if (empty($to) || ! in_array($to, TranslationHandler::getTypes())) {
-            throw new \InvalidArgumentException("Invalid to type '{$to}'. Valid types: ".implode(', ', TranslationHandler::getTypes()));
+        if (empty($to) || ! in_array($to, $types)) {
+            throw new \InvalidArgumentException("Invalid to type '{$to}'. Valid types: ".implode(', ', $types));
         }
 
         $this->comment('Writing translations to '.$to);
@@ -69,8 +71,10 @@ trait HasTranslationArguments
             $locale = $this->ask('What is the translation locale?');
         }
 
-        if (empty($locale) || ! in_array($locale, TranslationHandler::getOptions()->locales)) {
-            throw new \InvalidArgumentException("Invalid locale '{$locale}'. Configured locales: ".implode(', ', TranslationHandler::getOptions()->locales));
+        $locales = TranslationHandler::getOptions()->locales;
+
+        if (empty($locale) || ! in_array($locale, $locales)) {
+            throw new \InvalidArgumentException("Invalid locale '{$locale}'. Configured locales: ".implode(', ', $locales));
         }
 
         return $locale;

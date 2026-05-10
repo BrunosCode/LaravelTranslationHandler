@@ -188,8 +188,8 @@ php artisan translation-handler:import --from=php_file --to=json_file
 # Export translations from JSON to PHP, overwriting existing
 php artisan translation-handler:export --from=json_file --to=php_file --force
 
-# Move translations interactively
-php artisan translation-handler php_file json_file --guided
+# Sync translations interactively
+php artisan translation-handler:sync php_file json_file --guided
 
 # Get a specific translation
 php artisan translation-handler:get php_file test.welcome en
@@ -204,11 +204,17 @@ Or use the Facade:
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 
-// Import PHP → JSON
-TranslationHandler::import(TranslationOptions::PHP, TranslationOptions::JSON);
+// Copy PHP → JSON (explicit formats)
+TranslationHandler::sync(TranslationOptions::PHP, TranslationOptions::JSON);
 
-// Export JSON → PHP, overwriting existing
-TranslationHandler::export(TranslationOptions::JSON, TranslationOptions::PHP, force: true);
+// Copy JSON → PHP, overwriting existing
+TranslationHandler::sync(TranslationOptions::JSON, TranslationOptions::PHP, force: true);
+
+// Import using config defaults
+TranslationHandler::import();
+
+// Export using config defaults
+TranslationHandler::export();
 ```
 
 ## Commands
@@ -227,15 +233,23 @@ These options are available on `translation-handler`, `translation-handler:impor
 | `--to-path` | string | format default | Custom destination path |
 | `--guided` | bool | `false` | Interactive mode, prompts for each option |
 
-### `translation-handler`
+### `translation-handler:sync`
 
-Move translations from one format to another. Source and destination are positional arguments.
+Sync translations from one format to another. Source and destination are positional arguments.
+
+```bash
+php artisan translation-handler:sync {from?} {to?} [options]
+```
+
+If `from` or `to` are omitted, you will be prompted to choose.
+
+### `translation-handler` *(deprecated)*
+
+> **Deprecated.** Use `translation-handler:sync` instead.
 
 ```bash
 php artisan translation-handler {from?} {to?} [options]
 ```
-
-If `from` or `to` are omitted, you will be prompted to choose.
 
 ### `translation-handler:import`
 
@@ -275,9 +289,23 @@ php artisan translation-handler:set {to?} {key?} {locale?} {value?} {--to-path=}
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 ```
 
+### sync
+
+Copies translations from one format to another. Unlike `import`/`export`, `from` and `to` are required — no config defaults are used.
+
+```php
+TranslationHandler::sync(
+    from: string,      // source format
+    to: string,        // destination format
+    force: bool,       // overwrite existing (default: false)
+    fromPath: ?string, // custom source path (default: null)
+    toPath: ?string,   // custom destination path (default: null)
+): bool;
+```
+
 ### import / export
 
-Both methods share the same signature:
+Both methods share the same signature. `from` and `to` fall back to config defaults (`defaultImportFrom`/`defaultImportTo` and `defaultExportFrom`/`defaultExportTo`) when omitted.
 
 ```php
 TranslationHandler::import(

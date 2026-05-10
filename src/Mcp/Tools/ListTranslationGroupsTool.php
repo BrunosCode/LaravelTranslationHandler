@@ -38,40 +38,16 @@ class ListTranslationGroupsTool extends Tool
         $search = $request->get('search');
 
         try {
-            $collection = TranslationHandler::get($format);
+            $groups = TranslationHandler::listGroups($format, null, $level, $search);
         } catch (\Throwable $e) {
             return Response::error('Failed to read translations: '.$e->getMessage());
         }
 
-        $delimiter = TranslationHandler::getOption('keyDelimiter') ?? '.';
-        $depth = $level + 1;
-
-        $groups = $collection
-            ->map(fn ($t) => $t->key)
-            ->unique()
-            ->map(function ($key) use ($delimiter, $depth) {
-                $segments = explode($delimiter, $key);
-
-                if (count($segments) <= $depth) {
-                    return null;
-                }
-
-                return implode($delimiter, array_slice($segments, 0, $depth));
-            })
-            ->filter()
-            ->unique()
-            ->when($search, fn ($items) => $items->filter(
-                fn ($group) => str_contains(strtolower($group), strtolower($search))
-            ))
-            ->sort()
-            ->values()
-            ->all();
-
         return Response::text(json_encode([
             'format' => $format,
             'level' => $level,
-            'total' => count($groups),
-            'groups' => $groups,
+            'total' => $groups->count(),
+            'groups' => $groups->all(),
         ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
     }
 }

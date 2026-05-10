@@ -29,15 +29,7 @@ class ListCommand extends Command
 
         $group = $this->option('group');
 
-        $collection = TranslationHandler::get(from: $from, path: $fromPath);
-
-        if ($locale) {
-            $collection = $collection->whereLocale($locale);
-        }
-
-        if ($group) {
-            $collection = $collection->whereGroup($group);
-        }
+        $collection = TranslationHandler::listTranslations($from, $fromPath, $locale, $group);
 
         $this->table(
             ['Key', 'Locale', 'Value'],

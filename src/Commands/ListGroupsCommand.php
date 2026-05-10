@@ -29,30 +29,7 @@ class ListGroupsCommand extends Command
 
         $search = $this->option('search');
 
-        $collection = TranslationHandler::get(from: $from, path: $fromPath);
-
-        $delimiter = TranslationHandler::getOption('keyDelimiter') ?? '.';
-        $depth = $level + 1;
-
-        $groups = $collection
-            ->map(fn ($t) => $t->key)
-            ->unique()
-            ->map(function ($key) use ($delimiter, $depth) {
-                $segments = explode($delimiter, $key);
-
-                if (count($segments) <= $depth) {
-                    return null;
-                }
-
-                return implode($delimiter, array_slice($segments, 0, $depth));
-            })
-            ->filter()
-            ->unique()
-            ->when($search, fn ($items) => $items->filter(
-                fn ($group) => str_contains(strtolower($group), strtolower($search))
-            ))
-            ->sort()
-            ->values();
+        $groups = TranslationHandler::listGroups($from, $fromPath, $level, $search);
 
         foreach ($groups as $group) {
             $this->line($group);

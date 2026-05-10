@@ -38,17 +38,9 @@ class ListTranslationsTool extends Tool
         $group = $request->get('group');
 
         try {
-            $collection = TranslationHandler::get($format);
+            $collection = TranslationHandler::listTranslations($format, null, $locale, $group);
         } catch (\Throwable $e) {
             return Response::error('Failed to read translations: '.$e->getMessage());
-        }
-
-        if ($locale) {
-            $collection = $collection->whereLocale($locale);
-        }
-
-        if ($group) {
-            $collection = $collection->whereGroup($group);
         }
 
         $translations = $collection

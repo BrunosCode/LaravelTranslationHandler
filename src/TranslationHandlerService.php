@@ -6,6 +6,7 @@ use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\DatabaseHandlerInterface;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
+use Illuminate\Support\Collection;
 
 class TranslationHandlerService
 {
@@ -19,10 +20,49 @@ class TranslationHandlerService
         $this->options = null;
     }
 
+    public function listTranslations(string $from, ?string $path = null, ?string $locale = null, ?string $group = null): TranslationCollection
+    {
+        $collection = $this->get($from, $path);
+
+        if ($locale) {
+            $collection = $collection->whereLocale($locale);
+        }
+
+        if ($group) {
+            $collection = $collection->whereGroup($group);
+        }
+
+        return $collection;
+    }
+
+    public function listGroups(string $from, ?string $path = null, int $level = 0, ?string $search = null): Collection
+    {
+        $delimiter = $this->getOption('keyDelimiter') ?? '.';
+        $depth = $level + 1;
+
+        return $this->get($from, $path)
+            ->map(fn ($t) => $t->key)
+            ->unique()
+            ->map(function ($key) use ($delimiter, $depth) {
+                $segments = explode($delimiter, $key);
+
+                if (count($segments) <= $depth) {
+                    return null;
+                }
+
+                return implode($delimiter, array_slice($segments, 0, $depth));
+            })
+            ->filter()
+            ->unique()
+            ->when($search, fn ($items) => $items->filter(
+                fn ($group) => str_contains(strtolower($group), strtolower($search))
+            ))
+            ->sort()
+            ->values();
+    }
+
     public function sync(string $from, string $to, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
     {
-        $options = $this->getOptions();
-
         $translations = $this->get($from, $fromPath);
 
         return $this->set($translations, $to, $toPath, $force) > 0;

@@ -6,10 +6,10 @@ use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 
 trait HasTranslationArguments
 {
-    protected function getTranslationFromArgument(): string
+    protected function getTranslationFromArgument(?array $types = null): string
     {
         $from = $this->argument('from');
-        $types = TranslationHandler::getTypes();
+        $types = $types ?? TranslationHandler::getTypes();
 
         if (empty($from)) {
             $from = $this->choice(

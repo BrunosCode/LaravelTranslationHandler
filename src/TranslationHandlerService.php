@@ -136,6 +136,35 @@ class TranslationHandlerService
         return $this->putCollection($to, $newTranslations->sortTranslations(), $path);
     }
 
+    public function sortKeys(string $from, array $locales = [], array $groups = [], ?string $path = null): int
+    {
+        $collection = $this->get($from, $path);
+
+        $target = $collection;
+
+        if (! empty($locales)) {
+            $target = $target->whereLocaleIn($locales);
+        }
+
+        if (! empty($groups)) {
+            $target = $target->whereGroupIn($groups);
+        }
+
+        $count = $target->count();
+
+        if ($count === 0) {
+            return 0;
+        }
+
+        $sorted = $target->sortTranslations();
+        $rest = $collection->reject(fn ($t) => $target->contains($t));
+        $merged = new TranslationCollection([...$sorted->values()->all(), ...$rest->values()->all()]);
+
+        $this->putCollection($from, $merged, $path);
+
+        return $count;
+    }
+
     public function deleteKey(string $from, string $key, ?string $locale = null, ?string $path = null): int
     {
         $collection = $this->get($from, $path);

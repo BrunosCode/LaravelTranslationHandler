@@ -39,7 +39,7 @@ php artisan vendor:publish --provider="BrunosCode\TranslationHandler\Translation
 
 ## AI-Powered Translation Management with Laravel Boost
 
-When [Laravel Boost](https://github.com/laravel/boost) is installed, this package automatically registers **8 MCP tools** into Boost's MCP server. This lets any MCP-compatible AI agent (Claude, Cursor, GitHub Copilot, etc.) read and write your translations directly — no manual commands, no copy-pasting.
+When [Laravel Boost](https://github.com/laravel/boost) is installed, this package automatically registers **11 MCP tools** into Boost's MCP server. This lets any MCP-compatible AI agent (Claude, Cursor, GitHub Copilot, etc.) read and write your translations directly — no manual commands, no copy-pasting.
 
 ### What the AI can do
 
@@ -49,6 +49,9 @@ When [Laravel Boost](https://github.com/laravel/boost) is installed, this packag
 - Add or update a key across **all locales at once**
 - Translate **an entire group** in one call (every subkey, every locale)
 - Sync translations between storage formats
+- Delete a single key (optionally for a specific locale only)
+- Delete all keys under a group prefix
+- Sort keys alphabetically in PHP, JSON, and CSV formats
 - Read the full translation configuration
 
 ### Setup
@@ -143,6 +146,35 @@ Copies translations from one storage format to another.
 | `to` | string | yes | Destination format (must differ from `from`) |
 | `force` | boolean | no | Overwrite existing translations in destination (default `false`) |
 
+#### `delete-translation-tool` (write)
+
+Deletes a translation key from a storage format. Omit `locale` to delete the key for all locales.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to delete from |
+| `key` | string | yes | Dot-delimited key to delete (e.g. `auth.welcome`) |
+| `locale` | string | no | Delete only this locale. Omit to delete all locales for the key. |
+
+#### `delete-translation-group-tool` (write)
+
+Deletes all translation keys under a group prefix from a storage format.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to delete from |
+| `group` | string | yes | Key group prefix to delete (e.g. `auth` removes all `auth.*` keys) |
+
+#### `sort-translations-tool` (write)
+
+Sorts translation keys alphabetically within a storage format. Supports `php_file`, `json_file`, and `csv_file` only.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to sort (`php_file`, `json_file`, or `csv_file`) |
+| `locales` | array | no | Restrict sorting to these locales. Omit to sort all locales. |
+| `groups` | array | no | Restrict sorting to these key group prefixes. Omit to sort all groups. |
+
 ### Recommended workflow for editing translations
 
 **Use `db` as the working format for all writes, then sync to files at the end.**
@@ -209,6 +241,21 @@ php artisan translation-handler:get php_file auth.welcome en
 
 # Set a specific translation
 php artisan translation-handler:set php_file auth.welcome en "Welcome!"
+
+# Delete a translation key (all locales)
+php artisan translation-handler:delete php_file auth.welcome
+
+# Delete a translation key for a specific locale
+php artisan translation-handler:delete php_file auth.welcome --locale=en
+
+# Delete all keys under a group
+php artisan translation-handler:delete-group php_file auth
+
+# Sort all keys alphabetically
+php artisan translation-handler:sort php_file
+
+# Sort only specific locales and groups
+php artisan translation-handler:sort php_file --locale=en --group=auth
 ```
 
 Or use the Facade:
@@ -330,6 +377,35 @@ Set a single translation value.
 php artisan translation-handler:set {to?} {key?} {locale?} {value?} {--to-path=} {--force}
 ```
 
+### `translation-handler:delete`
+
+Delete a translation key from a storage format. Omit `--locale` to delete all locales for the key.
+
+```bash
+php artisan translation-handler:delete {from?} {key?} {--locale=} {--from-path=}
+```
+
+### `translation-handler:delete-group`
+
+Delete all translation keys under a group prefix from a storage format.
+
+```bash
+php artisan translation-handler:delete-group {from?} {group?} {--from-path=}
+```
+
+### `translation-handler:sort`
+
+Sort translation keys alphabetically. Works on `php_file`, `json_file`, and `csv_file` only.
+
+```bash
+php artisan translation-handler:sort {from?} {--from-path=} {--locale=*} {--group=*}
+```
+
+| Option | Description |
+|--------|-------------|
+| `--locale` | Restrict sorting to this locale (repeatable: `--locale=en --locale=it`) |
+| `--group` | Restrict sorting to this key group prefix (repeatable) |
+
 ## Facade API
 
 ```php
@@ -436,6 +512,44 @@ $translation = new Translation('welcome', 'en', 'Welcome!');
 $collection = new TranslationCollection([$translation]);
 
 TranslationHandler::set($collection, TranslationOptions::JSON);
+```
+
+### deleteKey
+
+Deletes a specific translation key from a format. Pass `locale` to target a single locale; omit to delete all locales.
+
+```php
+$count = TranslationHandler::deleteKey(
+    from: string,      // format to delete from
+    key: string,       // dot-delimited key
+    locale: ?string,   // locale to delete (default: null = all locales)
+    path: ?string,     // custom path (default: null)
+): int;
+```
+
+### deleteGroup
+
+Deletes all keys whose name starts with the given group prefix.
+
+```php
+$count = TranslationHandler::deleteGroup(
+    from: string,      // format to delete from
+    group: string,     // group prefix (e.g. "auth" removes all "auth.*" keys)
+    path: ?string,     // custom path (default: null)
+): int;
+```
+
+### sortKeys
+
+Sorts translation keys alphabetically within a format. Supports `php_file`, `json_file`, and `csv_file`. Optionally restrict by locale and/or group.
+
+```php
+$count = TranslationHandler::sortKeys(
+    from: string,      // format to sort (php_file, json_file, csv_file)
+    locales: array,    // restrict to these locales (default: [] = all)
+    groups: array,     // restrict to these group prefixes (default: [] = all)
+    path: ?string,     // custom path (default: null)
+): int;
 ```
 
 ### delete

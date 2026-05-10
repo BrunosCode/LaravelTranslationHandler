@@ -215,7 +215,6 @@ class TranslationHandlerService
         };
     }
 
-
     public function delete(string $from, ?string $path = null): int
     {
         return match ($from) {

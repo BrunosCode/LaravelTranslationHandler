@@ -2,6 +2,28 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.3.0 — Linter-friendly file writes - 2026-05-21
+
+### Added
+
+- **Linter-friendly writes** — File handlers (PHP, JSON, CSV) now compare the new content against what's already on disk before writing. If the result is identical, including key order, the write is skipped entirely. A file already formatted by the user's linter (Pint, PHP-CS-Fixer, Prettier, …) is left untouched as long as its translations and ordering match the new state.
+- **`Concerns\ComparesTranslations` trait** — strict-equality check (via `json_encode`) plus a leaf-level diff counter, used by all three file handlers.
+- **Idempotency tests** — every file handler now has a `returns 0 when content is unchanged` regression test.
+
+### Changed
+
+- **Return semantics of `put()` / `set()`** — the integer returned now represents the number of translations actually **changed** (added, modified, or removed), not the total count in the input collection. A no-op write returns `0`.
+- **`sync()` / `import()` / `export()` return type** — changed from `bool` to `false|int`. `false` signals an actual failure (the source has no translations to read); any integer (including `0`) signals success and reports how many translations were changed in the destination.
+- **`SyncCommand`, `ImportCommand`, `ExportCommand`, and the deprecated bare `Command`** — after the main success message, the command now prints either `Already in sync.` or `N translation(s) changed.`.
+- **`SetCommand`** — when `set()` returns `0`, the command checks whether the current value already matches the requested one. If it does, the command prints `Translation already set!` and returns `SUCCESS` (previously this case was reported as `FAILURE`).
+- **MCP tools** — `set-translation-tool` now also exposes the integer `count` field next to `written`; `sync-translations-tool` now exposes `success` (bool) and `count` (int).
+
+### Why
+
+The previous behavior rewrote every file on every operation, even when nothing had changed. Combined with code formatters that normalize array syntax / indentation / quoting, this produced spurious diffs in git on every sync and forced the formatter to run again afterwards. Comparing parsed content (not raw bytes) makes the operation a true no-op when the resulting state matches.
+
+**Full Changelog**: https://github.com/BrunosCode/LaravelTranslationHandler/compare/v2.2.0...v2.3.0
+
 ## v2.3.0 - 2026-05-21
 
 ### Added
@@ -48,8 +70,8 @@ Three new tools are available to AI agents via Laravel Boost:
 TranslationHandler::deleteKey(from: 'php_file', key: 'auth.welcome', locale: 'en');
 TranslationHandler::deleteGroup(from: 'php_file', group: 'auth');
 TranslationHandler::sortKeys(from: 'php_file', locales: ['en'], groups: ['auth']);
-```
 
+```
 ### Bug Fixes
 
 - **PHP and CSV handlers**: removed a redundant `array_replace_recursive` merge in `put()`. The service already merges the full collection before writing — the file-level re-merge was causing deleted keys to reappear after a write.
@@ -61,9 +83,9 @@ TranslationHandler::sortKeys(from: 'php_file', locales: ['en'], groups: ['auth']
 ### Added
 
 - **`set-translation-group-tool`** — new MCP tool that translates an entire group in a single call. The AI provides a group prefix and an object of `subkey → {locale: value}`; the tool joins each subkey to the group with the configured key delimiter and writes all locale values for every subkey in one operation. Tolerates a trailing delimiter on the group (`auth.` ≡ `auth`) and supports nested subkeys (`nested.deep`). Brings the total MCP tool count to **8**.
-
+  
   Example request:
-
+  
   ```json
   {
     "format": "db",
@@ -74,16 +96,18 @@ TranslationHandler::sortKeys(from: 'php_file', locales: ['en'], groups: ['auth']
     },
     "force": true
   }
+  
   ```
 
 ### Fixed
 
 - `DatabaseHandler::handleUpdate()` no longer touches `translation_keys.updated_at` and `translation_values.updated_at` for rows whose value has not changed.
-
+  
   Before this fix, writing a single translation through any MCP tool refreshed `updated_at` on every existing row in the table. Cause: `TranslationHandlerService::set()` reads the full existing collection, merges the input, then passes the entire merged collection to `put()` — and `handleUpdate` upserted every row in the input with `updated_at = now()`. The handler now:
-
+  
   - skips `translation_keys` rows unless they are soft-deleted (and need reviving)
   - skips `translation_values` rows whose `value` and `deleted_at` are unchanged
+  
 
 ### Tests
 
@@ -125,6 +149,7 @@ The payload is preserved — clients that read the `content[0].text` field can s
   - `set-translation` — create or update a translation for a single locale
   - `set-all-locales-translation` — create or update a translation key for **all locales at once** in a single call
   - `sync-translations` — sync translations between storage formats (PHP / JSON / CSV / DB)
+  
 - **DB-first workflow recommendation** documented in the skill and README: write individual changes to `db` (row-level I/O), then flush to files with a single `sync-translations` call at the end, avoiding repeated full-file rewrites.
 - **AI development skill + Boost guideline** under `resources/boost/guidelines/core.blade.php` and `resources/boost/skills/translation-handler-development/SKILL.md`, documenting tool contracts, translation handler conventions, and the DB-first workflow for AI agents.
 
@@ -163,8 +188,8 @@ app($class, [$this->getOptions()]);
 
 // after
 app($class, ['options' => $this->getOptions()]);
-```
 
+```
 Laravel 11 removed the automatic conversion of positional parameters to named ones (`keyParametersByArgument`). As a result, the container ignored the provided `TranslationOptions` instance and auto-resolved a fresh one from config — discarding any runtime overrides set via `setOption()` or `setOptions()`.
 
 ### Impact
@@ -174,8 +199,8 @@ Any option overridden at runtime was silently ignored. The most visible symptom 
 ```
 Invalid CSV at line 2: expected at least 2 columns, got 1.
 Check that the delimiter is ";"
-```
 
+```
 The same issue affected all four handler factories (`getPhpHandler`, `getCsvHandler`, `getJsonHandler`, `getDbHandler`).
 
 ### Affected versions
@@ -211,8 +236,8 @@ If you are on Laravel 11 or 12, no code changes are required — update the pack
 
 ```bash
 composer require brunoscode/laravel-translation-handler:^2.0
-```
 
+```
 If you are on Laravel 10, you must upgrade Laravel before updating this package.
 
 **Full Changelog**: https://github.com/BrunosCode/laravel-translation-handler/compare/v1.0.0...v2.0.0

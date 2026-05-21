@@ -3,6 +3,7 @@
 namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
+use BrunosCode\TranslationHandler\Concerns\ComparesTranslations;
 use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\File;
 
 class JsonFileHandler implements FileHandlerInterface
 {
+    use ComparesTranslations;
+
     public function __construct(
         private TranslationOptions $options
     ) {}
@@ -97,13 +100,15 @@ class JsonFileHandler implements FileHandlerInterface
 
             $rawTranslations = $this->buildForFile($filteredTranslations, $locale);
 
-            // $currentRawTranslations = $this->read($path, $locale);
+            $existing = $this->read($path, $locale);
 
-            // $rawTranslations = array_replace_recursive($currentRawTranslations, $rawTranslations);
+            if ($this->rawTranslationsEqual($existing, $rawTranslations)) {
+                continue;
+            }
 
             $this->write($rawTranslations, $path, $locale);
 
-            $counter += $filteredTranslations->count();
+            $counter += $this->countRawDifferences($existing, $rawTranslations);
         }
 
         return $counter;

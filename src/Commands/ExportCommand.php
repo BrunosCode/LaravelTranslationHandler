@@ -63,7 +63,7 @@ class ExportCommand extends Command
             }
         }
 
-        $success = TranslationHandler::export(
+        $result = TranslationHandler::export(
             from: $from,
             to: $to,
             force: $force,
@@ -71,13 +71,19 @@ class ExportCommand extends Command
             toPath: $toPath,
         );
 
-        if (! $success) {
+        if ($result === false) {
             $this->error(__('Export failed!'));
 
             return self::FAILURE;
         }
 
         $this->comment(__('Export finished!'));
+
+        if ($result === 0) {
+            $this->comment(__('Already in sync.'));
+        } else {
+            $this->comment(__(':count translation(s) changed.', ['count' => $result]));
+        }
 
         return self::SUCCESS;
     }

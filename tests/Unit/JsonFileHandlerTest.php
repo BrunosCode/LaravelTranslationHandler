@@ -68,7 +68,8 @@ describe('JsonFileHandler put', function () {
 
         $count = TranslationHandler::getJsonHandler()->put($translations);
 
-        expect($count)->toBe(4);
+        // Per locale: 4 pre-existing leaves removed + 2 new added = 6; × 2 locales = 12
+        expect($count)->toBe(12);
     });
 
     it('writes translations to a nested JSON file', function () {
@@ -81,7 +82,16 @@ describe('JsonFileHandler put', function () {
 
         $count = TranslationHandler::getJsonHandler()->put($translations);
 
-        expect($count)->toBe(4);
+        // Per locale: 4 pre-existing leaves removed + 2 new added = 6; × 2 locales = 12
+        expect($count)->toBe(12);
+    });
+
+    it('returns 0 when content is unchanged', function () {
+        $existing = TranslationHandler::getJsonHandler()->get();
+
+        $count = TranslationHandler::getJsonHandler()->put($existing);
+
+        expect($count)->toBe(0);
     });
 })->group('JsonFileHandler');
 

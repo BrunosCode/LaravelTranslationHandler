@@ -54,6 +54,7 @@ class SetTranslationTool extends Tool
 
         return Response::text(json_encode([
             'written' => $count > 0,
+            'count' => $count,
             'key' => $key,
             'locale' => $locale,
             'value' => $value,

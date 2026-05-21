@@ -49,6 +49,14 @@ class SetCommand extends Command
         );
 
         if ($count === 0) {
+            $existing = TranslationHandler::find($to, $key, $locale, $toPath);
+
+            if ($existing?->value === $value) {
+                $this->comment(__('Translation already set!'));
+
+                return self::SUCCESS;
+            }
+
             $this->error(__('Translation not set!'));
 
             return self::FAILURE;

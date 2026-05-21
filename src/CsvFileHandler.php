@@ -3,6 +3,7 @@
 namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
+use BrunosCode\TranslationHandler\Concerns\ComparesTranslations;
 use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\File;
 
 class CsvFileHandler implements FileHandlerInterface
 {
+    use ComparesTranslations;
+
     public function __construct(
         private TranslationOptions $options
     ) {}
@@ -79,11 +82,25 @@ class CsvFileHandler implements FileHandlerInterface
     {
         $rawTranslations = $this->buildForFile($translations);
 
+        $existing = $this->read($path);
+
+        if ($this->rawTranslationsEqual($existing, $rawTranslations)) {
+            return 0;
+        }
+
         if (! $this->write($rawTranslations, $path)) {
             return 0;
         }
 
-        return $translations->count();
+        return $this->countRawDifferences(
+            $this->stripCsvKeyField($existing),
+            $this->stripCsvKeyField($rawTranslations)
+        );
+    }
+
+    private function stripCsvKeyField(array $rows): array
+    {
+        return array_map(fn (array $row) => array_diff_key($row, ['key' => true]), $rows);
     }
 
     protected function buildForFile(TranslationCollection $translations): array

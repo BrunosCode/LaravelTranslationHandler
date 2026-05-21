@@ -3,6 +3,7 @@
 namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
+use BrunosCode\TranslationHandler\Concerns\ComparesTranslations;
 use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\File;
 
 class PhpFileHandler implements FileHandlerInterface
 {
+    use ComparesTranslations;
+
     public function __construct(
         private TranslationOptions $options
     ) {}
@@ -67,17 +70,26 @@ class PhpFileHandler implements FileHandlerInterface
                     ->whereGroup($filename)
                     ->whereLocale($locale);
 
+                $existing = $this->read($path, $filename, $locale);
+
                 if ($filteredTranslations->isEmpty()) {
-                    File::delete($this->getFilePath($path, $filename, $locale));
+                    if (! empty($existing)) {
+                        File::delete($this->getFilePath($path, $filename, $locale));
+                        $counter += $this->countRawDifferences($existing, []);
+                    }
 
                     continue;
                 }
 
                 $rawTranslations = $this->buildForFile($filteredTranslations, $filename, $locale);
 
+                if ($this->rawTranslationsEqual($existing, $rawTranslations)) {
+                    continue;
+                }
+
                 $this->write($rawTranslations, $path, $filename, $locale);
 
-                $counter += $filteredTranslations->count();
+                $counter += $this->countRawDifferences($existing, $rawTranslations);
             }
         }
 

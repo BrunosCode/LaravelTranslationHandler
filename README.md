@@ -211,6 +211,14 @@ The AI will call `list-translation-groups-tool` with `format: php_file`, `level:
 
 ---
 
+## Linter-friendly writes
+
+File-based formats (PHP, JSON, CSV) skip the write entirely when the resulting content would be identical to what's already on disk — including key order. This avoids churn from your code formatter (Pint, PHP-CS-Fixer, Prettier, …): a file already formatted by the linter is left untouched as long as its translations and ordering match the new state.
+
+- Comparison is **strict and includes key order** — a re-sort still triggers a rewrite (intended, since `sort` is an explicit operation).
+- Counts returned by `set`, `sync`, `import`, `export` reflect the number of translations actually **changed** (added, modified, removed), not the total in the collection. A no-op write returns `0`.
+- `sync` / `import` / `export` return `false` only when there are no source translations to read; `0` is a successful no-op.
+
 ## Quick Start
 
 ```bash
@@ -416,6 +424,8 @@ use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 
 Copies translations from one format to another. Unlike `import`/`export`, `from` and `to` are required — no config defaults are used.
 
+Returns `false` if the source has no translations to read; otherwise returns the number of translations changed in the destination (`0` means already in sync).
+
 ```php
 TranslationHandler::sync(
     from: string,      // source format
@@ -423,12 +433,12 @@ TranslationHandler::sync(
     force: bool,       // overwrite existing (default: false)
     fromPath: ?string, // custom source path (default: null)
     toPath: ?string,   // custom destination path (default: null)
-): bool;
+): false|int;
 ```
 
 ### import / export
 
-Both methods share the same signature. `from` and `to` fall back to config defaults (`defaultImportFrom`/`defaultImportTo` and `defaultExportFrom`/`defaultExportTo`) when omitted.
+Both methods share the same signature and the same return semantics as `sync`. `from` and `to` fall back to config defaults (`defaultImportFrom`/`defaultImportTo` and `defaultExportFrom`/`defaultExportTo`) when omitted.
 
 ```php
 TranslationHandler::import(
@@ -437,9 +447,9 @@ TranslationHandler::import(
     force: bool,       // overwrite existing (default: false)
     fromPath: ?string, // custom source path (default: null)
     toPath: ?string,   // custom destination path (default: null)
-): bool;
+): false|int;
 
-TranslationHandler::export(/* same signature */): bool;
+TranslationHandler::export(/* same signature */): false|int;
 ```
 
 ### find
@@ -491,6 +501,8 @@ $translations = TranslationHandler::get(
 ```
 
 ### set
+
+Returns the number of translations actually changed (added, modified, or removed) in the destination — `0` if the destination already matches the desired state.
 
 ```php
 $count = TranslationHandler::set(

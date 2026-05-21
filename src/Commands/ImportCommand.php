@@ -62,7 +62,7 @@ class ImportCommand extends Command
             }
         }
 
-        $success = TranslationHandler::import(
+        $result = TranslationHandler::import(
             from: $from,
             to: $to,
             force: $force,
@@ -70,13 +70,19 @@ class ImportCommand extends Command
             toPath: $toPath,
         );
 
-        if (! $success) {
+        if ($result === false) {
             $this->error(__('Import failed!'));
 
             return self::FAILURE;
         }
 
         $this->comment(__('Import successful!'));
+
+        if ($result === 0) {
+            $this->comment(__('Already in sync.'));
+        } else {
+            $this->comment(__(':count translation(s) changed.', ['count' => $result]));
+        }
 
         return self::SUCCESS;
     }

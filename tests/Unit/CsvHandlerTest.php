@@ -60,7 +60,16 @@ describe('CsvFileHandler put', function () {
 
         $count = TranslationHandler::getCsvHandler()->put($translations);
 
-        expect($count)->toBe(4);
+        // 4 pre-existing cells (test1.get/test2.get × en/it) removed + 4 new added = 8
+        expect($count)->toBe(8);
+    });
+
+    test('put returns 0 when content is unchanged', function () {
+        $existing = TranslationHandler::getCsvHandler()->get();
+
+        $count = TranslationHandler::getCsvHandler()->put($existing);
+
+        expect($count)->toBe(0);
     });
 })->group('CsvFileHandler');
 

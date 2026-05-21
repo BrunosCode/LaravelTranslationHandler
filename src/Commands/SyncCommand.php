@@ -63,7 +63,7 @@ class SyncCommand extends Command
             }
         }
 
-        $success = TranslationHandler::sync(
+        $result = TranslationHandler::sync(
             from: $from,
             to: $to,
             force: $force,
@@ -71,13 +71,19 @@ class SyncCommand extends Command
             toPath: $toPath
         );
 
-        if (! $success) {
+        if ($result === false) {
             $this->error(__('Sync failed!'));
 
             return self::FAILURE;
         }
 
         $this->comment(__('Sync finished!'));
+
+        if ($result === 0) {
+            $this->comment(__('Already in sync.'));
+        } else {
+            $this->comment(__(':count translation(s) changed.', ['count' => $result]));
+        }
 
         return self::SUCCESS;
     }

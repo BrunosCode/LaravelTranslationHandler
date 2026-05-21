@@ -67,14 +67,18 @@ class TranslationHandlerService
             ->values();
     }
 
-    public function sync(string $from, string $to, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
+    public function sync(string $from, string $to, bool $force = false, ?string $fromPath = null, ?string $toPath = null): false|int
     {
         $translations = $this->get($from, $fromPath);
 
-        return $this->set($translations, $to, $toPath, $force) > 0;
+        if ($translations->isEmpty()) {
+            return false;
+        }
+
+        return $this->set($translations, $to, $toPath, $force);
     }
 
-    public function import(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
+    public function import(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null): false|int
     {
         $options = $this->getOptions();
 
@@ -84,10 +88,14 @@ class TranslationHandlerService
 
         $translations = $this->get($from, $fromPath);
 
-        return $this->set($translations, $to, $toPath, $force) > 0;
+        if ($translations->isEmpty()) {
+            return false;
+        }
+
+        return $this->set($translations, $to, $toPath, $force);
     }
 
-    public function export(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null): bool
+    public function export(?string $from = null, ?string $to = null, bool $force = false, ?string $fromPath = null, ?string $toPath = null): false|int
     {
         $options = $this->getOptions();
 
@@ -97,7 +105,11 @@ class TranslationHandlerService
 
         $translations = $this->get($from, $fromPath);
 
-        return $this->set($translations, $to, $toPath, $force) > 0;
+        if ($translations->isEmpty()) {
+            return false;
+        }
+
+        return $this->set($translations, $to, $toPath, $force);
     }
 
     public function get(string $from, ?string $path = null): TranslationCollection

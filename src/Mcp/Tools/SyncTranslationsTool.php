@@ -40,13 +40,14 @@ class SyncTranslationsTool extends Tool
         }
 
         try {
-            $success = TranslationHandler::import($from, $to, force: $force);
+            $result = TranslationHandler::import($from, $to, force: $force);
         } catch (\Throwable $e) {
             return Response::error('Failed to sync translations: '.$e->getMessage());
         }
 
         return Response::text(json_encode([
-            'success' => $success,
+            'success' => $result !== false,
+            'count' => $result === false ? 0 : $result,
             'from' => $from,
             'to' => $to,
             'force' => $force,

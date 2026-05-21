@@ -39,7 +39,7 @@ describe('PhpFileHandler put', function () {
             ->toThrow(InvalidArgumentException::class);
     });
 
-    test('put should return the number of translations written', function () {
+    test('put should return the number of translations changed', function () {
         $options = TranslationHandler::getOptions();
 
         $translations = new TranslationCollection([
@@ -51,11 +51,21 @@ describe('PhpFileHandler put', function () {
         $test1 = include "{$options->phpPath}/en/test1.php";
         $test2 = include "{$options->phpPath}/it/test2.php";
 
-        expect($result)->toBe(2);
+        // Pre-existing 8 translations are removed (en/it × test1/test2 × {get, nested.get})
+        // and 2 new are added (test1.put/en, test2.put/it) = 10 changes
+        expect($result)->toBe(10);
         expect(File::exists("{$options->phpPath}/en/test1.php"))->toBeTrue();
         expect($test1['put'])->toBe('put1');
         expect(File::exists("{$options->phpPath}/it/test2.php"))->toBeTrue();
         expect($test2['put'])->toBe('put2');
+    });
+
+    test('put returns 0 when content is unchanged', function () {
+        $existing = TranslationHandler::getPhpHandler()->get();
+
+        $result = TranslationHandler::getPhpHandler()->put(translations: $existing);
+
+        expect($result)->toBe(0);
     });
 })->group('PhpFileHandler');
 

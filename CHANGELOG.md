@@ -2,7 +2,7 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
-## Unreleased
+## v2.4.0 — Translations check command - 2026-06-04
 
 ### Added
 
@@ -12,6 +12,8 @@ All notable changes to `laravel-translation-handler` will be documented in this 
 - **`check` config entry** — configurable scan `paths` and `extensions` per side. The keys of `check` define the sides to scan (`backend` / `frontend` by default, but renamable/extendable); the array structure is validated generically in `TranslationOptions`, and the command/tool derive the available sides from the config rather than a hard-coded list. Defaults to the previous values when omitted, so existing published configs keep working.
 - **Per-side `patterns` config** — each `check` side may declare `patterns.static` / `patterns.dynamic` regexes to override the bundled extraction patterns without subclassing (e.g. to recognise a custom translation helper). Patterns are validated to be compilable regexes; when omitted, the built-in defaults are used.
 - **`checkerClass` config entry** — for deeper customisation, swap in a subclass of `TranslationChecker` (override the now-`protected` `patternsFor()` / `defaultPatternsFor()` or the defined-key resolution). Resolved through `TranslationHandler::getChecker()` and validated in `TranslationOptions` (defaults to `TranslationChecker::class`).
+
+**Full Changelog**: https://github.com/BrunosCode/LaravelTranslationHandler/compare/v2.3.0...v2.4.0
 
 ## v2.3.0 — Linter-friendly file writes - 2026-05-21
 

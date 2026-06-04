@@ -261,7 +261,18 @@ class TranslationChecker
 
     protected function resolvePath(string $path): string
     {
-        return str_starts_with($path, DIRECTORY_SEPARATOR) ? $path : base_path($path);
+        return $this->isAbsolutePath($path) ? $path : base_path($path);
+    }
+
+    /**
+     * Cross-platform absolute-path check: Unix `/…`, Windows `C:\…` / `C:/…`,
+     * and UNC `\\…`.
+     */
+    protected function isAbsolutePath(string $path): bool
+    {
+        return str_starts_with($path, '/')
+            || str_starts_with($path, '\\')
+            || (strlen($path) > 1 && ctype_alpha($path[0]) && $path[1] === ':');
     }
 
     /**

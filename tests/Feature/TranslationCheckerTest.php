@@ -23,6 +23,30 @@ class CustomPatternChecker extends TranslationChecker
     }
 }
 
+class PathProbeChecker extends TranslationChecker
+{
+    public function probe(string $path): bool
+    {
+        return $this->isAbsolutePath($path);
+    }
+}
+
+describe('TranslationChecker path resolution', function () {
+    it('detects absolute paths across platforms', function () {
+        $checker = new PathProbeChecker(new TranslationOptions);
+
+        // Unix
+        expect($checker->probe('/var/www/app'))->toBeTrue();
+        // Windows drive + UNC
+        expect($checker->probe('C:\\sites\\app'))->toBeTrue();
+        expect($checker->probe('C:/sites/app'))->toBeTrue();
+        expect($checker->probe('\\\\server\\share'))->toBeTrue();
+        // Relative
+        expect($checker->probe('app'))->toBeFalse();
+        expect($checker->probe('resources/views'))->toBeFalse();
+    });
+})->group('TranslationChecker');
+
 describe('TranslationChecker custom class', function () {
     beforeEach(function () {
         $this->preparePhpTranslations();

@@ -175,6 +175,17 @@ Sorts translation keys alphabetically within a storage format. Supports `php_fil
 | `locales` | array | no | Restrict sorting to these locales. Omit to sort all locales. |
 | `groups` | array | no | Restrict sorting to these key group prefixes. Omit to sort all groups. |
 
+#### `check-translations-tool` (read-only)
+
+Scans backend PHP and frontend JS/TS source for translation usages and reports keys referenced in code but undefined per locale. Returns a per-side, per-locale report and a `passed` flag.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to read defined keys from |
+| `locales` | array | no | Restrict the report to these locales. Omit to use the configured locales. |
+| `side` | string | no | Limit scanning to a single configured side (`backend` / `frontend` by default). Omit to scan all sides. |
+| `orphans` | boolean | no | Also report keys defined but never referenced in code. Defaults to `false`. |
+
 ### Recommended workflow for editing translations
 
 **Use `db` as the working format for all writes, then sync to files at the end.**
@@ -264,6 +275,9 @@ php artisan translation-handler:sort php_file
 
 # Sort only specific locales and groups
 php artisan translation-handler:sort php_file --locale=en --group=auth
+
+# Check source code for missing (or orphan) translation keys
+php artisan translation-handler:check php_file --show-keys --orphans
 ```
 
 Or use the Facade:
@@ -413,6 +427,38 @@ php artisan translation-handler:sort {from?} {--from-path=} {--locale=*} {--grou
 |--------|-------------|
 | `--locale` | Restrict sorting to this locale (repeatable: `--locale=en --locale=it`) |
 | `--group` | Restrict sorting to this key group prefix (repeatable) |
+
+### `translation-handler:check`
+
+Scan the application's backend PHP and frontend JS/TS source for translation usages (`__()`, `trans()`, `trans_choice()`, `Lang::get()`, `@lang`, and `t()` / `i18next.t()`) and report keys that are referenced in code but not defined per locale. A non-zero exit code is returned when any key is missing, so it doubles as a CI gate.
+
+```bash
+php artisan translation-handler:check {from?} {--from-path=} {--locale=*} {--side=} {--show-keys} {--orphans}
+```
+
+| Option | Description |
+|--------|-------------|
+| `--locale` | Restrict the report to one or more locales (repeatable). Defaults to the configured `locales`. |
+| `--side` | Limit scanning to a single configured side (`backend` / `frontend` by default). Defaults to all sides. |
+| `--show-keys` | Print each missing (or orphan) key. |
+| `--orphans` | Also list keys that are defined but never referenced in code (informational — does not affect the exit code). |
+
+Defined keys are read from the chosen `from` format and scoped to the configured `fileNames`. The directories and extensions scanned per side are configurable via the `check` config entry:
+
+```php
+'check' => [
+    'backend' => [
+        'paths' => ['app', 'resources/views', 'routes', 'database'],
+        'extensions' => ['php'],
+    ],
+    'frontend' => [
+        'paths' => ['resources/js'],
+        'extensions' => ['ts', 'tsx', 'js', 'jsx'],
+    ],
+],
+```
+
+Defined keys are read from the chosen `from` format and scoped to the configured `fileNames`, so the check reflects exactly the translations the package manages. References to keys outside those groups (e.g. Laravel's own `auth.*` / `validation.*`) are reported as missing unless you add their groups to `fileNames`.
 
 ## Facade API
 
@@ -640,6 +686,37 @@ The `config/translation-handler.php` file contains:
 | Option | Default | Description |
 |--------|---------|-------------|
 | `dbHandlerClass` | `DatabaseHandler::class` | Handler class |
+
+### Check
+
+Used by `translation-handler:check` and `check-translations-tool` to locate source files. Paths are relative to the application base path (absolute paths allowed).
+
+The keys of `check` define the **sides** to scan — `backend` and `frontend` by default, but you can rename, remove, or add sides freely. Each side must provide a `paths` array and an `extensions` array (the structure is validated).
+
+Each side may also declare a `patterns` entry to override the extraction regexes — `static` patterns must capture a full key in group 1, `dynamic` patterns a key prefix. Every pattern is validated to be a compilable regex. When omitted, the bundled defaults are used (PHP patterns for the `backend` side, JS/TS patterns for any other side). For example, to recognise a custom helper:
+
+```php
+'check' => [
+    'backend' => [
+        'paths' => ['app', 'resources/views'],
+        'extensions' => ['php'],
+        'patterns' => [
+            'static' => ["/(?:__|myTrans)\\(\\s*'([^'\\\\]+)'/"],
+            'dynamic' => [],
+        ],
+    ],
+],
+```
+
+For customisation that can't be expressed as static patterns (programmatic generation, custom defined-key resolution), extend `TranslationChecker` and override `patternsFor()`, then point `checkerClass` at your subclass.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `check.backend.paths` | `['app', 'resources/views', 'routes', 'database']` | Backend directories to scan |
+| `check.backend.extensions` | `['php']` | Backend file extensions |
+| `check.frontend.paths` | `['resources/js']` | Frontend directories to scan |
+| `check.frontend.extensions` | `['ts', 'tsx', 'js', 'jsx']` | Frontend file extensions |
+| `checkerClass` | `TranslationChecker::class` | Checker implementation. Extend `TranslationChecker` and override `patternsFor()` to customise the scanning regexes (e.g. for custom helpers or frameworks). |
 
 ## Contributing
 

@@ -2,6 +2,17 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## Unreleased
+
+### Added
+
+- **`translation-handler:check`** — Scans backend PHP and frontend JS/TS source for translation usages (`__()`, `trans()`, `trans_choice()`, `Lang::get()`, `@lang`, and `t()` / `i18next.t()`) and reports keys referenced in code but not defined per locale. Returns a non-zero exit code when keys are missing, so it works as a CI gate. Supports `--locale`, `--side`, `--show-keys`, and `--orphans`. Defined keys are read from the chosen format and scoped to the configured `fileNames`.
+- **`check-translations-tool`** — MCP tool exposing the same check to AI agents via Laravel Boost. Returns a structured per-side, per-locale report with `passed` / `totalMissing` and optional orphan keys.
+- **`TranslationChecker`** — reusable class (and `TranslationHandler::check()` facade method) holding the source-scanning and missing/orphan logic shared by the command and the MCP tool.
+- **`check` config entry** — configurable scan `paths` and `extensions` per side. The keys of `check` define the sides to scan (`backend` / `frontend` by default, but renamable/extendable); the array structure is validated generically in `TranslationOptions`, and the command/tool derive the available sides from the config rather than a hard-coded list. Defaults to the previous values when omitted, so existing published configs keep working.
+- **Per-side `patterns` config** — each `check` side may declare `patterns.static` / `patterns.dynamic` regexes to override the bundled extraction patterns without subclassing (e.g. to recognise a custom translation helper). Patterns are validated to be compilable regexes; when omitted, the built-in defaults are used.
+- **`checkerClass` config entry** — for deeper customisation, swap in a subclass of `TranslationChecker` (override the now-`protected` `patternsFor()` / `defaultPatternsFor()` or the defined-key resolution). Resolved through `TranslationHandler::getChecker()` and validated in `TranslationOptions` (defaults to `TranslationChecker::class`).
+
 ## v2.3.0 — Linter-friendly file writes - 2026-05-21
 
 ### Added
@@ -23,26 +34,6 @@ All notable changes to `laravel-translation-handler` will be documented in this 
 The previous behavior rewrote every file on every operation, even when nothing had changed. Combined with code formatters that normalize array syntax / indentation / quoting, this produced spurious diffs in git on every sync and forced the formatter to run again afterwards. Comparing parsed content (not raw bytes) makes the operation a true no-op when the resulting state matches.
 
 **Full Changelog**: https://github.com/BrunosCode/LaravelTranslationHandler/compare/v2.2.0...v2.3.0
-
-## v2.3.0 - 2026-05-21
-
-### Added
-
-- **Linter-friendly writes** — File handlers (PHP, JSON, CSV) now compare the new content against what's already on disk before writing. If the result is identical, including key order, the write is skipped entirely. A file already formatted by the user's linter (Pint, PHP-CS-Fixer, Prettier, …) is left untouched as long as its translations and ordering match the new state.
-- **`Concerns\ComparesTranslations` trait** — strict-equality check (via `json_encode`) plus a leaf-level diff counter, used by all three file handlers.
-- **Idempotency tests** — every file handler now has a `returns 0 when content is unchanged` regression test.
-
-### Changed
-
-- **Return semantics of `put()` / `set()`** — the integer returned now represents the number of translations actually **changed** (added, modified, or removed), not the total count in the input collection. A no-op write returns `0`.
-- **`sync()` / `import()` / `export()` return type** — changed from `bool` to `false|int`. `false` signals an actual failure (the source has no translations to read); any integer (including `0`) signals success and reports how many translations were changed in the destination.
-- **`SyncCommand`, `ImportCommand`, `ExportCommand`, and the deprecated bare `Command`** — after the main success message, the command now prints either `Already in sync.` or `N translation(s) changed.`.
-- **`SetCommand`** — when `set()` returns `0`, the command checks whether the current value already matches the requested one. If it does, the command prints `Translation already set!` and returns `SUCCESS` (previously this case was reported as `FAILURE`).
-- **MCP tools** — `set-translation-tool` now also exposes the integer `count` field next to `written`; `sync-translations-tool` now exposes `success` (bool) and `count` (int).
-
-### Why
-
-The previous behavior rewrote every file on every operation, even when nothing had changed. Combined with code formatters that normalize array syntax / indentation / quoting, this produced spurious diffs in git on every sync and forced the formatter to run again afterwards. Comparing parsed content (not raw bytes) makes the operation a true no-op when the resulting state matches.
 
 ## v2.2.0 - 2026-05-10
 

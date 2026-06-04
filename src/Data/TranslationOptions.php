@@ -68,9 +68,16 @@ class TranslationOptions
 
     public string $csvDelimiter;
 
+    /** @var array<string, array{paths: string[], extensions: string[]}> */
+    public array $check;
+
+    public string $checkerClass;
+
     public function __construct(?array $config = null)
     {
-        $validator = self::validator($config ?? config('translation-handler'));
+        $config = $config ?? config('translation-handler');
+
+        $validator = self::validator($config);
 
         if ($validator->fails()) {
             throw new \InvalidArgumentException($validator->errors()->first());
@@ -104,11 +111,24 @@ class TranslationOptions
         $this->csvPath = $validated['csvPath'];
         $this->csvFileName = $validated['csvFileName'];
         $this->csvDelimiter = $validated['csvDelimiter'];
+
+        // Read check/checkerClass from the raw config so the full structure
+        // (including optional per-side `patterns`) is preserved — validated()
+        // only returns the leaves it has explicit rules for. Both are required
+        // by the validator above, so they are guaranteed to be present here.
+        $this->check = $config['check'];
+        $this->checkerClass = $config['checkerClass'];
     }
 
     public function validator(array $data): ValidatorContract
     {
         $validTypes = implode(', ', self::TYPES);
+
+        $validRegex = function (string $attribute, mixed $value, \Closure $fail): void {
+            if (! is_string($value) || @preg_match($value, '') === false) {
+                $fail("The {$attribute} is not a valid regular expression.");
+            }
+        };
 
         return Validator::make($data, [
             'keyDelimiter' => 'required|string|min:1',
@@ -140,6 +160,20 @@ class TranslationOptions
             'csvPath' => 'required|string|min:1',
             'csvFileName' => 'required|string|min:1',
             'csvDelimiter' => 'required|string|min:1|different:'.$data['keyDelimiter'],
+
+            'check' => 'required|array|min:1',
+            'check.*' => 'required|array',
+            'check.*.paths' => 'present|array',
+            'check.*.paths.*' => 'required|string|min:1',
+            'check.*.extensions' => 'present|array',
+            'check.*.extensions.*' => 'required|string|min:1',
+            'check.*.patterns' => 'sometimes|array',
+            'check.*.patterns.static' => 'sometimes|array',
+            'check.*.patterns.static.*' => ['required', 'string', 'min:1', $validRegex],
+            'check.*.patterns.dynamic' => 'sometimes|array',
+            'check.*.patterns.dynamic.*' => ['required', 'string', 'min:1', $validRegex],
+
+            'checkerClass' => 'required|string|min:1',
         ], [
             'fileNames.*.distinct' => 'Duplicate file name ":input" in fileNames',
             'locales.*.distinct' => 'Duplicate locale ":input" in locales',

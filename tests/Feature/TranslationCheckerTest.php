@@ -1,0 +1,106 @@
+<?php
+
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
+use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use BrunosCode\TranslationHandler\TranslationChecker;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
+
+uses(RefreshDatabase::class);
+
+/**
+ * A custom checker that recognises a project-specific `myTrans('...')` helper
+ * instead of the built-in Laravel functions.
+ */
+class CustomPatternChecker extends TranslationChecker
+{
+    protected function patternsFor(string $side): array
+    {
+        return [
+            'static' => ["/myTrans\\(\\s*'([^']+)'/"],
+            'dynamic' => [],
+        ];
+    }
+}
+
+describe('TranslationChecker custom class', function () {
+    beforeEach(function () {
+        $this->preparePhpTranslations();
+
+        $dir = storage_path('checker-test');
+        if (! File::exists($dir)) {
+            File::makeDirectory($dir, 0777, true);
+        }
+        File::put("{$dir}/Source.php", "<?php myTrans('test1.custom-missing');");
+
+        TranslationHandler::setOption('check', [
+            'backend' => ['paths' => [$dir], 'extensions' => ['php']],
+            'frontend' => ['paths' => [], 'extensions' => ['php']],
+        ]);
+    });
+
+    afterEach(function () {
+        $this->cleanPhpTranslations();
+        File::deleteDirectory(storage_path('checker-test'));
+    });
+
+    it('resolves the checker class from config', function () {
+        TranslationHandler::setOption('checkerClass', CustomPatternChecker::class);
+
+        expect(TranslationHandler::getChecker())->toBeInstanceOf(CustomPatternChecker::class);
+    });
+
+    it('uses the custom patterns when the checker class is swapped', function () {
+        TranslationHandler::setOption('checkerClass', CustomPatternChecker::class);
+
+        $report = TranslationHandler::check(TranslationOptions::PHP, ['en'], ['backend']);
+
+        expect($report['sides']['backend']['staticKeys'])->toBe(1);
+        expect($report['sides']['backend']['locales']['en']['keys'])->toContain('test1.custom-missing');
+    });
+
+    it('ignores the custom helper with the default checker', function () {
+        $report = TranslationHandler::check(TranslationOptions::PHP, ['en'], ['backend']);
+
+        expect($report['sides']['backend']['staticKeys'])->toBe(0);
+    });
+
+    it('uses custom patterns declared in the config without subclassing', function () {
+        $dir = storage_path('checker-test');
+
+        TranslationHandler::setOption('check', [
+            'backend' => [
+                'paths' => [$dir],
+                'extensions' => ['php'],
+                'patterns' => [
+                    'static' => ["/myTrans\\(\\s*'([^']+)'/"],
+                    'dynamic' => [],
+                ],
+            ],
+        ]);
+
+        // Still the default checker class — patterns come purely from config.
+        expect(TranslationHandler::getChecker())->toBeInstanceOf(TranslationChecker::class);
+
+        $report = TranslationHandler::check(TranslationOptions::PHP, ['en'], ['backend']);
+
+        expect($report['sides']['backend']['staticKeys'])->toBe(1);
+        expect($report['sides']['backend']['locales']['en']['keys'])->toContain('test1.custom-missing');
+    });
+
+    it('derives the sides to scan from the configured check keys', function () {
+        $dir = storage_path('checker-test');
+
+        TranslationHandler::setOption('check', [
+            'php' => ['paths' => [$dir], 'extensions' => ['php']],
+            'twig' => ['paths' => [], 'extensions' => ['twig']],
+        ]);
+
+        expect(TranslationHandler::getChecker()->sides())->toBe(['php', 'twig']);
+
+        // Omitting $sides scans every configured side.
+        $report = TranslationHandler::check(TranslationOptions::PHP, ['en']);
+
+        expect(array_keys($report['sides']))->toBe(['php', 'twig']);
+    });
+})->group('TranslationChecker', 'PhpFileHandler');

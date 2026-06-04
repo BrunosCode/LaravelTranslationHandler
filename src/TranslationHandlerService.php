@@ -246,6 +246,29 @@ class TranslationHandlerService
         };
     }
 
+    /**
+     * Scan the application source for translation usages and report keys
+     * referenced in code but not defined per locale (and optionally orphans).
+     *
+     * @param  string[]  $locales
+     * @param  string[]|null  $sides  Defaults to all configured sides when null.
+     * @return array<string, mixed>
+     */
+    public function check(string $from, array $locales, ?array $sides = null, ?string $fromPath = null, bool $includeOrphans = false): array
+    {
+        $translations = $this->get($from, $fromPath);
+
+        return array_merge(
+            ['from' => $from],
+            $this->getChecker()->check($translations, $locales, $sides, $includeOrphans),
+        );
+    }
+
+    public function getChecker(): TranslationChecker
+    {
+        return app($this->getOptions()->checkerClass, ['options' => $this->getOptions()]);
+    }
+
     public function getTypes(): array
     {
         return TranslationOptions::TYPES;

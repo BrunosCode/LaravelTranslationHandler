@@ -8,6 +8,7 @@ use BrunosCode\TranslationHandler\DatabaseHandler;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use BrunosCode\TranslationHandler\JsonFileHandler;
 use BrunosCode\TranslationHandler\PhpFileHandler;
+use BrunosCode\TranslationHandler\TranslationChecker;
 use BrunosCode\TranslationHandler\TranslationHandlerServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\DB;
@@ -51,6 +52,11 @@ class TestCase extends Orchestra
             'jsonFileName' => 'test-translations',
             'jsonNested' => false,
             'jsonFormat' => true,
+            'check' => [
+                'backend' => ['paths' => ['app', 'resources/views', 'routes', 'database'], 'extensions' => ['php']],
+                'frontend' => ['paths' => ['resources/js'], 'extensions' => ['ts', 'tsx', 'js', 'jsx']],
+            ],
+            'checkerClass' => TranslationChecker::class,
         ], $config);
     }
 

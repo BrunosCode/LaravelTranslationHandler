@@ -1,6 +1,7 @@
 <?php
 
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
+use BrunosCode\TranslationHandler\TranslationChecker;
 
 describe('TranslationOptions', function () {
 
@@ -56,5 +57,109 @@ describe('TranslationOptions', function () {
 
         expect($validator->fails())->toBeTrue();
         expect($validator->errors()->first())->toBe('The locales.1 field must be at least 2 characters.');
+    });
+
+    it('reads the checker class from config', function () {
+        expect((new TranslationOptions)->checkerClass)->toBe(TranslationChecker::class);
+    });
+
+    it('throws when the check option is missing', function () {
+        $config = $this->config();
+        unset($config['check']);
+        config()->set('translation-handler', $config);
+
+        new TranslationOptions;
+    })->throws(InvalidArgumentException::class);
+
+    it('throws when the checker class is missing', function () {
+        $config = $this->config();
+        unset($config['checkerClass']);
+        config()->set('translation-handler', $config);
+
+        new TranslationOptions;
+    })->throws(InvalidArgumentException::class);
+
+    it('keeps a custom checker class provided via config', function () {
+        config()->set('translation-handler', array_merge($this->config(), [
+            'checkerClass' => 'App\\Custom\\Checker',
+        ]));
+
+        expect((new TranslationOptions)->checkerClass)->toBe('App\\Custom\\Checker');
+    });
+
+    it('keeps a custom check option provided via config', function () {
+        config()->set('translation-handler', array_merge($this->config(), [
+            'check' => [
+                'backend' => ['paths' => ['src'], 'extensions' => ['php']],
+                'frontend' => ['paths' => [], 'extensions' => ['vue']],
+            ],
+        ]));
+
+        $options = new TranslationOptions;
+
+        expect($options->check['backend']['paths'])->toBe(['src']);
+        expect($options->check['frontend']['extensions'])->toBe(['vue']);
+    });
+
+    it('fails validation when a check side is malformed', function () {
+        $data = array_merge($this->config(), [
+            'check' => [
+                'backend' => ['paths' => ['app']], // extensions key missing
+            ],
+        ]);
+
+        $validator = (new TranslationOptions)->validator($data);
+
+        expect($validator->fails())->toBeTrue();
+    });
+
+    it('accepts valid custom patterns in the check option', function () {
+        $data = array_merge($this->config(), [
+            'check' => [
+                'backend' => [
+                    'paths' => ['app'],
+                    'extensions' => ['php'],
+                    'patterns' => [
+                        'static' => ["/__\\(\\s*'([^']+)'/"],
+                        'dynamic' => [],
+                    ],
+                ],
+            ],
+        ]);
+
+        $validator = (new TranslationOptions)->validator($data);
+
+        expect($validator->fails())->toBeFalse();
+    });
+
+    it('fails validation when a check pattern is not a valid regex', function () {
+        $data = array_merge($this->config(), [
+            'check' => [
+                'backend' => [
+                    'paths' => ['app'],
+                    'extensions' => ['php'],
+                    'patterns' => [
+                        'static' => ['/unterminated('],
+                    ],
+                ],
+            ],
+        ]);
+
+        $validator = (new TranslationOptions)->validator($data);
+
+        expect($validator->fails())->toBeTrue();
+    });
+
+    it('validates arbitrary side names with a valid structure', function () {
+        config()->set('translation-handler', array_merge($this->config(), [
+            'check' => [
+                'blade' => ['paths' => ['resources/views'], 'extensions' => ['php']],
+                'vue' => ['paths' => ['resources/js'], 'extensions' => ['vue']],
+            ],
+        ]));
+
+        $options = new TranslationOptions;
+
+        expect(array_keys($options->check))->toBe(['blade', 'vue']);
     });
 })->group('TranslationOptions');

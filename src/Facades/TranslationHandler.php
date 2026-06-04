@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Facade;
  * @method static \BrunosCode\TranslationHandler\Collections\TranslationCollection get(string $from, ?string $path = null)
  * @method static int set(\BrunosCode\TranslationHandler\Collections\TranslationCollection $translations, string $to, ?string $path = null, bool $force = false)
  * @method static int delete(string $from, ?string $path = null)
+ * @method static array check(string $from, array $locales, ?array $sides = null, ?string $fromPath = null, bool $includeOrphans = false)
+ * @method static \BrunosCode\TranslationHandler\TranslationChecker getChecker()
  * @method static array getTypes()
  * @method static \BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface getPhpHandler()
  * @method static \BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface getCsvHandler()

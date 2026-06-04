@@ -2,6 +2,7 @@
 
 namespace BrunosCode\TranslationHandler;
 
+use BrunosCode\TranslationHandler\Commands\CheckCommand;
 use BrunosCode\TranslationHandler\Commands\Command;
 use BrunosCode\TranslationHandler\Commands\DeleteCommand;
 use BrunosCode\TranslationHandler\Commands\DeleteGroupCommand;
@@ -14,6 +15,7 @@ use BrunosCode\TranslationHandler\Commands\ListGroupsCommand;
 use BrunosCode\TranslationHandler\Commands\SetCommand;
 use BrunosCode\TranslationHandler\Commands\SortCommand;
 use BrunosCode\TranslationHandler\Commands\SyncCommand;
+use BrunosCode\TranslationHandler\Mcp\Tools\CheckTranslationsTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\DeleteTranslationGroupTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\DeleteTranslationTool;
 use BrunosCode\TranslationHandler\Mcp\Tools\FindTranslationTool;
@@ -59,6 +61,7 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
                 DeleteCommand::class,
                 DeleteGroupCommand::class,
                 SortCommand::class,
+                CheckCommand::class,
             ])
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
@@ -94,6 +97,7 @@ class TranslationHandlerServiceProvider extends PackageServiceProvider
                     DeleteTranslationTool::class,
                     DeleteTranslationGroupTool::class,
                     SortTranslationsTool::class,
+                    CheckTranslationsTool::class,
                 ]
             )]);
         }

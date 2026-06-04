@@ -299,6 +299,16 @@ php artisan translation-handler:sort php_file
 php artisan translation-handler:sort php_file --locale=en --group=auth
 ```
 
+### Check source code for missing / orphan keys
+
+```bash
+php artisan translation-handler:check {from?} {--from-path=} {--locale=*} {--side=} {--show-keys} {--orphans}
+php artisan translation-handler:check php_file --show-keys           # fail (non-zero) on missing keys
+php artisan translation-handler:check php_file --side=backend --orphans
+```
+
+Scans backend PHP and frontend JS/TS for translation usages and reports keys referenced in code but undefined per locale. Defined keys are read from `from` (scoped to configured `fileNames`); scanned dirs/extensions come from the `check` config entry.
+
 ### Shared options (sync, import, export)
 
 | Option | Description |
@@ -512,6 +522,17 @@ Sorts translation keys alphabetically within a format. Supports `php_file`, `jso
 | `locales` | array | no | Restrict sorting to these locales. Omit to sort all locales. |
 | `groups` | array | no | Restrict sorting to these group prefixes. Omit to sort all groups. |
 
+### `check-translations-tool` (read-only)
+
+Scans source code for translation usages and reports keys referenced in code but undefined per locale. Returns a per-side, per-locale report plus a `passed` flag and `totalMissing` count.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string (enum) | yes | Storage format to read defined keys from |
+| `locales` | array | no | Restrict the report to these locales. Omit to use configured locales. |
+| `side` | string (enum) | no | A configured side (`backend` / `frontend` by default). Omit to scan all sides. |
+| `orphans` | boolean | no | Also report keys defined but never referenced. Defaults to `false`. |
+
 ## Configuration (`config/translation-handler.php`)
 
 Publish with `php artisan vendor:publish --provider="BrunosCode\TranslationHandler\TranslationHandlerServiceProvider"`.
@@ -546,5 +567,15 @@ return [
 
     // Database (run migrations first)
     'dbHandlerClass'    => \BrunosCode\TranslationHandler\DatabaseHandler::class,
+
+    // translation-handler:check / check-translations-tool source scanning.
+    // Keys are the sides to scan. Optional per-side 'patterns' => ['static' => [...], 'dynamic' => [...]]
+    // overrides the extraction regexes (group 1 captures the key/prefix); defaults used when omitted.
+    'check' => [
+        'backend'  => ['paths' => ['app', 'resources/views', 'routes', 'database'], 'extensions' => ['php']],
+        'frontend' => ['paths' => ['resources/js'], 'extensions' => ['ts', 'tsx', 'js', 'jsx']],
+    ],
+    // For programmatic customisation, extend TranslationChecker and override patternsFor()
+    'checkerClass' => \BrunosCode\TranslationHandler\TranslationChecker::class,
 ];
 ```

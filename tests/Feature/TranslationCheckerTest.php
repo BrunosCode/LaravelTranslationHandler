@@ -128,3 +128,43 @@ describe('TranslationChecker custom class', function () {
         expect(array_keys($report['sides']))->toBe(['php', 'twig']);
     });
 })->group('TranslationChecker', 'PhpFileHandler');
+
+describe('TranslationChecker framework keys', function () {
+    beforeEach(function () {
+        $this->preparePhpTranslations();
+
+        $dir = storage_path('framework-keys-test');
+        if (! File::exists($dir)) {
+            File::makeDirectory($dir, 0777, true);
+        }
+        // auth.failed lives in Laravel's bundled lang files, never in the
+        // package's own fileNames (test1 / test2).
+        File::put("{$dir}/Source.php", "<?php echo __('auth.failed');");
+
+        TranslationHandler::setOption('check', [
+            'backend' => ['paths' => [$dir], 'extensions' => ['php']],
+            'frontend' => ['paths' => [], 'extensions' => ['php']],
+        ]);
+    });
+
+    afterEach(function () {
+        $this->cleanPhpTranslations();
+        File::deleteDirectory(storage_path('framework-keys-test'));
+    });
+
+    it('reports a bundled framework key as missing by default', function () {
+        // checkIncludeFrameworkKeys defaults to false.
+        $report = TranslationHandler::check(TranslationOptions::PHP, ['en'], ['backend']);
+
+        expect($report['sides']['backend']['locales']['en']['keys'])->toContain('auth.failed');
+    });
+
+    it('treats bundled framework keys as defined when enabled', function () {
+        TranslationHandler::setOption('checkIncludeFrameworkKeys', true);
+
+        $report = TranslationHandler::check(TranslationOptions::PHP, ['en'], ['backend']);
+
+        expect($report['sides']['backend']['locales']['en']['keys'])->not->toContain('auth.failed');
+        expect($report['sides']['backend']['locales']['en']['total'])->toBe(0);
+    });
+})->group('TranslationChecker', 'PhpFileHandler');

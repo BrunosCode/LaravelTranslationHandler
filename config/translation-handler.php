@@ -66,6 +66,15 @@ return [
         ],
     ],
 
+    // When true, the keys shipped with Laravel's own bundled lang files
+    // (auth, pagination, passwords, validation) count as defined during a
+    // check, so references like __('auth.failed') are not reported as missing.
+    // The framework's translator falls back to those bundled files even when a
+    // project never publishes them, so the references are valid at runtime.
+    // Read straight from vendor/laravel/framework, independent of fileNames.
+    // Defaults to false (no behavior change for configs published earlier).
+    'checkIncludeFrameworkKeys' => false,
+
     // Swap in a subclass of TranslationChecker to customise the scanning
     // regexes (override patternsFor()) or the defined-key resolution.
     'checkerClass' => TranslationChecker::class,

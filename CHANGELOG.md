@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.6.0 — Framework keys in checks - 2026-06-16
+
+### Added
+
+- **`checkIncludeFrameworkKeys` config option** — when `true`, the keys shipped with Laravel's own bundled lang files (`auth`, `pagination`, `passwords`, `validation`) count as defined during `translation-handler:check` / `check-translations-tool`, so references like `__('auth.failed')` are no longer reported as missing. Laravel's translator falls back to those bundled files even when a project never publishes them, so the references are valid at runtime — the check now reflects that. The keys are read straight from `vendor/laravel/framework/.../lang/en` (the only locale the framework ships) and flattened to the configured `keyDelimiter`, **independent of `fileNames`** — so framework groups the project does not publish (e.g. `passwords`, `pagination`) are covered too. When the vendor directory is absent the option is a silent no-op. Defaults to `false` (no behavior change on upgrade), and is read leniently (`sometimes|boolean`) so configs published before this release keep working. Removes the need for a custom `checkerClass` subclass just to whitelist framework keys.
+
+**Full Changelog**: https://github.com/BrunosCode/LaravelTranslationHandler/compare/v2.5.0...v2.6.0
+
 ## v2.5.0 — Pint formatting for PHP writes - 2026-06-16
 
 ### Added

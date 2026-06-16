@@ -167,7 +167,7 @@ class DatabaseHandler implements DatabaseHandlerInterface
                     'translation_key_id' => $dbKey?->id,
                     'value' => $translation->value,
                     'locale' => $translation->locale,
-                    'created_at' => $dbValue?->created_at ?? now(),
+                    'created_at' => $dbValue->created_at ?? now(),
                     'updated_at' => now(),
                     'deleted_at' => null,
                     '_dbValue' => $dbValue,

@@ -71,10 +71,6 @@ class CsvFileHandler implements FileHandlerInterface
 
         fclose($handler);
 
-        if (! is_array($rawTranslations)) {
-            return [];
-        }
-
         return $rawTranslations;
     }
 

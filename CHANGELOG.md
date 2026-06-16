@@ -2,14 +2,21 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
-## Unreleased
+## v2.4.1 — Docs & AI-skill restructure - 2026-06-16
 
 ### Changed
 
+- **README restructured.** Basic usage (Quick Start) now comes before the AI/MCP reference; added a table of contents, a format-interchange diagram, and Testing / Changelog / Credits sections plus the License badge. The 11-tool MCP reference was condensed to a high-level map (full detail now lives in the shipped Boost skill). Documented the default **non-destructive merge** behavior of `sync` / `import` / `export` (existing destination keys are kept; `--force` overwrites, `--fresh` wipes).
 - **Split the Boost AI skill in two.** The MCP/CLI workflow was extracted from `translation-handler-development` into a new `translation-handler-mcp` skill, so each triggers on a distinct task:
   - `translation-handler-mcp` (new) — managing a project's translations via the Boost MCP tools / Artisan commands (the db-then-sync workflow, group and all-locale writes, missing-key checks).
   - `translation-handler-development` (slimmed) — writing custom PHP: the facade, `TranslationCollection`, data objects, and extending the file/database handlers or `TranslationChecker`.
 - **`resources/boost/guidelines/core.blade.php`** now states the db-then-sync editing rule and points to both skills.
+
+### Fixed
+
+- Removed a dead `is_array()` check in `CsvFileHandler` and a redundant nullsafe operator in `DatabaseHandler`, both flagged by PHPStan. No behavior change.
+
+**Full Changelog**: https://github.com/BrunosCode/LaravelTranslationHandler/compare/v2.4.0...v2.4.1
 
 ## v2.4.0 — Translations check command - 2026-06-04
 

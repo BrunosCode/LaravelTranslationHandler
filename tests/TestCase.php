@@ -45,6 +45,7 @@ class TestCase extends Orchestra
             'dbHandlerClass' => DatabaseHandler::class,
             'phpPath' => lang_path('php-test'),
             'phpFormat' => false,
+            'phpPint' => false,
             'csvDelimiter' => ';',
             'csvFileName' => 'test-translations',
             'csvPath' => storage_path('lang/csv-test'),

@@ -487,6 +487,10 @@ File-based formats (PHP, JSON, CSV) skip the write entirely when the resulting c
 - Counts returned by `set`, `sync`, `import`, `export` reflect the number of translations actually **changed** (added, modified, removed), not the total in the collection. A no-op write returns `0`.
 - `sync` / `import` / `export` return `false` only when there are no source translations to read; `0` is a successful no-op.
 
+### Formatting PHP files with Pint
+
+Set `phpPint` to `true` to run [Pint](https://github.com/laravel/pint) on the PHP files written during a write operation, so generated translation files match your project's own code style and stay diff-stable across runs. The binary is resolved from your project first (`vendor/bin/pint`), then from this package's own vendor (only when developing the package itself). If no Pint binary is found the step is skipped silently and the files keep their raw `phpFormat` output — so enabling `phpPint` is a no-op unless `laravel/pint` is installed.
+
 ## AI Translation Management with Laravel Boost
 
 When [Laravel Boost](https://github.com/laravel/boost) is installed, this package auto-registers **11 MCP tools** into Boost's MCP server — no configuration. Any MCP-compatible agent (Claude, Cursor, GitHub Copilot, …) can then browse, add, update, translate, sync, delete, sort, and audit your translations directly.
@@ -561,7 +565,8 @@ The `config/translation-handler.php` file contains:
 | Option | Default | Description |
 |--------|---------|-------------|
 | `phpPath` | `lang_path()` | Path to PHP translation files |
-| `phpFormat` | `false` | Format PHP output |
+| `phpFormat` | `false` | Convert exported arrays to short syntax (`[]` instead of `array()`) |
+| `phpPint` | `false` | Format exported PHP files with Pint after writing (see [Linter-friendly Writes](#linter-friendly-writes)) |
 | `phpHandlerClass` | `PhpFileHandler::class` | Handler class |
 
 ### JSON

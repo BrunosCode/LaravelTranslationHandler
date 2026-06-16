@@ -8,6 +8,7 @@ use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Process;
 
 class PhpFileHandler implements FileHandlerInterface
 {
@@ -63,6 +64,8 @@ class PhpFileHandler implements FileHandlerInterface
     {
         $counter = 0;
 
+        $writtenPaths = [];
+
         foreach ($this->options->fileNames as $filename) {
             foreach ($this->options->locales as $locale) {
                 $filteredTranslations = $translations
@@ -89,8 +92,14 @@ class PhpFileHandler implements FileHandlerInterface
 
                 $this->write($rawTranslations, $path, $filename, $locale);
 
+                $writtenPaths[] = $this->getFilePath($path, $filename, $locale);
+
                 $counter += $this->countRawDifferences($existing, $rawTranslations);
             }
+        }
+
+        if ($this->options->phpPint) {
+            $this->formatWithPint($writtenPaths);
         }
 
         return $counter;
@@ -157,6 +166,50 @@ class PhpFileHandler implements FileHandlerInterface
         }
 
         return $formattedExport;
+    }
+
+    /**
+     * Format the given PHP files with Pint, using the host project's code style.
+     *
+     * The Pint binary is resolved from the host project first, then from this
+     * package's own vendor (only present while developing the package). When no
+     * binary is found the step is skipped silently — the files keep their raw
+     * var_export / phpFormat output.
+     *
+     * @param  string[]  $paths
+     */
+    protected function formatWithPint(array $paths): void
+    {
+        if (empty($paths)) {
+            return;
+        }
+
+        $binary = $this->resolvePintBinary();
+
+        if ($binary === null) {
+            return;
+        }
+
+        // Run via PHP_BINARY so the call works cross-platform (the bare binary
+        // is not directly executable on Windows), and from the project root so
+        // Pint discovers the host project's pint.json.
+        Process::path(base_path())->run([PHP_BINARY, $binary, ...$paths]);
+    }
+
+    protected function resolvePintBinary(): ?string
+    {
+        $candidates = [
+            base_path('vendor/bin/pint'),
+            dirname(__DIR__).'/vendor/bin/pint',
+        ];
+
+        foreach ($candidates as $binary) {
+            if (is_file($binary)) {
+                return $binary;
+            }
+        }
+
+        return null;
     }
 
     public function delete(?string $path = null): int

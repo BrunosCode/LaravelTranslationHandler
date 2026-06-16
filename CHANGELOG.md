@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.5.0 — Pint formatting for PHP writes - 2026-06-16
+
+### Added
+
+- **`phpPint` config option** — when `true`, the PHP handler runs [Pint](https://github.com/laravel/pint) on the files written during a write operation (`set` / `sync` / `import` / `export`), in a single invocation after the write loop. Generated translation files then match the project's own code style and stay diff-stable across runs. The binary is resolved from the host project first (`vendor/bin/pint`), then from the package's own vendor (only when developing the package itself); the call runs via `PHP_BINARY` from the project root so Pint discovers the project's `pint.json` and works cross-platform. If no Pint binary is found the step is skipped silently and files keep their raw `phpFormat` output — so the option is a no-op unless `laravel/pint` is installed. Defaults to `false`, and is read leniently (`sometimes|boolean`) so configs published before this release — including a cached config that `mergeConfigFrom` can no longer backfill — keep working after upgrade instead of failing validation.
+
+**Full Changelog**: https://github.com/BrunosCode/LaravelTranslationHandler/compare/v2.4.1...v2.5.0
+
 ## v2.4.1 — Docs & AI-skill restructure - 2026-06-16
 
 ### Changed

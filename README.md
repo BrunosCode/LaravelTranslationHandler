@@ -302,7 +302,7 @@ Defined keys are read from the chosen `from` format and scoped to the configured
 ],
 ```
 
-Because defined keys are scoped to the configured `fileNames`, the check reflects exactly the translations the package manages. References to keys outside those groups (e.g. Laravel's own `auth.*` / `validation.*`) are reported as missing unless you add their groups to `fileNames`.
+Because defined keys are scoped to the configured `fileNames`, the check reflects exactly the translations the package manages. References to keys outside those groups (e.g. Laravel's own `auth.*` / `validation.*`) are reported as missing unless you add their groups to `fileNames` — or set [`checkIncludeFrameworkKeys`](#check) to `true` to treat Laravel's bundled lang keys as defined.
 
 ## Facade API
 
@@ -615,6 +615,8 @@ Each side may also declare a `patterns` entry to override the extraction regexes
 ],
 ```
 
+Set `checkIncludeFrameworkKeys` to `true` to treat the keys shipped with Laravel's own bundled lang files (`auth`, `pagination`, `passwords`, `validation`) as defined. Laravel's translator falls back to those files even when your project never publishes them, so references like `__('auth.failed')` are valid at runtime; with this option enabled they are no longer reported as missing. The keys are read straight from `vendor/laravel/framework` (the bundled `en` locale) and flattened to your `keyDelimiter`, independent of `fileNames` — so it covers framework groups you don't publish too. It removes the need for a custom `checkerClass` subclass just to whitelist framework keys.
+
 For customisation that can't be expressed as static patterns (programmatic generation, custom defined-key resolution), extend `TranslationChecker` and override `patternsFor()`, then point `checkerClass` at your subclass.
 
 | Option | Default | Description |
@@ -623,6 +625,7 @@ For customisation that can't be expressed as static patterns (programmatic gener
 | `check.backend.extensions` | `['php']` | Backend file extensions |
 | `check.frontend.paths` | `['resources/js']` | Frontend directories to scan |
 | `check.frontend.extensions` | `['ts', 'tsx', 'js', 'jsx']` | Frontend file extensions |
+| `checkIncludeFrameworkKeys` | `false` | Count Laravel's bundled lang keys (`auth`, `pagination`, `passwords`, `validation`) as defined, so the framework's own fallback keys are not reported as missing |
 | `checkerClass` | `TranslationChecker::class` | Checker implementation. Extend `TranslationChecker` and override `patternsFor()` to customise the scanning regexes (e.g. for custom helpers or frameworks). |
 
 ## Testing

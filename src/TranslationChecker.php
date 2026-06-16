@@ -91,17 +91,92 @@ class TranslationChecker
     /**
      * Group the defined keys of the given collection per locale.
      *
+     * When `checkIncludeFrameworkKeys` is enabled, Laravel's own bundled lang
+     * keys are merged into every locale so references the framework resolves
+     * via its built-in files are not reported as missing.
+     *
      * @param  string[]  $locales
      * @return array<string, string[]>
      */
     public function loadExistingKeys(TranslationCollection $translations, array $locales): array
     {
         $result = [];
+        $frameworkKeys = $this->options->checkIncludeFrameworkKeys ? $this->frameworkKeys() : [];
+
         foreach ($locales as $locale) {
-            $result[$locale] = $translations->whereLocale($locale)->pluck('key')->unique()->values()->all();
+            $result[$locale] = $translations->whereLocale($locale)
+                ->pluck('key')
+                ->merge($frameworkKeys)
+                ->unique()
+                ->values()
+                ->all();
         }
 
         return $result;
+    }
+
+    /**
+     * The translation keys shipped with Laravel's own lang files (auth,
+     * pagination, passwords, validation). The framework's translator falls
+     * back to these even when a project never publishes them, so they count as
+     * defined when `checkIncludeFrameworkKeys` is enabled.
+     *
+     * Read straight from the framework's bundled `en` lang directory (the only
+     * locale Laravel ships) and flattened to the configured key delimiter,
+     * independent of the project's `fileNames`. Returns an empty list when the
+     * directory is absent (e.g. a non-standard install layout).
+     *
+     * @return string[]
+     */
+    protected function frameworkKeys(): array
+    {
+        $dir = base_path('vendor/laravel/framework/src/Illuminate/Translation/lang/en');
+
+        if (! is_dir($dir)) {
+            return [];
+        }
+
+        $keys = [];
+        foreach (glob("{$dir}/*.php") ?: [] as $file) {
+            $group = pathinfo($file, PATHINFO_FILENAME);
+            $contents = require $file;
+
+            if (! is_array($contents)) {
+                continue;
+            }
+
+            foreach ($this->flattenKeys($contents, $group) as $key) {
+                $keys[] = $key;
+            }
+        }
+
+        return $keys;
+    }
+
+    /**
+     * Flatten a nested translation array into fully-qualified keys joined by
+     * the configured delimiter, e.g. `['custom' => ['x' => '…']]` under prefix
+     * `validation` becomes `validation{delimiter}custom{delimiter}x`.
+     *
+     * @param  array<int|string, mixed>  $items
+     * @return string[]
+     */
+    protected function flattenKeys(array $items, string $prefix): array
+    {
+        $keys = [];
+        foreach ($items as $key => $value) {
+            $fullKey = $prefix.$this->delimiter.$key;
+
+            if (is_array($value)) {
+                foreach ($this->flattenKeys($value, $fullKey) as $nested) {
+                    $keys[] = $nested;
+                }
+            } else {
+                $keys[] = $fullKey;
+            }
+        }
+
+        return $keys;
     }
 
     /**

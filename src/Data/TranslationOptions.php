@@ -73,6 +73,8 @@ class TranslationOptions
     /** @var array<string, array{paths: string[], extensions: string[]}> */
     public array $check;
 
+    public bool $checkIncludeFrameworkKeys;
+
     public string $checkerClass;
 
     public function __construct(?array $config = null)
@@ -123,6 +125,9 @@ class TranslationOptions
         // only returns the leaves it has explicit rules for. Both are required
         // by the validator above, so they are guaranteed to be present here.
         $this->check = $config['check'];
+        // Optional with a default, like phpPint above, so configs published
+        // before this option existed keep working after upgrade.
+        $this->checkIncludeFrameworkKeys = $validated['checkIncludeFrameworkKeys'] ?? false;
         $this->checkerClass = $config['checkerClass'];
     }
 
@@ -179,6 +184,8 @@ class TranslationOptions
             'check.*.patterns.static.*' => ['required', 'string', 'min:1', $validRegex],
             'check.*.patterns.dynamic' => 'sometimes|array',
             'check.*.patterns.dynamic.*' => ['required', 'string', 'min:1', $validRegex],
+
+            'checkIncludeFrameworkKeys' => 'sometimes|boolean',
 
             'checkerClass' => 'required|string|min:1',
         ], [

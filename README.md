@@ -1,11 +1,34 @@
 # Laravel Translation Handler
 
-Manage translations in Laravel across PHP files, JSON files, CSV files, and database — and let an AI agent handle them for you via [Laravel Boost](https://github.com/laravel/boost) MCP tools.
+> Manage Laravel translations across PHP, JSON, CSV, and the database — keep the formats in sync, edit them live in production, and let an AI agent handle them via Laravel Boost.
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/brunoscode/laravel-translation-handler.svg?style=flat-square)](https://packagist.org/packages/brunoscode/laravel-translation-handler)
 [![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/brunoscode/laravel-translation-handler/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/brunoscode/laravel-translation-handler/actions?query=workflow%3Arun-tests+branch%3Amain)
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/brunoscode/laravel-translation-handler/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/brunoscode/laravel-translation-handler/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/brunoscode/laravel-translation-handler.svg?style=flat-square)](https://packagist.org/packages/brunoscode/laravel-translation-handler)
+[![License](https://img.shields.io/packagist/l/brunoscode/laravel-translation-handler.svg?style=flat-square)](LICENSE.md)
+
+Laravel translations end up split across `lang/*.php` files and a JSON copy the frontend consumes — two sources that drift apart, and neither editable in production without a redeploy. This package treats PHP files, JSON files, CSV files, and the database as interchangeable views of one set of translations. Two workflows it was built around:
+
+- **Client-managed translations on staging/production.** Store translations in the `db` format so they can be edited in the running environment — by the client, without touching files or redeploying — then synced back to files.
+- **PHP files as the single source, frontend generated from them (or the reverse).** Keep `php_file` as the source of truth and generate the JSON the frontend consumes — or go the other way (`json_file` → `php_file`). Edit one side, regenerate the other.
+
+## Table of Contents
+
+- [Requirements](#requirements)
+- [Supported Formats](#supported-formats)
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+- [Commands](#commands)
+- [Facade API](#facade-api)
+- [Linter-friendly Writes](#linter-friendly-writes)
+- [AI Translation Management with Laravel Boost](#ai-translation-management-with-laravel-boost)
+- [Configuration](#configuration)
+- [Testing](#testing)
+- [Changelog](#changelog)
+- [Credits](#credits)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Requirements
 
@@ -35,200 +58,11 @@ Publish the configuration file:
 php artisan vendor:publish --provider="BrunosCode\TranslationHandler\TranslationHandlerServiceProvider"
 ```
 
----
-
-## AI-Powered Translation Management with Laravel Boost
-
-When [Laravel Boost](https://github.com/laravel/boost) is installed, this package automatically registers **11 MCP tools** into Boost's MCP server. This lets any MCP-compatible AI agent (Claude, Cursor, GitHub Copilot, etc.) read and write your translations directly — no manual commands, no copy-pasting.
-
-### What the AI can do
-
-- Browse your translation keys by group and depth level
-- Look up a specific key in any locale
-- Add or update a single translation in any format
-- Add or update a key across **all locales at once**
-- Translate **an entire group** in one call (every subkey, every locale)
-- Sync translations between storage formats
-- Delete a single key (optionally for a specific locale only)
-- Delete all keys under a group prefix
-- Sort keys alphabetically in PHP, JSON, and CSV formats
-- Read the full translation configuration
-
-### Setup
-
-Install Laravel Boost, then connect your AI assistant to its MCP server. No further configuration is required — the tools register automatically on package detection.
+For database-backed translations, run the migrations:
 
 ```bash
-composer require laravel/boost
+php artisan migrate
 ```
-
-### Available MCP Tools
-
-Format values for `format` / `from` / `to` parameters: `php_file`, `json_file`, `csv_file`, `db`.
-
-#### `get-translation-config-tool` (read-only)
-
-Returns the active configuration: locales, file names, key delimiter, default formats, and storage paths. Useful as a first call to understand the project's translation setup.
-
-No parameters.
-
-#### `list-translations-tool` (read-only)
-
-Lists translations from a format with optional filters.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | yes | Storage format to read from |
-| `locale` | string | no | Filter by locale (e.g. `en`) |
-| `group` | string | no | Filter by key prefix (e.g. `auth` returns all `auth.*` keys) |
-
-#### `list-translation-groups-tool` (read-only)
-
-Lists unique key groups at a given depth. Use this to explore the key hierarchy before reading or writing translations — especially useful in large projects.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | yes | Storage format to read from |
-| `level` | integer | no | Number of delimiters in the group name. `0` = top-level (e.g. `auth`), `1` = second-level (e.g. `auth.messages`). Defaults to `0`. |
-| `search` | string | no | Case-insensitive filter on group names |
-
-#### `find-translation-tool` (read-only)
-
-Finds a specific translation by key and locale.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | yes | Storage format to read from |
-| `key` | string | yes | Dot-delimited key (e.g. `auth.welcome`) |
-| `locale` | string | yes | Locale to look up |
-
-#### `set-translation-tool` (write)
-
-Sets or updates a single translation value.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | yes | Storage format to write to |
-| `key` | string | yes | Dot-delimited key |
-| `locale` | string | yes | Target locale |
-| `value` | string | yes | Translation value |
-| `force` | boolean | no | Overwrite existing value (default `false`) |
-
-#### `set-all-locales-translation-tool` (write)
-
-Sets or updates a translation key for **all locales at once**. Ideal when the AI generates translations for every supported language in a single step.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | yes | Storage format to write to |
-| `key` | string | yes | Dot-delimited key |
-| `values` | object | yes | Map of locale → value, e.g. `{"en": "Hello", "it": "Ciao"}` |
-| `force` | boolean | no | Overwrite existing values (default `false`) |
-
-#### `set-translation-group-tool` (write)
-
-Translates **an entire group** in a single call. The AI provides a group prefix and an object of `subkey → {locale: value}`; the tool joins each subkey to the group and writes all locales for all subkeys in one DB transaction.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | yes | Storage format to write to |
-| `group` | string | yes | Group prefix (e.g. `auth`). Trailing delimiter is tolerated. |
-| `translations` | object | yes | Map of subkey → locale=>value, e.g. `{"welcome": {"en": "Welcome", "it": "Benvenuto"}, "logout": {"en": "Logout", "it": "Esci"}}`. Subkeys may contain the delimiter (`nested.deep`). |
-| `force` | boolean | no | Overwrite existing values (default `false`) |
-
-#### `sync-translations-tool` (write)
-
-Copies translations from one storage format to another.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `from` | string | yes | Source format |
-| `to` | string | yes | Destination format (must differ from `from`) |
-| `force` | boolean | no | Overwrite existing translations in destination (default `false`) |
-
-#### `delete-translation-tool` (write)
-
-Deletes a translation key from a storage format. Omit `locale` to delete the key for all locales.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | yes | Storage format to delete from |
-| `key` | string | yes | Dot-delimited key to delete (e.g. `auth.welcome`) |
-| `locale` | string | no | Delete only this locale. Omit to delete all locales for the key. |
-
-#### `delete-translation-group-tool` (write)
-
-Deletes all translation keys under a group prefix from a storage format.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | yes | Storage format to delete from |
-| `group` | string | yes | Key group prefix to delete (e.g. `auth` removes all `auth.*` keys) |
-
-#### `sort-translations-tool` (write)
-
-Sorts translation keys alphabetically within a storage format. Supports `php_file`, `json_file`, and `csv_file` only.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | yes | Storage format to sort (`php_file`, `json_file`, or `csv_file`) |
-| `locales` | array | no | Restrict sorting to these locales. Omit to sort all locales. |
-| `groups` | array | no | Restrict sorting to these key group prefixes. Omit to sort all groups. |
-
-#### `check-translations-tool` (read-only)
-
-Scans backend PHP and frontend JS/TS source for translation usages and reports keys referenced in code but undefined per locale. Returns a per-side, per-locale report and a `passed` flag.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string | yes | Storage format to read defined keys from |
-| `locales` | array | no | Restrict the report to these locales. Omit to use the configured locales. |
-| `side` | string | no | Limit scanning to a single configured side (`backend` / `frontend` by default). Omit to scan all sides. |
-| `orphans` | boolean | no | Also report keys defined but never referenced in code. Defaults to `false`. |
-
-### Recommended workflow for editing translations
-
-**Use `db` as the working format for all writes, then sync to files at the end.**
-
-File-based formats (PHP, JSON, CSV) rewrite the entire file on every write operation. The database format writes only the affected rows, making each change significantly faster. Once all edits are done, a single sync pushes everything to the target file format.
-
-```
-1. Read/browse   → db (or any format for read-only queries)
-2. Write keys    → always db
-3. Finalise      → sync-translations-tool  from: db  to: <target format>
-```
-
-When no database is configured, write directly to the file format but batch all locales for a key into a single `set-all-locales-translation-tool` call rather than one call per locale.
-
-### Example AI workflow
-
-> **You:** "Add a `auth.too_many_attempts` key in English and Italian to the JSON files."
-
-The AI will:
-1. Call `get-translation-config-tool` to confirm the locales and format
-2. Call `set-all-locales-translation-tool` with `{"en": "Too many attempts. Please try again later.", "it": "Troppi tentativi. Riprova più tardi."}` targeting `json_file`
-
-> **You:** "Translate the entire `auth` group into English, Italian, and Spanish."
-
-The AI will call `set-translation-group-tool` with `format: db`, `group: auth`, and a `translations` object containing every auth subkey mapped to all three locales — written in a single DB transaction.
-
-> **You:** "Migrate all translations from PHP files to the database."
-
-The AI will call `sync-translations-tool` with `from: php_file`, `to: db`.
-
-> **You:** "What translation groups exist at the top level?"
-
-The AI will call `list-translation-groups-tool` with `format: php_file`, `level: 0`.
-
----
-
-## Linter-friendly writes
-
-File-based formats (PHP, JSON, CSV) skip the write entirely when the resulting content would be identical to what's already on disk — including key order. This avoids churn from your code formatter (Pint, PHP-CS-Fixer, Prettier, …): a file already formatted by the linter is left untouched as long as its translations and ordering match the new state.
-
-- Comparison is **strict and includes key order** — a re-sort still triggers a rewrite (intended, since `sort` is an explicit operation).
-- Counts returned by `set`, `sync`, `import`, `export` reflect the number of translations actually **changed** (added, modified, removed), not the total in the collection. A no-op write returns `0`.
-- `sync` / `import` / `export` return `false` only when there are no source translations to read; `0` is a successful no-op.
 
 ## Quick Start
 
@@ -303,7 +137,7 @@ TranslationHandler::export();
 
 ### Shared Options
 
-These options are available on `translation-handler`, `translation-handler:import`, and `translation-handler:export`:
+These options are available on `translation-handler:sync`, `translation-handler:import`, and `translation-handler:export`:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
@@ -458,7 +292,7 @@ Defined keys are read from the chosen `from` format and scoped to the configured
 ],
 ```
 
-Defined keys are read from the chosen `from` format and scoped to the configured `fileNames`, so the check reflects exactly the translations the package manages. References to keys outside those groups (e.g. Laravel's own `auth.*` / `validation.*`) are reported as missing unless you add their groups to `fileNames`.
+Because defined keys are scoped to the configured `fileNames`, the check reflects exactly the translations the package manages. References to keys outside those groups (e.g. Laravel's own `auth.*` / `validation.*`) are reported as missing unless you add their groups to `fileNames`.
 
 ## Facade API
 
@@ -633,6 +467,201 @@ TranslationHandler::setOptions(new TranslationOptions([...]));
 TranslationHandler::resetOptions();
 ```
 
+## Linter-friendly Writes
+
+File-based formats (PHP, JSON, CSV) skip the write entirely when the resulting content would be identical to what's already on disk — including key order. This avoids churn from your code formatter (Pint, PHP-CS-Fixer, Prettier, …): a file already formatted by the linter is left untouched as long as its translations and ordering match the new state.
+
+- Comparison is **strict and includes key order** — a re-sort still triggers a rewrite (intended, since `sort` is an explicit operation).
+- Counts returned by `set`, `sync`, `import`, `export` reflect the number of translations actually **changed** (added, modified, removed), not the total in the collection. A no-op write returns `0`.
+- `sync` / `import` / `export` return `false` only when there are no source translations to read; `0` is a successful no-op.
+
+## AI Translation Management with Laravel Boost
+
+When [Laravel Boost](https://github.com/laravel/boost) is installed, this package automatically registers **11 MCP tools** into Boost's MCP server. This lets any MCP-compatible AI agent (Claude, Cursor, GitHub Copilot, etc.) read and write your translations directly — no manual commands, no copy-pasting.
+
+### What the AI can do
+
+- Browse your translation keys by group and depth level
+- Look up a specific key in any locale
+- Add or update a single translation in any format
+- Add or update a key across **all locales at once**
+- Translate **an entire group** in one call (every subkey, every locale)
+- Sync translations between storage formats
+- Delete a single key (optionally for a specific locale only)
+- Delete all keys under a group prefix
+- Sort keys alphabetically in PHP, JSON, and CSV formats
+- Read the full translation configuration
+- Check the source code for missing or orphan keys
+
+### Setup
+
+Install Laravel Boost, then connect your AI assistant to its MCP server. No further configuration is required — the tools register automatically on package detection.
+
+```bash
+composer require laravel/boost
+```
+
+The package also ships two Boost skills that guide the agent: `translation-handler-mcp` (the MCP/CLI workflow) and `translation-handler-development` (writing custom PHP against the package).
+
+### Recommended workflow for editing translations
+
+**Use `db` as the working format for all writes, then sync to files at the end.**
+
+File-based formats (PHP, JSON, CSV) rewrite the entire file on every write operation. The database format writes only the affected rows, making each change significantly faster. Once all edits are done, a single sync pushes everything to the target file format.
+
+```
+1. Read/browse   → db (or any format for read-only queries)
+2. Write keys    → always db
+3. Finalise      → sync-translations-tool  from: db  to: <target format>
+4. Verify        → check-translations-tool  (or translation-handler:check)
+```
+
+When no database is configured, write directly to the file format but batch all locales for a key into a single `set-all-locales-translation-tool` call rather than one call per locale. End the work with a `check` run to confirm no referenced key is missing.
+
+### Available MCP Tools
+
+Format values for `format` / `from` / `to` parameters: `php_file`, `json_file`, `csv_file`, `db`.
+
+#### `get-translation-config-tool` (read-only)
+
+Returns the active configuration: locales, file names, key delimiter, default formats, and storage paths. Useful as a first call to understand the project's translation setup.
+
+No parameters.
+
+#### `list-translations-tool` (read-only)
+
+Lists translations from a format with optional filters.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to read from |
+| `locale` | string | no | Filter by locale (e.g. `en`) |
+| `group` | string | no | Filter by key prefix (e.g. `auth` returns all `auth.*` keys) |
+
+#### `list-translation-groups-tool` (read-only)
+
+Lists unique key groups at a given depth. Use this to explore the key hierarchy before reading or writing translations — especially useful in large projects.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to read from |
+| `level` | integer | no | Number of delimiters in the group name. `0` = top-level (e.g. `auth`), `1` = second-level (e.g. `auth.messages`). Defaults to `0`. |
+| `search` | string | no | Case-insensitive filter on group names |
+
+#### `find-translation-tool` (read-only)
+
+Finds a specific translation by key and locale.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to read from |
+| `key` | string | yes | Dot-delimited key (e.g. `auth.welcome`) |
+| `locale` | string | yes | Locale to look up |
+
+#### `set-translation-tool` (write)
+
+Sets or updates a single translation value.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to write to |
+| `key` | string | yes | Dot-delimited key |
+| `locale` | string | yes | Target locale |
+| `value` | string | yes | Translation value |
+| `force` | boolean | no | Overwrite existing value (default `false`) |
+
+#### `set-all-locales-translation-tool` (write)
+
+Sets or updates a translation key for **all locales at once**. Ideal when the AI generates translations for every supported language in a single step.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to write to |
+| `key` | string | yes | Dot-delimited key |
+| `values` | object | yes | Map of locale → value, e.g. `{"en": "Hello", "it": "Ciao"}` |
+| `force` | boolean | no | Overwrite existing values (default `false`) |
+
+#### `set-translation-group-tool` (write)
+
+Translates **an entire group** in a single call. The AI provides a group prefix and an object of `subkey → {locale: value}`; the tool joins each subkey to the group and writes all locales for all subkeys in one DB transaction.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to write to |
+| `group` | string | yes | Group prefix (e.g. `auth`). Trailing delimiter is tolerated. |
+| `translations` | object | yes | Map of subkey → locale=>value, e.g. `{"welcome": {"en": "Welcome", "it": "Benvenuto"}, "logout": {"en": "Logout", "it": "Esci"}}`. Subkeys may contain the delimiter (`nested.deep`). |
+| `force` | boolean | no | Overwrite existing values (default `false`) |
+
+#### `sync-translations-tool` (write)
+
+Copies translations from one storage format to another.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `from` | string | yes | Source format |
+| `to` | string | yes | Destination format (must differ from `from`) |
+| `force` | boolean | no | Overwrite existing translations in destination (default `false`) |
+
+#### `delete-translation-tool` (write)
+
+Deletes a translation key from a storage format. Omit `locale` to delete the key for all locales.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to delete from |
+| `key` | string | yes | Dot-delimited key to delete (e.g. `auth.welcome`) |
+| `locale` | string | no | Delete only this locale. Omit to delete all locales for the key. |
+
+#### `delete-translation-group-tool` (write)
+
+Deletes all translation keys under a group prefix from a storage format.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to delete from |
+| `group` | string | yes | Key group prefix to delete (e.g. `auth` removes all `auth.*` keys) |
+
+#### `sort-translations-tool` (write)
+
+Sorts translation keys alphabetically within a storage format. Supports `php_file`, `json_file`, and `csv_file` only.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to sort (`php_file`, `json_file`, or `csv_file`) |
+| `locales` | array | no | Restrict sorting to these locales. Omit to sort all locales. |
+| `groups` | array | no | Restrict sorting to these key group prefixes. Omit to sort all groups. |
+
+#### `check-translations-tool` (read-only)
+
+Scans backend PHP and frontend JS/TS source for translation usages and reports keys referenced in code but undefined per locale. Returns a per-side, per-locale report and a `passed` flag.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `format` | string | yes | Storage format to read defined keys from |
+| `locales` | array | no | Restrict the report to these locales. Omit to use the configured locales. |
+| `side` | string | no | Limit scanning to a single configured side (`backend` / `frontend` by default). Omit to scan all sides. |
+| `orphans` | boolean | no | Also report keys defined but never referenced in code. Defaults to `false`. |
+
+### Example AI workflow
+
+> **You:** "Add a `auth.too_many_attempts` key in English and Italian to the JSON files."
+
+The AI will:
+1. Call `get-translation-config-tool` to confirm the locales and format
+2. Call `set-all-locales-translation-tool` with `{"en": "Too many attempts. Please try again later.", "it": "Troppi tentativi. Riprova più tardi."}` targeting `json_file`
+
+> **You:** "Translate the entire `auth` group into English, Italian, and Spanish."
+
+The AI will call `set-translation-group-tool` with `format: db`, `group: auth`, and a `translations` object containing every auth subkey mapped to all three locales — written in a single DB transaction.
+
+> **You:** "Migrate all translations from PHP files to the database."
+
+The AI will call `sync-translations-tool` with `from: php_file`, `to: db`.
+
+> **You:** "What translation groups exist at the top level?"
+
+The AI will call `list-translation-groups-tool` with `format: php_file`, `level: 0`.
+
 ## Configuration
 
 The `config/translation-handler.php` file contains:
@@ -717,6 +746,21 @@ For customisation that can't be expressed as static patterns (programmatic gener
 | `check.frontend.paths` | `['resources/js']` | Frontend directories to scan |
 | `check.frontend.extensions` | `['ts', 'tsx', 'js', 'jsx']` | Frontend file extensions |
 | `checkerClass` | `TranslationChecker::class` | Checker implementation. Extend `TranslationChecker` and override `patternsFor()` to customise the scanning regexes (e.g. for custom helpers or frameworks). |
+
+## Testing
+
+```bash
+composer test
+```
+
+## Changelog
+
+Please see [CHANGELOG.md](CHANGELOG.md) for what has changed recently.
+
+## Credits
+
+- [BrunosCode](https://github.com/BrunosCode)
+- [All Contributors](https://github.com/BrunosCode/LaravelTranslationHandler/graphs/contributors)
 
 ## Contributing
 

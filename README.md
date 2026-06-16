@@ -3,8 +3,8 @@
 > Manage Laravel translations across PHP, JSON, CSV, and the database — keep the formats in sync, edit them live in production, and let an AI agent handle them via Laravel Boost.
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/brunoscode/laravel-translation-handler.svg?style=flat-square)](https://packagist.org/packages/brunoscode/laravel-translation-handler)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/brunoscode/laravel-translation-handler/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/brunoscode/laravel-translation-handler/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/brunoscode/laravel-translation-handler/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/brunoscode/laravel-translation-handler/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/BrunosCode/LaravelTranslationHandler/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/BrunosCode/LaravelTranslationHandler/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/BrunosCode/LaravelTranslationHandler/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/BrunosCode/LaravelTranslationHandler/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/brunoscode/laravel-translation-handler.svg?style=flat-square)](https://packagist.org/packages/brunoscode/laravel-translation-handler)
 [![License](https://img.shields.io/packagist/l/brunoscode/laravel-translation-handler.svg?style=flat-square)](LICENSE.md)
 

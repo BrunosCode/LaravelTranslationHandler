@@ -132,7 +132,7 @@ public function delete(?string $path = null): int;
 Publish: `php artisan vendor:publish --provider="BrunosCode\TranslationHandler\TranslationHandlerServiceProvider"`.
 
 ```php
-'keyDelimiter' => '.',          'fileNames' => ['messages'],   'locales' => ['en', 'it'],
+'keyDelimiter' => '.',          'fileNames' => ['translation-handler'], 'locales' => ['en'],
 'defaultImportFrom' => 'php_file', 'defaultImportTo' => 'json_file',
 'defaultExportFrom' => 'json_file','defaultExportTo' => 'php_file',
 'phpPath' => lang_path(),  'phpFormat' => false,

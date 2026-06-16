@@ -67,6 +67,26 @@ describe('PhpFileHandler put', function () {
 
         expect($result)->toBe(0);
     });
+
+    test('put formats written files with Pint when phpPint is enabled', function () {
+        TranslationHandler::setOption('phpPint', true);
+
+        $options = TranslationHandler::getOptions();
+
+        $translations = new TranslationCollection([
+            new Translation('test1.put', 'en', 'put1'),
+        ]);
+
+        TranslationHandler::getPhpHandler()->put(translations: $translations);
+
+        $content = File::get("{$options->phpPath}/en/test1.php");
+
+        // Pint rewrites the raw var_export long-array syntax to short arrays and
+        // appends a trailing newline, while the data round-trips unchanged.
+        expect($content)->not->toContain('array (');
+        expect($content)->toEndWith("\n");
+        expect(include "{$options->phpPath}/en/test1.php")->toBe(['put' => 'put1']);
+    });
 })->group('PhpFileHandler');
 
 describe('PhpFileHandler delete', function () {

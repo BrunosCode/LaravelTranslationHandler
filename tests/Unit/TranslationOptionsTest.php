@@ -23,6 +23,7 @@ describe('TranslationOptions', function () {
             ->defaultExportTo->toBe($this->config()['defaultExportTo'])
             ->phpPath->toBe($this->config()['phpPath'])
             ->phpFormat->toBe($this->config()['phpFormat'])
+            ->phpPint->toBe($this->config()['phpPint'])
             ->jsonPath->toBe($this->config()['jsonPath'])
             ->jsonFileName->toBe($this->config()['jsonFileName'])
             ->jsonNested->toBe($this->config()['jsonNested'])
@@ -30,6 +31,15 @@ describe('TranslationOptions', function () {
             ->csvPath->toBe($this->config()['csvPath'])
             ->csvFileName->toBe($this->config()['csvFileName'])
             ->csvDelimiter->toBe($this->config()['csvDelimiter']);
+    });
+
+    it('defaults phpPint to false when the key is absent (config published before the option existed)', function () {
+        $config = $this->config();
+        unset($config['phpPint']);
+
+        $options = new TranslationOptions($config);
+
+        expect($options->phpPint)->toBeFalse();
     });
 
     it('throws an exception with invalid configuration', function () {

@@ -25,7 +25,15 @@ return [
     'jsonHandlerClass' => JsonFileHandler::class,
     'dbHandlerClass' => DatabaseHandler::class,
 
+    // if phpFormat is true exported PHP arrays use short syntax ([] instead of array())
     'phpFormat' => false,
+    // if phpPint is true exported PHP files are formatted with Pint after writing.
+    // The Pint binary is resolved from the host project first (vendor/bin/pint),
+    // then from this package's own vendor (only when developing the package).
+    // When no binary is found the step is skipped silently and the file keeps its
+    // raw var_export / phpFormat output, so this option is a no-op unless Pint
+    // (laravel/pint) is installed.
+    'phpPint' => false,
     'phpPath' => lang_path(),
 
     'csvDelimiter' => ';',

@@ -54,6 +54,8 @@ class TranslationOptions
 
     public bool $phpFormat;
 
+    public bool $phpPint;
+
     public string $jsonPath;
 
     public ?string $jsonFileName;
@@ -102,6 +104,10 @@ class TranslationOptions
 
         $this->phpPath = $validated['phpPath'];
         $this->phpFormat = $validated['phpFormat'];
+        // Optional with a default so configs published before this option existed
+        // (e.g. a cached config that mergeConfigFrom can no longer backfill) keep
+        // working after upgrade instead of failing validation.
+        $this->phpPint = $validated['phpPint'] ?? false;
 
         $this->jsonPath = $validated['jsonPath'];
         $this->jsonFileName = $validated['jsonFileName'];
@@ -151,6 +157,7 @@ class TranslationOptions
 
             'phpPath' => 'required|string|min:1',
             'phpFormat' => 'required|boolean',
+            'phpPint' => 'sometimes|boolean',
 
             'jsonPath' => 'required|string|min:1',
             'jsonFileName' => 'nullable|string|min:0',

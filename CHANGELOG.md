@@ -2,6 +2,12 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- **Pinned the Boost dev dependency to `laravel/boost:^2.0`.** The MCP integration is now developed and tested against Boost v2 (which requires `laravel/mcp ^0.7.1|^0.8.0`, matching the existing `^0.8.0` dev dependency). The README install snippet and the `translation-handler-mcp` skill now reference Boost **v2**. Runtime behavior is unchanged — Boost integration stays opt-in via the host app, and the full MCP test suite (including `BoostExecuteToolCompatibilityTest`) passes against `laravel/boost v2.4.10`.
+
 ## v2.6.0 — Framework keys in checks - 2026-06-16
 
 ### Added

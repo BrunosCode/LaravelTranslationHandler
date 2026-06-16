@@ -493,10 +493,10 @@ Set `phpPint` to `true` to run [Pint](https://github.com/laravel/pint) on the PH
 
 ## AI Translation Management with Laravel Boost
 
-When [Laravel Boost](https://github.com/laravel/boost) is installed, this package auto-registers **11 MCP tools** into Boost's MCP server — no configuration. Any MCP-compatible agent (Claude, Cursor, GitHub Copilot, …) can then browse, add, update, translate, sync, delete, sort, and audit your translations directly.
+When [Laravel Boost](https://github.com/laravel/boost) **v2** is installed, this package auto-registers **11 MCP tools** into Boost's MCP server — no configuration. Any MCP-compatible agent (Claude, Cursor, GitHub Copilot, …) can then browse, add, update, translate, sync, delete, sort, and audit your translations directly.
 
 ```bash
-composer require laravel/boost
+composer require laravel/boost:^2.0
 ```
 
 Two Boost skills ship with the package and guide the agent — the README only sketches the tools; the skills (and the MCP server's own schemas) hold the detail:

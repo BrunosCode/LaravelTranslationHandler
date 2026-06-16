@@ -2,6 +2,15 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- **Split the Boost AI skill in two.** The MCP/CLI workflow was extracted from `translation-handler-development` into a new `translation-handler-mcp` skill, so each triggers on a distinct task:
+  - `translation-handler-mcp` (new) — managing a project's translations via the Boost MCP tools / Artisan commands (the db-then-sync workflow, group and all-locale writes, missing-key checks).
+  - `translation-handler-development` (slimmed) — writing custom PHP: the facade, `TranslationCollection`, data objects, and extending the file/database handlers or `TranslationChecker`.
+- **`resources/boost/guidelines/core.blade.php`** now states the db-then-sync editing rule and points to both skills.
+
 ## v2.4.0 — Translations check command - 2026-06-04
 
 ### Added

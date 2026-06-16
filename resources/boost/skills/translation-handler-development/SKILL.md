@@ -1,581 +1,146 @@
 ---
 name: translation-handler-development
-description: Build and manage Laravel translations across PHP files, JSON files, CSV files, and database using the brunoscode/laravel-translation-handler package.
+description: Develop with brunoscode/laravel-translation-handler in PHP — write custom translation flows on the TranslationHandler facade and TranslationCollection, or extend the package itself (custom file/database handlers, a TranslationChecker subclass, the data objects). Use for code; for agent/MCP-driven translation editing see translation-handler-mcp.
 ---
 
-# Laravel Translation Handler Development
+# Translation Handler — Development
 
-## When to use this skill
+For driving translations from PHP: the facade, collections, data objects, and extension points.
+For agent-driven editing via Boost MCP tools, use the `translation-handler-mcp` skill instead.
 
-Use this skill when:
-- Migrating translations between formats (PHP ↔ JSON ↔ CSV ↔ DB)
-- Importing or exporting translation files programmatically
-- Reading, writing, deleting, or sorting individual translation keys or groups
-- Configuring multi-locale translation management
-- Working with the `TranslationHandler` facade, `TranslationCollection`, or `Translation` data objects
+## Formats
 
-## Installation
+Four interchangeable storage formats, referenced by constants on `TranslationOptions`:
 
-```bash
-composer require brunoscode/laravel-translation-handler
-php artisan translation-handler:install
-```
+| Constant | String value | Notes |
+|----------|-------------|-------|
+| `TranslationOptions::PHP`  | `php_file`  | Standard Laravel PHP arrays |
+| `TranslationOptions::JSON` | `json_file` | JSON files |
+| `TranslationOptions::CSV`  | `csv_file`  | CSV files |
+| `TranslationOptions::DB`   | `db`        | Database rows (run migrations first) |
 
-For database-backed translations, also run:
+File formats rewrite the **entire file** on every write; `db` writes only affected rows. For bulk programmatic edits, work in `db` then `sync` to the file format once at the end.
 
-```bash
-php artisan migrate
-```
-
-## Core Concepts
-
-### Formats
-
-Four storage formats, referenced by constants on `TranslationOptions`:
-
-| Constant | String value | Description |
-|----------|-------------|-------------|
-| `TranslationOptions::PHP` | `php_file` | Standard Laravel PHP translation arrays |
-| `TranslationOptions::JSON` | `json_file` | JSON translation files |
-| `TranslationOptions::CSV` | `csv_file` | CSV translation files |
-| `TranslationOptions::DB` | `db` | Database-backed translations |
-
-### Data Objects
-
-**`Translation`** — a single translation entry:
+## Data objects
 
 ```php
 use BrunosCode\TranslationHandler\Data\Translation;
-
-$t = new Translation(
-    key: 'auth.welcome',  // dot-delimited key
-    locale: 'en',
-    value: 'Welcome!'     // nullable string
-);
-```
-
-**`TranslationCollection`** — typed collection of `Translation` objects:
-
-```php
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 
+$t = new Translation(key: 'auth.welcome', locale: 'en', value: 'Welcome!'); // value nullable
 $collection = new TranslationCollection([$t]);
 ```
 
-**`TranslationOptions`** — package configuration snapshot. Usually read from config; construct manually only when overriding defaults.
+`TranslationOptions` is the config snapshot — read from config by default; construct manually only to override.
 
-## Facade API
+## Facade
 
 ```php
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 ```
 
-### import / export
+| Method | Signature (key args) | Returns |
+|--------|----------------------|---------|
+| `import` / `export` | `(from, to, force=false, fromPath=null, toPath=null)` | `bool` |
+| `sync`        | `(from, to, force=false, fromPath=null, toPath=null)` | `bool` |
+| `get`         | `(from, path=null)` | `TranslationCollection` |
+| `set`         | `(translations, to, path=null, force=false)` | `int` (count) |
+| `find`        | `(from, key, locale, path=null)` | `?Translation` |
+| `listTranslations` | `(from, path=null, locale=null, group=null)` | `TranslationCollection` |
+| `listGroups`  | `(from, path=null, level=0, search=null)` | `Collection` |
+| `deleteKey`   | `(from, key, locale=null, path=null)` | `int` |
+| `deleteGroup` | `(from, group, path=null)` | `int` |
+| `sortKeys`    | `(from, locales=[], groups=[], path=null)` | `int` — PHP/JSON/CSV only |
+| `delete`      | `(from, path=null)` | `int` — wipes the whole format |
+
+`null` path means the config default. `locale=null` / empty arrays mean "all".
+
+Options at runtime: `setOption($k, $v)`, `getOption($k)`, `setOptions(new TranslationOptions([...]))`, `resetOptions()`.
+
+## TranslationCollection
 
 ```php
-TranslationHandler::import(
-    from: TranslationOptions::PHP,   // source format
-    to: TranslationOptions::JSON,    // destination format
-    force: false,                    // overwrite existing translations
-    fromPath: null,                  // custom source path (null = config default)
-    toPath: null,                    // custom destination path (null = config default)
-): bool;
-
-TranslationHandler::export(/* same signature */): bool;
-```
-
-### get — read all translations from a format
-
-```php
-$collection = TranslationHandler::get(
-    from: TranslationOptions::PHP,
-    path: null,
-): TranslationCollection;
-```
-
-### set — write translations to a format
-
-```php
-$count = TranslationHandler::set(
-    translations: $collection,
-    to: TranslationOptions::JSON,
-    path: null,
-    force: false,
-): int;
-```
-
-### sync — copy translations from one format to another
-
-```php
-TranslationHandler::sync(
-    from: TranslationOptions::PHP,
-    to: TranslationOptions::DB,
-    force: false,
-    fromPath: null,
-    toPath: null,
-): bool;
-```
-
-### find — look up a single key+locale
-
-```php
-$translation = TranslationHandler::find(
-    from: TranslationOptions::PHP,
-    key: 'auth.welcome',
-    locale: 'en',
-    path: null,
-): ?Translation;
-```
-
-### listTranslations — filtered collection
-
-```php
-$translations = TranslationHandler::listTranslations(
-    from: TranslationOptions::PHP,
-    path: null,
-    locale: 'en',   // null = all locales
-    group: 'auth',  // null = all groups
-): TranslationCollection;
-```
-
-### listGroups — unique key group names
-
-```php
-$groups = TranslationHandler::listGroups(
-    from: TranslationOptions::PHP,
-    path: null,
-    level: 0,       // 0 = top-level (e.g. "auth"), 1 = second-level, …
-    search: null,   // case-insensitive filter
-): Collection;
-```
-
-### deleteKey — delete a single key (optionally one locale)
-
-```php
-$count = TranslationHandler::deleteKey(
-    from: TranslationOptions::PHP,
-    key: 'auth.welcome',
-    locale: 'en',   // null = delete all locales for the key
-    path: null,
-): int;
-```
-
-### deleteGroup — delete all keys under a group prefix
-
-```php
-$count = TranslationHandler::deleteGroup(
-    from: TranslationOptions::PHP,
-    group: 'auth',  // removes all "auth.*" keys
-    path: null,
-): int;
-```
-
-### sortKeys — sort keys alphabetically (PHP, JSON, CSV only)
-
-```php
-$count = TranslationHandler::sortKeys(
-    from: TranslationOptions::PHP,
-    locales: ['en'],   // [] = all locales
-    groups: ['auth'],  // [] = all groups
-    path: null,
-): int;
-```
-
-### delete — remove all translations from a format
-
-```php
-$count = TranslationHandler::delete(
-    from: TranslationOptions::DB,
-    path: null,
-): int;
-```
-
-### Options management
-
-```php
-TranslationHandler::setOption('keyDelimiter', '_');
-$value = TranslationHandler::getOption('keyDelimiter');
-TranslationHandler::setOptions(new TranslationOptions([...]));
-TranslationHandler::resetOptions();
-```
-
-## TranslationCollection API
-
-```php
-// Filter
-$collection->whereLocale('en');
-$collection->whereLocaleIn(['en', 'it']);
-$collection->whereKey('auth.welcome');
-$collection->whereKeyIn(['auth.welcome', 'auth.login']);
-$collection->whereGroup('auth');              // keys starting with 'auth.'
-$collection->whereGroupIn(['auth', 'validation']);
-$collection->whereValue('Welcome!');
-$collection->whereValueContains('Welcome');
-$collection->whereValueIn(['Welcome!', 'Ciao!']);
+// Filter (each returns a new filtered collection)
+$c->whereLocale('en');   $c->whereLocaleIn(['en','it']);
+$c->whereKey('auth.welcome'); $c->whereKeyIn([...]);
+$c->whereGroup('auth');  $c->whereGroupIn(['auth','validation']); // 'auth' matches auth.*
+$c->whereValue('Welcome!'); $c->whereValueContains('Welc'); $c->whereValueIn([...]);
 
 // Add / replace
-$collection->addTranslation($translation);        // skip if key+locale exists
-$collection->replaceTranslation($translation);    // overwrite if key+locale exists
-$collection->addTranslations($otherCollection);
-$collection->replaceTranslations($otherCollection);
+$c->addTranslation($t);          // skip if key+locale exists
+$c->replaceTranslation($t);      // overwrite if key+locale exists
+$c->addTranslations($other);     $c->replaceTranslations($other);
 
 // Utilities
-$collection->searchTranslation($translation);
-$collection->sortTranslations();
-$collection->clone();
+$c->searchTranslation($t);  $c->sortTranslations();  $c->clone();
 ```
 
-## Artisan Commands
-
-### Sync translations between formats
-
-```bash
-php artisan translation-handler:sync {from?} {to?} [options]
-php artisan translation-handler:sync php_file db --force
-```
-
-### Import / Export
-
-```bash
-php artisan translation-handler:import [options]   # uses config defaults
-php artisan translation-handler:export [options]   # uses config defaults
-```
-
-### List translations
-
-```bash
-php artisan translation-handler:list {from?} {--from-path=} {--locale=} {--group=}
-php artisan translation-handler:list php_file --locale=en --group=auth
-```
-
-### List key groups
-
-```bash
-php artisan translation-handler:list-groups {from?} {--from-path=} {--level=0} {--search=}
-php artisan translation-handler:list-groups php_file --level=1 --search=messages
-```
-
-### Find a specific translation
-
-```bash
-php artisan translation-handler:find {from?} {key?} {locale?} {--from-path=}
-php artisan translation-handler:find php_file auth.welcome en
-```
-
-### Get a single translation value
-
-```bash
-php artisan translation-handler:get {from?} {key?} {locale?} {--from-path=}
-```
-
-### Set a single translation
-
-```bash
-php artisan translation-handler:set {to?} {key?} {locale?} {value?} {--to-path=} {--force}
-php artisan translation-handler:set json_file auth.welcome en "Welcome!" --force
-```
-
-### Delete a translation key
-
-```bash
-php artisan translation-handler:delete {from?} {key?} {--locale=} {--from-path=}
-php artisan translation-handler:delete php_file auth.welcome          # all locales
-php artisan translation-handler:delete php_file auth.welcome --locale=en
-```
-
-### Delete a translation group
-
-```bash
-php artisan translation-handler:delete-group {from?} {group?} {--from-path=}
-php artisan translation-handler:delete-group php_file auth
-```
-
-### Sort translation keys alphabetically (PHP, JSON, CSV only)
-
-```bash
-php artisan translation-handler:sort {from?} {--from-path=} {--locale=*} {--group=*}
-php artisan translation-handler:sort php_file
-php artisan translation-handler:sort php_file --locale=en --group=auth
-```
-
-### Check source code for missing / orphan keys
-
-```bash
-php artisan translation-handler:check {from?} {--from-path=} {--locale=*} {--side=} {--show-keys} {--orphans}
-php artisan translation-handler:check php_file --show-keys           # fail (non-zero) on missing keys
-php artisan translation-handler:check php_file --side=backend --orphans
-```
-
-Scans backend PHP and frontend JS/TS for translation usages and reports keys referenced in code but undefined per locale. Defined keys are read from `from` (scoped to configured `fileNames`); scanned dirs/extensions come from the `check` config entry.
-
-### Shared options (sync, import, export)
-
-| Option | Description |
-|--------|-------------|
-| `--force` | Overwrite existing translations |
-| `--fresh` | Delete all before writing |
-| `--file-names=*` | Translation file names to process |
-| `--locales=*` | Locales to process |
-| `--from-path=` | Custom source path |
-| `--to-path=` | Custom destination path |
-| `--guided` | Interactive mode |
-
-## Common Workflows
-
-### Migrate PHP → JSON
+## Common patterns
 
 ```php
+// Migrate PHP → JSON
 TranslationHandler::import(TranslationOptions::PHP, TranslationOptions::JSON, force: true);
-```
 
-### Read, modify, write back
+// Read, modify, write back
+$c = TranslationHandler::get(TranslationOptions::JSON);
+$c->addTranslation(new Translation('auth.welcome', 'it', 'Benvenuto!'));
+TranslationHandler::set($c, TranslationOptions::JSON, force: true);
 
-```php
-use BrunosCode\TranslationHandler\Data\Translation;
-
-$collection = TranslationHandler::get(TranslationOptions::JSON);
-$collection->addTranslation(new Translation('auth.welcome', 'it', 'Benvenuto!'));
-TranslationHandler::set($collection, TranslationOptions::JSON, force: true);
-```
-
-### Sync DB from PHP files
-
-```php
-$translations = TranslationHandler::get(TranslationOptions::PHP);
-TranslationHandler::set($translations, TranslationOptions::DB, force: true);
-```
-
-### Export a single locale to CSV
-
-```php
-$all = TranslationHandler::get(TranslationOptions::PHP);
-$italian = $all->whereLocale('it');
-TranslationHandler::set($italian, TranslationOptions::CSV, force: true);
-```
-
-### Merge translations from two sources
-
-```php
+// Merge two sources (DB keys not already present are added)
 $base = TranslationHandler::get(TranslationOptions::PHP);
-$extra = TranslationHandler::get(TranslationOptions::DB);
-$base->addTranslations($extra);  // DB keys not already in $base are added
+$base->addTranslations(TranslationHandler::get(TranslationOptions::DB));
 TranslationHandler::set($base, TranslationOptions::JSON, force: true);
-```
 
-### Delete a key from all formats
+// Export one locale to CSV
+$it = TranslationHandler::get(TranslationOptions::PHP)->whereLocale('it');
+TranslationHandler::set($it, TranslationOptions::CSV, force: true);
 
-```php
+// Delete a key everywhere / for one locale / a whole group
 TranslationHandler::deleteKey(TranslationOptions::PHP, 'auth.old_key');
-TranslationHandler::deleteKey(TranslationOptions::DB, 'auth.old_key');
-```
-
-### Delete a key for one locale only
-
-```php
 TranslationHandler::deleteKey(TranslationOptions::PHP, 'auth.welcome', locale: 'fr');
-```
-
-### Remove a whole group
-
-```php
 TranslationHandler::deleteGroup(TranslationOptions::PHP, 'legacy');
 ```
 
-### Sort keys after a bulk import
+## Extending the package
+
+All handler classes and the checker are swappable via config (`config/translation-handler.php`) or `setOption()`:
 
 ```php
-TranslationHandler::sortKeys(TranslationOptions::PHP);
-TranslationHandler::sortKeys(TranslationOptions::JSON, locales: ['en', 'it']);
+'phpHandlerClass'  => \App\Translations\MyPhpHandler::class,   // implements FileHandlerInterface
+'jsonHandlerClass' => ...,
+'csvHandlerClass'  => ...,
+'dbHandlerClass'   => \App\Translations\MyDbHandler::class,    // implements DatabaseHandlerInterface
+'checkerClass'     => \App\Translations\MyChecker::class,      // extends TranslationChecker
 ```
 
-## MCP Tools (available when laravel/boost is installed)
-
-The following tools are injected automatically into Boost's MCP server. No configuration required — they register on detection of `laravel/boost`.
-
-Format values for `format` / `from` / `to` parameters: `php_file`, `json_file`, `csv_file`, `db`.
-
-### Recommended workflow for editing translations
-
-**Always use `db` as the working format for individual reads and writes, then sync to files at the end.**
-
-File-based formats (PHP, JSON, CSV) rewrite the entire file on every `set` call. When adding or updating multiple keys, this means repeated full-file I/O. The database format writes only the affected rows, making each operation significantly faster.
-
-Preferred pattern:
-
-```
-1. read/browse   → use db (or any format for read-only queries)
-2. write keys    → always use db
-3. finalise      → call sync-translations-tool from: db, to: <target file format>
-```
-
-**When to deviate:**
-- You are making a single change and no DB is configured → write directly to the file format.
-- The project does not use DB translations at all → write to the file format directly, but batch as many keys as possible in a single `set-all-locales-translation-tool` call rather than one call per locale.
-
-### `get-translation-config-tool` (read-only, idempotent)
-
-Returns current config: locales, fileNames, key delimiter, default formats, and storage paths.
-
-No parameters.
-
-### `list-translations-tool` (read-only, idempotent)
-
-Lists translations from a storage format with optional filters.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string (enum) | yes | One of the format values |
-| `locale` | string | no | Filter by locale (e.g. `en`, `it`) |
-| `group` | string | no | Filter by key prefix (e.g. `auth` matches `auth.*`) |
-
-### `find-translation-tool` (read-only, idempotent)
-
-Finds a specific translation by key + locale.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string (enum) | yes | One of the format values |
-| `key` | string | yes | Dot-delimited translation key (e.g. `auth.welcome`) |
-| `locale` | string | yes | Locale to look up |
-
-### `set-translation-tool` (write)
-
-Sets or updates a single translation value.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string (enum) | yes | One of the format values |
-| `key` | string | yes | Dot-delimited translation key |
-| `locale` | string | yes | Locale to write |
-| `value` | string | yes | Translation value |
-| `force` | boolean | no | Overwrite existing value (default `false`) |
-
-### `list-translation-groups-tool` (read-only, idempotent)
-
-Lists unique translation key groups at a given depth level. A group is a key prefix — `auth` is a level-0 group, `auth.messages` is a level-1 group. Level equals the number of delimiters in the group name.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string (enum) | yes | One of the format values |
-| `level` | integer | no | Number of delimiters in the group name. `0` = top-level (e.g. `auth`), `1` = second-level (e.g. `auth.messages`). Defaults to `0`. |
-| `search` | string | no | Case-insensitive filter — only groups whose name contains this string are returned. |
-
-### `set-all-locales-translation-tool` (write)
-
-Sets or updates a translation key for all locales at once.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string (enum) | yes | One of the format values |
-| `key` | string | yes | Dot-delimited translation key (e.g. `auth.welcome`) |
-| `values` | object | yes | Map of locale → value (e.g. `{"en": "Hello", "it": "Ciao"}`) |
-| `force` | boolean | no | Overwrite existing values (default `false`) |
-
-### `set-translation-group-tool` (write)
-
-Sets or updates every translation under a group prefix in a single call. Use this when localising an entire group at once — the tool joins each subkey to the group with the configured delimiter and writes all locale values for every subkey.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string (enum) | yes | One of the format values |
-| `group` | string | yes | Group prefix (e.g. `auth`). A trailing delimiter is tolerated. |
-| `translations` | object | yes | Map of subkey → locale=>value object, e.g. `{"welcome": {"en": "Welcome", "it": "Benvenuto"}, "logout": {"en": "Logout", "it": "Esci"}}`. Subkeys may contain the delimiter (e.g. `nested.deep`). |
-| `force` | boolean | no | Overwrite existing values (default `false`) |
-
-### `sync-translations-tool` (write)
-
-Copies translations from one storage format to another.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `from` | string (enum) | yes | Source format |
-| `to` | string (enum) | yes | Destination format (must differ from `from`) |
-| `force` | boolean | no | Overwrite existing translations in destination (default `false`) |
-
-### `delete-translation-tool` (write)
-
-Deletes a single translation key. Omit `locale` to delete all locales for the key.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string (enum) | yes | Storage format to delete from |
-| `key` | string | yes | Dot-delimited key (e.g. `auth.welcome`) |
-| `locale` | string | no | Delete only this locale. Omit to delete all locales. |
-
-### `delete-translation-group-tool` (write)
-
-Deletes all keys under a group prefix.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string (enum) | yes | Storage format to delete from |
-| `group` | string | yes | Group prefix — all keys starting with `{group}.` are removed (e.g. `auth` removes all `auth.*`) |
-
-### `sort-translations-tool` (write)
-
-Sorts translation keys alphabetically within a format. Supports `php_file`, `json_file`, and `csv_file` only — not `db`.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string (enum) | yes | `php_file`, `json_file`, or `csv_file` |
-| `locales` | array | no | Restrict sorting to these locales. Omit to sort all locales. |
-| `groups` | array | no | Restrict sorting to these group prefixes. Omit to sort all groups. |
-
-### `check-translations-tool` (read-only)
-
-Scans source code for translation usages and reports keys referenced in code but undefined per locale. Returns a per-side, per-locale report plus a `passed` flag and `totalMissing` count.
-
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `format` | string (enum) | yes | Storage format to read defined keys from |
-| `locales` | array | no | Restrict the report to these locales. Omit to use configured locales. |
-| `side` | string (enum) | no | A configured side (`backend` / `frontend` by default). Omit to scan all sides. |
-| `orphans` | boolean | no | Also report keys defined but never referenced. Defaults to `false`. |
-
-## Configuration (`config/translation-handler.php`)
-
-Publish with `php artisan vendor:publish --provider="BrunosCode\TranslationHandler\TranslationHandlerServiceProvider"`.
-
-Key options:
+**Custom file handler** — implement `FileHandlerInterface`:
 
 ```php
-return [
-    'keyDelimiter'      => '.',                // delimiter in translation keys
-    'fileNames'         => ['messages'],       // PHP/JSON/CSV file names to process
-    'locales'           => ['en', 'it'],       // locales to process
+public function __construct(TranslationOptions $options);
+public function get(?string $path = null): TranslationCollection;
+public function put(TranslationCollection $translations, ?string $path = null): int;
+public function delete(?string $path = null): int;
+```
 
-    'defaultImportFrom' => 'php_file',
-    'defaultImportTo'   => 'json_file',
-    'defaultExportFrom' => 'json_file',
-    'defaultExportTo'   => 'php_file',
+**Custom database handler** — implement `DatabaseHandlerInterface` (same shape, `?string $connection` instead of `$path`, and `delete(?string $connection = null, bool $hardDelete = false)`).
 
-    // PHP files
-    'phpPath'           => lang_path(),
-    'phpFormat'         => false,
+**Custom key extraction for `check`** — extend `TranslationChecker` and override `patternsFor(string $side): array`. It returns `['static' => [...regex], 'dynamic' => [...regex]]`; group 1 of each regex must capture the key (static) or prefix (dynamic). The scanned paths/extensions per side come from the `check` config entry.
 
-    // JSON files
-    'jsonPath'          => lang_path(),
-    'jsonFileName'      => '',                 // '' = locale as filename; set = locale as folder
-    'jsonNested'        => false,
-    'jsonFormat'        => true,
+## Configuration
 
-    // CSV files
-    'csvPath'           => storage_path('lang'),
-    'csvFileName'       => 'translations',
-    'csvDelimiter'      => ';',               // must differ from keyDelimiter
+Publish: `php artisan vendor:publish --provider="BrunosCode\TranslationHandler\TranslationHandlerServiceProvider"`.
 
-    // Database (run migrations first)
-    'dbHandlerClass'    => \BrunosCode\TranslationHandler\DatabaseHandler::class,
-
-    // translation-handler:check / check-translations-tool source scanning.
-    // Keys are the sides to scan. Optional per-side 'patterns' => ['static' => [...], 'dynamic' => [...]]
-    // overrides the extraction regexes (group 1 captures the key/prefix); defaults used when omitted.
-    'check' => [
-        'backend'  => ['paths' => ['app', 'resources/views', 'routes', 'database'], 'extensions' => ['php']],
-        'frontend' => ['paths' => ['resources/js'], 'extensions' => ['ts', 'tsx', 'js', 'jsx']],
-    ],
-    // For programmatic customisation, extend TranslationChecker and override patternsFor()
-    'checkerClass' => \BrunosCode\TranslationHandler\TranslationChecker::class,
-];
+```php
+'keyDelimiter' => '.',          'fileNames' => ['messages'],   'locales' => ['en', 'it'],
+'defaultImportFrom' => 'php_file', 'defaultImportTo' => 'json_file',
+'defaultExportFrom' => 'json_file','defaultExportTo' => 'php_file',
+'phpPath' => lang_path(),  'phpFormat' => false,
+'jsonPath' => lang_path(), 'jsonFileName' => '', 'jsonNested' => false, 'jsonFormat' => true,
+'csvPath' => storage_path('lang'), 'csvFileName' => 'translations', 'csvDelimiter' => ';', // ≠ keyDelimiter
+'check' => [
+    'backend'  => ['paths' => ['app','resources/views','routes','database'], 'extensions' => ['php']],
+    'frontend' => ['paths' => ['resources/js'], 'extensions' => ['ts','tsx','js','jsx']],
+    // optional per-side 'patterns' => ['static' => [...], 'dynamic' => [...]] overrides the regexes
+],
 ```

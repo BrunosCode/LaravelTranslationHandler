@@ -5,7 +5,7 @@ description: Manage a Laravel project's translations through the brunoscode/lara
 
 # Translation Handler — MCP & CLI
 
-When `laravel/boost` is installed, this package auto-registers translation MCP tools (no config). The tool schemas (parameters, enums) come from the MCP server itself — this skill is the **workflow**: which tool, in what order. Format values everywhere: `php_file`, `json_file`, `csv_file`, `db`.
+When `laravel/boost` (v2) is installed, this package auto-registers translation MCP tools (no config). The tool schemas (parameters, enums) come from the MCP server itself — this skill is the **workflow**: which tool, in what order. Format values everywhere: `php_file`, `json_file`, `csv_file`, `db`.
 
 ## Golden rule: edit in `db`, sync to files at the end
 

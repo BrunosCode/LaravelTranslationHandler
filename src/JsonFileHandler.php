@@ -170,11 +170,14 @@ class JsonFileHandler implements FileHandlerInterface
             File::makeDirectory(dirname($filePath), 0777, true);
         }
 
-        return (bool) File::put(
-            $filePath,
-            json_encode($translations, $this->options->jsonFormat ? JSON_PRETTY_PRINT : 0),
-            false
+        // Encode before touching the file: on invalid UTF-8 json_encode used to
+        // return false and File::put() wrote an empty file, wiping the locale.
+        $json = json_encode(
+            $translations,
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | ($this->options->jsonFormat ? JSON_PRETTY_PRINT : 0)
         );
+
+        return (bool) File::put($filePath, $json, false);
     }
 
     public function delete(?string $path = null): int

@@ -6,7 +6,10 @@ trait ComparesTranslations
 {
     protected function rawTranslationsEqual(array $a, array $b): bool
     {
-        return json_encode($a) === json_encode($b);
+        // Strict array comparison: same keys, order and values. Unlike the
+        // json_encode() round-trip it cannot report two arrays as equal just
+        // because both failed to encode (e.g. invalid UTF-8).
+        return $a === $b;
     }
 
     protected function countRawDifferences(array $existing, array $new): int

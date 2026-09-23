@@ -108,6 +108,28 @@ describe('JsonFileHandler put', function () {
 
         expect($count)->toBe(0);
     });
+
+    it('refuses invalid UTF-8 and leaves the existing file intact', function () {
+        $path = lang_path('json-test/en/test-translations.json');
+        $before = File::get($path);
+
+        $translations = TranslationHandler::getJsonHandler()->get()
+            ->addTranslation(new Translation('test1.bad', 'en', "caf\xE9"));
+
+        expect(fn () => TranslationHandler::getJsonHandler()->put($translations))
+            ->toThrow(JsonException::class);
+
+        expect(File::get($path))->toBe($before);
+    });
+
+    it('writes unicode and slashes unescaped', function () {
+        $translations = TranslationHandler::getJsonHandler()->get()
+            ->addTranslation(new Translation('test1.accent', 'en', 'caffè / tè'));
+
+        TranslationHandler::getJsonHandler()->put($translations);
+
+        expect(File::get(lang_path('json-test/en/test-translations.json')))->toContain('"caffè / tè"');
+    });
 })->group('JsonFileHandler');
 
 describe('JsonFileHandler delete', function () {

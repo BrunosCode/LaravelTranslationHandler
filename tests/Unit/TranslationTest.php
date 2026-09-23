@@ -91,4 +91,11 @@ describe('Translation', function () {
         expect(TranslationHandler::getOptions()->locales)->toContain($translation->locale);
         expect($translation->value)->not->toBeEmpty();
     });
+
+    it('accepts a null value', function () {
+        $translation = new Translation('key1', 'en', null);
+
+        expect($translation->value)->toBeNull();
+        expect($translation->toArray()['value'])->toBeNull();
+    });
 })->group('Translation');

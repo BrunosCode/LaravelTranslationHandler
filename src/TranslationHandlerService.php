@@ -35,7 +35,7 @@ class TranslationHandlerService
         }
 
         if ($group) {
-            $collection = $collection->whereGroup($group);
+            $collection = $collection->whereGroup($group, $this->getOptions()->keyDelimiter);
         }
 
         return $collection;
@@ -133,19 +133,68 @@ class TranslationHandlerService
         };
 
         return $translations
-            ->whereGroupIn($options->fileNames)
+            ->whereGroupIn($options->fileNames, $options->keyDelimiter)
             ->whereLocaleIn($options->locales);
     }
 
     public function set(TranslationCollection $translations, string $to, ?string $path = null, bool $force = false): int
     {
-        $oldTranslations = $this->get($to, $path);
+        // Anything outside the configured locales/fileNames would be dropped by
+        // the handlers without a trace (count 0, nothing written): refuse it here.
+        $this->assertWithinScope($translations);
 
-        $newTranslations = $force
-            ? $oldTranslations->replaceTranslations($translations)
-            : $oldTranslations->addTranslations($translations);
+        // Only the groups and locales present in the input can change, so read
+        // and write just those: the handlers leave everything else untouched.
+        return $this->withScopedOptions($translations, function () use ($translations, $to, $path, $force) {
+            $oldTranslations = $this->get($to, $path);
 
-        return $this->putCollection($to, $newTranslations->sortTranslations(), $path);
+            $newTranslations = $force
+                ? $oldTranslations->replaceTranslations($translations)
+                : $oldTranslations->addTranslations($translations);
+
+            // Fail before touching the target: a leaf/parent pair would otherwise
+            // crash (or silently overwrite) the nested PHP and JSON writers.
+            $newTranslations->assertNoParentLeafConflicts($this->getOptions()->keyDelimiter);
+
+            return $this->putCollection($to, $newTranslations->sortTranslations(), $path);
+        });
+    }
+
+    /**
+     * Run the callback with fileNames and locales narrowed to those touched
+     * by the given translations, restoring the previous options afterwards.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    private function withScopedOptions(TranslationCollection $translations, callable $callback): mixed
+    {
+        $current = $this->getOptions();
+
+        $locales = $translations->map(fn (Translation $t) => $t->locale)->unique()->values()->all();
+
+        $groups = [];
+
+        foreach ($current->fileNames as $fileName) {
+            if ($translations->whereGroup($fileName, $current->keyDelimiter)->isNotEmpty()) {
+                $groups[] = $fileName;
+            }
+        }
+
+        $scoped = clone $current;
+        $scoped->fileNames = $groups;
+        $scoped->locales = $locales;
+
+        $previous = $this->options;
+        $this->options = $scoped;
+
+        try {
+            return $callback();
+        } finally {
+            $this->options = $previous;
+        }
     }
 
     public function sortKeys(string $from, array $locales = [], array $groups = [], ?string $path = null): int
@@ -159,7 +208,7 @@ class TranslationHandlerService
         }
 
         if (! empty($groups)) {
-            $target = $target->whereGroupIn($groups);
+            $target = $target->whereGroupIn($groups, $this->getOptions()->keyDelimiter);
         }
 
         $count = $target->count();
@@ -214,6 +263,42 @@ class TranslationHandlerService
         $this->putCollection($from, new TranslationCollection($survivors->values()->all()), $path);
 
         return $deleted;
+    }
+
+    /**
+     * @throws \InvalidArgumentException when a translation targets a locale or a group that is not configured
+     */
+    private function assertWithinScope(TranslationCollection $translations): void
+    {
+        $options = $this->getOptions();
+
+        foreach ($translations as $translation) {
+            if (! in_array($translation->locale, $options->locales, true)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Locale "%s" (key "%s") is not configured. Configured locales: %s',
+                    $translation->locale,
+                    $translation->key,
+                    implode(', ', $options->locales),
+                ));
+            }
+
+            $inScope = false;
+
+            foreach ($options->fileNames as $fileName) {
+                if (str_starts_with($translation->key, $fileName.$options->keyDelimiter)) {
+                    $inScope = true;
+                    break;
+                }
+            }
+
+            if (! $inScope) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Key "%s" does not belong to any configured file name. Keys must start with one of: %s',
+                    $translation->key,
+                    implode(', ', array_map(fn (string $f) => $f.$options->keyDelimiter, $options->fileNames)),
+                ));
+            }
+        }
     }
 
     private function putCollection(string $to, TranslationCollection $collection, ?string $path): int

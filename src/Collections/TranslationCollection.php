@@ -36,34 +36,57 @@ class TranslationCollection extends Collection
 
     public function addTranslations(TranslationCollection $newTranslations): self
     {
-        $newTranslations->each(function (Translation $newTranslation) {
-            $oldTranslationKey = $this->searchTranslation($newTranslation);
+        $index = $this->indexByKeyAndLocale();
 
-            if ($oldTranslationKey !== false) {
-                return;
+        foreach ($newTranslations as $newTranslation) {
+            $indexKey = $newTranslation->key.'|'.$newTranslation->locale;
+
+            if (isset($index[$indexKey])) {
+                continue;
             }
 
             $this->push($newTranslation);
-        });
+            $index[$indexKey] = true;
+        }
 
         return $this;
     }
 
     public function replaceTranslations(TranslationCollection $newTranslations): self
     {
-        $newTranslations->each(function (Translation $newTranslation) {
-            $oldTranslationKey = $this->searchTranslation($newTranslation);
+        $index = $this->indexByKeyAndLocale();
 
-            if ($oldTranslationKey === false) {
-                $this->push($newTranslation);
+        foreach ($newTranslations as $newTranslation) {
+            $indexKey = $newTranslation->key.'|'.$newTranslation->locale;
 
-                return;
+            if (isset($index[$indexKey])) {
+                $this->put($index[$indexKey], $newTranslation);
+
+                continue;
             }
 
-            $this->put($oldTranslationKey, $newTranslation);
-        });
+            $this->push($newTranslation);
+            $index[$indexKey] = array_key_last($this->items);
+        }
 
         return $this;
+    }
+
+    /**
+     * Offsets of the items keyed by "key|locale", so bulk merges run in
+     * linear time instead of one search() per incoming translation.
+     *
+     * @return array<string, int|string>
+     */
+    private function indexByKeyAndLocale(): array
+    {
+        $index = [];
+
+        foreach ($this->items as $offset => $translation) {
+            $index[$translation->key.'|'.$translation->locale] = $offset;
+        }
+
+        return $index;
     }
 
     public function searchTranslation(Translation $translation): int|bool
@@ -107,7 +130,7 @@ class TranslationCollection extends Collection
 
     public function whereValueContains(string $value): self
     {
-        return $this->filter(fn (Translation $translation) => str_contains($translation->value, $value));
+        return $this->filter(fn (Translation $translation) => str_contains($translation->value ?? '', $value));
     }
 
     public function whereValueIn(array $values): self
@@ -141,6 +164,59 @@ class TranslationCollection extends Collection
 
             return false;
         });
+    }
+
+    /**
+     * Find a key that is used both as a value and as a parent of another key
+     * within the same locale (e.g. `auth.a` and `auth.a.b`). Such a pair cannot
+     * be represented in a nested lang file, and Laravel's translator would
+     * return an array for the parent key anyway.
+     *
+     * @return array{leaf: string, child: string, locale: string}|null
+     */
+    public function findParentLeafConflict(string $delimiter = '.'): ?array
+    {
+        /** @var array<string, array<string, true>> $keysByLocale */
+        $keysByLocale = [];
+
+        foreach ($this as $translation) {
+            $keysByLocale[$translation->locale][$translation->key] = true;
+        }
+
+        foreach ($keysByLocale as $locale => $keys) {
+            foreach (array_keys($keys) as $key) {
+                $segments = explode($delimiter, (string) $key);
+
+                for ($i = count($segments) - 1; $i > 0; $i--) {
+                    $prefix = implode($delimiter, array_slice($segments, 0, $i));
+
+                    if (isset($keys[$prefix])) {
+                        return ['leaf' => $prefix, 'child' => (string) $key, 'locale' => (string) $locale];
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * @throws \InvalidArgumentException when a key is both a value and a parent of another key
+     */
+    public function assertNoParentLeafConflicts(string $delimiter = '.'): self
+    {
+        $conflict = $this->findParentLeafConflict($delimiter);
+
+        if ($conflict !== null) {
+            throw new \InvalidArgumentException(sprintf(
+                'Translation key "%s" (%s) cannot hold a value because "%s" is nested under it. Rename one of the two keys.',
+                $conflict['leaf'],
+                $conflict['locale'],
+                $conflict['child'],
+            ));
+        }
+
+        return $this;
     }
 
     public static function fake(int $count = 10): self

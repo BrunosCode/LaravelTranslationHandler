@@ -3,6 +3,7 @@
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
     $this->prepareCsvTranslations();
@@ -31,6 +32,16 @@ describe('CsvFileHandler get', function () {
         expect($firstTranslation->key)->toBe('test1.get');
         expect($firstTranslation->locale)->toBe('en');
         expect($firstTranslation->value)->toBe('get-1-en');
+    });
+
+    test('get method skips locales whose column is missing from the header', function () {
+        $options = TranslationHandler::getOptions();
+        File::put("{$options->csvPath}/{$options->csvFileName}.csv", "key;en\ntest1.get;get-1-en\n");
+
+        $translations = TranslationHandler::getCsvHandler()->get();
+
+        expect($translations)->toHaveCount(1);
+        expect($translations->first()->locale)->toBe('en');
     });
 })->group('CsvFileHandler');
 

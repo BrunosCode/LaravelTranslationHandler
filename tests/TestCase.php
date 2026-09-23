@@ -73,24 +73,6 @@ class TestCase extends Orchestra
         config()->set('database.default', 'sqlite');
     }
 
-    public function prepareService()
-    {
-        $options = new TranslationOptions;
-        TranslationHandler::shouldReceive('getDefaultOptions')->andReturn($options);
-
-        $phpHandler = app($options->phpHandlerClass, [$options]);
-        TranslationHandler::shouldReceive('getPhpHandler')->andReturn($phpHandler);
-
-        $jsonHandler = app($options->jsonHandlerClass, [$options]);
-        TranslationHandler::shouldReceive('getJsonHandler')->andReturn($jsonHandler);
-
-        $csvHandler = app($options->csvHandlerClass, [$options]);
-        TranslationHandler::shouldReceive('getCsvHandler')->andReturn($csvHandler);
-
-        $dbHandler = app($options->dbHandlerClass, [$options]);
-        TranslationHandler::shouldReceive('getDbHandler')->andReturn($dbHandler);
-    }
-
     public function preparePhpTranslations()
     {
         $options = TranslationHandler::getOptions();
@@ -163,14 +145,9 @@ class TestCase extends Orchestra
 
     public function cleanJsonTranslations()
     {
-        $options = TranslationHandler::getOptions();
-        foreach ($options->locales as $locale) {
-            $path = ! empty($options->jsonFileName)
-                ? "{$options->jsonPath}/{$locale}/{$options->jsonFileName}.json"
-                : "{$options->jsonPath}/{$locale}.json";
-
-            File::delete($path);
-        }
+        // Whole directory, not per configured locale: a command run in the
+        // test may have narrowed the locales and the fixture must not leak.
+        File::deleteDirectory(TranslationHandler::getOptions()->jsonPath);
     }
 
     public function prepareCsvTranslations()
@@ -189,8 +166,7 @@ class TestCase extends Orchestra
 
     public function cleanCsvTranslations()
     {
-        $options = TranslationHandler::getOptions();
-        File::delete("{$options->csvPath}/{$options->csvFileName}.csv");
+        File::deleteDirectory(TranslationHandler::getOptions()->csvPath);
     }
 
     public function prepareDbTranslations()

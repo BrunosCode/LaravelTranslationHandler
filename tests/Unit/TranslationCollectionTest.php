@@ -170,4 +170,34 @@ describe('TranslationCollection', function () {
         expect($collection->count())->toBe(5);
         expect($collection->first())->toBeInstanceOf(Translation::class);
     });
+
+    it('finds a key used both as a value and as a parent within a locale', function () {
+        $collection = new TranslationCollection([
+            new Translation('auth.a', 'en', 'leaf'),
+            new Translation('auth.a.b', 'en', 'child'),
+        ]);
+
+        expect($collection->findParentLeafConflict())->toBe(['leaf' => 'auth.a', 'child' => 'auth.a.b', 'locale' => 'en']);
+        expect(fn () => $collection->assertNoParentLeafConflicts())
+            ->toThrow(InvalidArgumentException::class, '"auth.a" (en) cannot hold a value because "auth.a.b" is nested under it');
+    });
+
+    it('does not report a conflict across different locales', function () {
+        $collection = new TranslationCollection([
+            new Translation('auth.a', 'en', 'leaf'),
+            new Translation('auth.a.b', 'it', 'child'),
+        ]);
+
+        expect($collection->findParentLeafConflict())->toBeNull();
+    });
+
+    it('detects conflicts with a custom delimiter only', function () {
+        $collection = new TranslationCollection([
+            new Translation('auth::a', 'en', 'leaf'),
+            new Translation('auth::a::b', 'en', 'child'),
+        ]);
+
+        expect($collection->findParentLeafConflict('.'))->toBeNull();
+        expect($collection->findParentLeafConflict('::'))->not->toBeNull();
+    });
 })->group('TranslationCollection');

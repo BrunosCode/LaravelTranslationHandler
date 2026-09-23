@@ -18,23 +18,29 @@ class Translation
     public function __construct(
         string $key,
         string $locale,
-        string $value
+        ?string $value
     ) {
-        $validator = self::validator([
-            'key' => $key,
-            'locale' => $locale,
-            'value' => $value,
-        ]);
-
-        if ($validator->fails()) {
-            throw new \InvalidArgumentException($validator->errors()->first());
+        // Plain checks mirroring validator(): a Validator instance per object
+        // is the dominant cost when thousands of translations are loaded.
+        if ($key === '') {
+            throw new \InvalidArgumentException('Translation key is required');
         }
 
-        $validated = $validator->validated();
+        if ($locale === '') {
+            throw new \InvalidArgumentException('Translation locale is required');
+        }
 
-        $this->key = $validated['key'];
-        $this->locale = $validated['locale'];
-        $this->value = $validated['value'];
+        if (mb_strlen($locale) < 2) {
+            throw new \InvalidArgumentException("Translation locale \"{$locale}\" is too short (min 2 characters)");
+        }
+
+        if (mb_strlen($locale) > 7) {
+            throw new \InvalidArgumentException("Translation locale \"{$locale}\" is too long (max 7 characters)");
+        }
+
+        $this->key = $key;
+        $this->locale = $locale;
+        $this->value = $value;
     }
 
     public function toArray(): array

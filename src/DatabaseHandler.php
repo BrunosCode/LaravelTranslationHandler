@@ -56,15 +56,18 @@ class DatabaseHandler implements DatabaseHandlerInterface
         $db->transaction(function () use ($translations, $db, &$counter) {
             foreach ($this->options->fileNames as $filename) {
                 $filteredTranslations = $translations
-                    ->whereGroup($filename);
+                    ->whereGroup($filename, $this->options->keyDelimiter);
 
+                // Load the group's keys and values once and share them with
+                // every step: each used to re-query the table on its own.
                 $dbKeys = $this->getCurrentKeys($db, $filename);
+                $dbValues = $this->getCurrentValues($db, $dbKeys);
 
-                $counter += $this->handleUpdate($db, $filteredTranslations, $filename, $dbKeys);
+                $counter += $this->handleUpdate($db, $filteredTranslations, $filename, $dbKeys, $dbValues);
 
                 $counter += $this->handleInsert($db, $filteredTranslations, $filename, $dbKeys);
 
-                $this->handleSoftDelete($db, $filteredTranslations, $filename, $dbKeys);
+                $this->handleSoftDelete($db, $filteredTranslations, $filename, $dbKeys, $dbValues);
             }
         });
 
@@ -78,13 +81,33 @@ class DatabaseHandler implements DatabaseHandlerInterface
             ->get();
     }
 
+    /**
+     * All value rows (including soft-deleted ones) of the given keys.
+     */
+    public function getCurrentValues(Connection $db, Collection $dbKeys): Collection
+    {
+        if ($dbKeys->isEmpty()) {
+            return new Collection;
+        }
+
+        return $db->table('translation_values')
+            ->whereIn('translation_key_id', $dbKeys->pluck('id')->all())
+            ->get();
+    }
+
     public function handleInsert(Connection $db, TranslationCollection $translations, ?string $filename = null, ?Collection $dbKeys = null): int
     {
         $dbKeys = $dbKeys ?? $this->getCurrentKeys($db, $filename);
 
-        $translationToInsert = $translations->filter(function (Translation $translation) use ($dbKeys) {
-            return ! $dbKeys->contains('key', $translation->key);
+        $dbKeyByKey = $dbKeys->keyBy('key');
+
+        $translationToInsert = $translations->filter(function (Translation $translation) use ($dbKeyByKey) {
+            return ! $dbKeyByKey->has($translation->key);
         });
+
+        if ($translationToInsert->isEmpty()) {
+            return 0;
+        }
 
         $keysToInsert = $translationToInsert
             ->unique('key')
@@ -95,17 +118,15 @@ class DatabaseHandler implements DatabaseHandlerInterface
                 'deleted_at' => null,
             ]);
 
-        $insertedKeys = $db->table('translation_keys')->insert($keysToInsert->toArray());
+        $db->table('translation_keys')->insert($keysToInsert->values()->all());
 
-        if ($insertedKeys < 0) {
-            return 0;
-        }
-
-        $dbKeys = $this->getCurrentKeys($db, $filename);
+        $insertedKeyIdByKey = $db->table('translation_keys')
+            ->whereIn('key', $keysToInsert->pluck('key')->all())
+            ->pluck('id', 'key');
 
         $valuesToInsert = $translationToInsert
             ->map(fn (Translation $translation) => [
-                'translation_key_id' => $dbKeys->where('key', $translation->key)->first()?->id,
+                'translation_key_id' => $insertedKeyIdByKey->get($translation->key),
                 'value' => $translation->value,
                 'locale' => $translation->locale,
                 'created_at' => now(),
@@ -113,25 +134,29 @@ class DatabaseHandler implements DatabaseHandlerInterface
             ])
             ->filter(fn (array $translation) => $translation['translation_key_id'] !== null);
 
-        if (! $db->table('translation_values')->insert($valuesToInsert->toArray())) {
+        if (! $db->table('translation_values')->insert($valuesToInsert->values()->all())) {
             return 0;
         }
 
         return $valuesToInsert->count();
     }
 
-    public function handleUpdate(Connection $db, TranslationCollection $translations, ?string $filename = null, ?Collection $dbKeys = null): int
+    public function handleUpdate(Connection $db, TranslationCollection $translations, ?string $filename = null, ?Collection $dbKeys = null, ?Collection $dbValues = null): int
     {
         $dbKeys = $dbKeys ?? $this->getCurrentKeys($db, $filename);
+        $dbValues = $dbValues ?? $this->getCurrentValues($db, $dbKeys);
 
-        $translationToInsert = $translations->filter(function (Translation $translation) use ($dbKeys) {
-            return $dbKeys->contains('key', $translation->key);
+        $dbKeyByKey = $dbKeys->keyBy('key');
+        $dbValueByPair = $dbValues->keyBy(fn ($value) => $value->translation_key_id.'|'.$value->locale);
+
+        $translationToUpdate = $translations->filter(function (Translation $translation) use ($dbKeyByKey) {
+            return $dbKeyByKey->has($translation->key);
         });
 
-        $keysToUpdate = $translationToInsert
+        $keysToUpdate = $translationToUpdate
             ->unique('key')
-            ->filter(function (Translation $translation) use ($dbKeys) {
-                $dbKey = $dbKeys->firstWhere('key', $translation->key);
+            ->filter(function (Translation $translation) use ($dbKeyByKey) {
+                $dbKey = $dbKeyByKey->get($translation->key);
 
                 return $dbKey !== null && $dbKey->deleted_at !== null;
             })
@@ -144,23 +169,17 @@ class DatabaseHandler implements DatabaseHandlerInterface
         if ($keysToUpdate->isNotEmpty()) {
             $db->table('translation_keys')
                 ->upsert(
-                    $keysToUpdate->toArray(),
+                    $keysToUpdate->values()->all(),
                     ['key'],
                     ['updated_at', 'deleted_at']
                 );
         }
 
-        $dbValues = $db->table('translation_values')
-            ->whereIn('translation_key_id', $dbKeys->pluck('id')->toArray())
-            ->get();
-
-        $valuesToUpdate = $translationToInsert
-            ->map(function (Translation $translation) use ($dbKeys, $dbValues) {
-                $dbKey = $dbKeys->where('key', $translation->key)->first();
+        $valuesToUpdate = $translationToUpdate
+            ->map(function (Translation $translation) use ($dbKeyByKey, $dbValueByPair) {
+                $dbKey = $dbKeyByKey->get($translation->key);
                 $dbValue = $dbKey !== null
-                    ? $dbValues->where('translation_key_id', $dbKey->id)
-                        ->where('locale', $translation->locale)
-                        ->first()
+                    ? $dbValueByPair->get($dbKey->id.'|'.$translation->locale)
                     : null;
 
                 return [
@@ -195,39 +214,63 @@ class DatabaseHandler implements DatabaseHandlerInterface
 
         return $db->table('translation_values')
             ->upsert(
-                $valuesToUpdate->toArray(),
+                $valuesToUpdate->values()->all(),
                 ['translation_key_id', 'locale'],
                 ['value', 'updated_at', 'created_at', 'deleted_at']
             );
     }
 
-    public function handleSoftDelete(Connection $db, TranslationCollection $translations, ?string $filename = null, ?Collection $dbKeys = null): int
+    public function handleSoftDelete(Connection $db, TranslationCollection $translations, ?string $filename = null, ?Collection $dbKeys = null, ?Collection $dbValues = null): int
     {
         $dbKeys = $dbKeys ?? $this->getCurrentKeys($db, $filename);
+        $dbValues = $dbValues ?? $this->getCurrentValues($db, $dbKeys);
+
+        // Like the file handlers, this handler only manages the configured
+        // locales: values of other locales are never touched, and a key is
+        // only retired once no active value of another locale depends on it.
+        $managedLocales = array_flip($this->options->locales);
+
+        $dbKeyIdByKey = $dbKeys->pluck('id', 'key');
+
+        $wantedPairs = [];
+
+        foreach ($translations as $translation) {
+            $keyId = $dbKeyIdByKey->get($translation->key);
+
+            if ($keyId !== null) {
+                $wantedPairs[$keyId.'|'.$translation->locale] = true;
+            }
+        }
+
+        $valueIdsToSoftDelete = $dbValues
+            ->filter(fn ($value) => $value->deleted_at === null
+                && isset($managedLocales[$value->locale])
+                && ! isset($wantedPairs[$value->translation_key_id.'|'.$value->locale]))
+            ->pluck('id')
+            ->all();
+
+        if (! empty($valueIdsToSoftDelete)) {
+            $db->table('translation_values')
+                ->whereIn('id', $valueIdsToSoftDelete)
+                ->update(['deleted_at' => now()]);
+        }
+
+        $keyIdsWithActiveUnmanagedValues = $dbValues
+            ->filter(fn ($value) => $value->deleted_at === null && ! isset($managedLocales[$value->locale]))
+            ->pluck('translation_key_id')
+            ->flip()
+            ->all();
 
         $newKeys = $translations->map(fn (Translation $translation) => $translation->key)->unique();
 
-        $keysToSoftDelete = $dbKeys->whereNotIn('key', $newKeys);
+        $keysToSoftDelete = $dbKeys
+            ->whereNotIn('key', $newKeys)
+            ->reject(fn ($dbKey) => isset($keyIdsWithActiveUnmanagedValues[$dbKey->id]));
 
-        $db->table('translation_keys')
-            ->whereIn('id', $keysToSoftDelete->pluck('id')->toArray())
-            ->whereNull('deleted_at')
-            ->update(['deleted_at' => now()]);
-
-        $db->table('translation_values')
-            ->whereIn('translation_key_id', $keysToSoftDelete->pluck('id')->toArray())
-            ->whereNull('deleted_at')
-            ->update(['deleted_at' => now()]);
-
-        $keysToKeep = $dbKeys->whereIn('key', $newKeys);
-
-        foreach ($keysToKeep as $dbKey) {
-            $localesForKey = $translations->filter(fn (Translation $t) => $t->key === $dbKey->key)->pluck('locale');
-
-            $db->table('translation_values')
-                ->where('translation_key_id', $dbKey->id)
+        if ($keysToSoftDelete->isNotEmpty()) {
+            $db->table('translation_keys')
+                ->whereIn('id', $keysToSoftDelete->pluck('id')->all())
                 ->whereNull('deleted_at')
-                ->whereNotIn('locale', $localesForKey->toArray())
                 ->update(['deleted_at' => now()]);
         }
 

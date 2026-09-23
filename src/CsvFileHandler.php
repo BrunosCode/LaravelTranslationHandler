@@ -4,6 +4,7 @@ namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Concerns\ComparesTranslations;
+use BrunosCode\TranslationHandler\Concerns\IdentifiesManagedKeys;
 use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\File;
 
 class CsvFileHandler implements FileHandlerInterface
 {
-    use ComparesTranslations;
+    use ComparesTranslations, IdentifiesManagedKeys;
 
     public function __construct(
         private TranslationOptions $options
@@ -31,8 +32,13 @@ class CsvFileHandler implements FileHandlerInterface
         foreach ($rawTranslations as $row) {
             $key = $row['key'];
             foreach ($this->options->locales as $locale) {
-                $value = $row[$locale];
-                $translations->push(new Translation($key, $locale, $value));
+                // A locale column missing from the header means "no value here",
+                // not a malformed file: skip it instead of raising an undefined index.
+                if (! array_key_exists($locale, $row)) {
+                    continue;
+                }
+
+                $translations->push(new Translation($key, $locale, $row[$locale]));
             }
         }
 
@@ -49,13 +55,13 @@ class CsvFileHandler implements FileHandlerInterface
 
         $handler = fopen($filePath, 'r');
 
-        $headers = fgetcsv($handler, 0, $this->options->csvDelimiter);
+        $headers = fgetcsv($handler, 0, $this->options->csvDelimiter, escape: '\\');
 
         $rawTranslations = [];
 
         $line = 1;
 
-        while ($data = fgetcsv($handler, 0, $this->options->csvDelimiter)) {
+        while ($data = fgetcsv($handler, 0, $this->options->csvDelimiter, escape: '\\')) {
             $line++;
 
             if (count($data) <= 1) {
@@ -76,15 +82,25 @@ class CsvFileHandler implements FileHandlerInterface
 
     public function put(TranslationCollection $translations, ?string $path = null): int
     {
-        $rawTranslations = $this->buildForFile($translations);
-
         $existing = $this->read($path);
+
+        // The CSV is a single shared file: rows of other groups and columns of
+        // locales not configured right now must survive the write.
+        $headers = $this->mergeHeaders($existing);
+
+        $rawTranslations = $this->mergeWithUnmanaged($existing, $this->buildForFile($translations), $headers);
 
         if ($this->rawTranslationsEqual($existing, $rawTranslations)) {
             return 0;
         }
 
-        if (! $this->write($rawTranslations, $path)) {
+        if (empty($rawTranslations)) {
+            File::delete($this->getFilePath($path));
+
+            return $this->countRawDifferences($this->stripCsvKeyField($existing), []);
+        }
+
+        if (! $this->write($rawTranslations, $path, $headers)) {
             return 0;
         }
 
@@ -92,6 +108,57 @@ class CsvFileHandler implements FileHandlerInterface
             $this->stripCsvKeyField($existing),
             $this->stripCsvKeyField($rawTranslations)
         );
+    }
+
+    /**
+     * Header of the file to write: the existing columns in their original
+     * order, plus any configured locale not yet present.
+     *
+     * @param  array<string, array<string, string|null>>  $existing
+     * @return string[]
+     */
+    private function mergeHeaders(array $existing): array
+    {
+        $existingHeaders = $existing === [] ? [] : array_keys(reset($existing));
+
+        return array_values(array_unique(['key', ...$existingHeaders, ...$this->options->locales]));
+    }
+
+    /**
+     * Managed rows come first, in the order of the collection, each keeping
+     * the columns of unmanaged locales from the existing row; unmanaged rows
+     * follow in their original order. Managed rows missing from the
+     * collection are dropped. Every row is normalised to the given headers.
+     *
+     * @param  string[]  $headers
+     */
+    private function mergeWithUnmanaged(array $existing, array $managed, array $headers): array
+    {
+        $result = [];
+
+        foreach ($managed as $key => $row) {
+            $result[$key] = array_replace($existing[$key] ?? [], $row);
+        }
+
+        foreach ($existing as $key => $row) {
+            if (isset($result[$key]) || $this->isManagedKey((string) $key)) {
+                continue;
+            }
+
+            $result[$key] = $row;
+        }
+
+        foreach ($result as $key => $row) {
+            $normalised = [];
+
+            foreach ($headers as $header) {
+                $normalised[$header] = $row[$header] ?? '';
+            }
+
+            $result[$key] = $normalised;
+        }
+
+        return $result;
     }
 
     private function stripCsvKeyField(array $rows): array
@@ -132,7 +199,10 @@ class CsvFileHandler implements FileHandlerInterface
         return $fileTranslations;
     }
 
-    protected function write(array $translations, ?string $path): bool
+    /**
+     * @param  string[]|null  $headers  Defaults to `key` plus the configured locales.
+     */
+    protected function write(array $translations, ?string $path, ?array $headers = null): bool
     {
         $filePath = $this->getFilePath($path);
 
@@ -142,10 +212,10 @@ class CsvFileHandler implements FileHandlerInterface
         }
 
         $csv = fopen($filePath, 'w');
-        fputcsv($csv, ['key', ...$this->options->locales], $this->options->csvDelimiter);
+        fputcsv($csv, $headers ?? ['key', ...$this->options->locales], $this->options->csvDelimiter, escape: '\\');
 
         foreach ($translations as $translation) {
-            fputcsv($csv, $translation, $this->options->csvDelimiter);
+            fputcsv($csv, $translation, $this->options->csvDelimiter, escape: '\\');
         }
 
         return fclose($csv);

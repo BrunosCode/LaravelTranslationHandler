@@ -172,4 +172,15 @@ describe('TranslationOptions', function () {
 
         expect(array_keys($options->check))->toBe(['blade', 'vue']);
     });
+
+    it('rejects a csvDelimiter equal to the keyDelimiter', function () {
+        expect(fn () => new TranslationOptions($this->config(['keyDelimiter' => '.', 'csvDelimiter' => '.'])))
+            ->toThrow(InvalidArgumentException::class, 'must be different from keyDelimiter');
+    });
+
+    it('accepts a csvDelimiter different from the keyDelimiter', function () {
+        $options = new TranslationOptions($this->config(['keyDelimiter' => '.', 'csvDelimiter' => ',']));
+
+        expect($options->csvDelimiter)->toBe(',');
+    });
 })->group('TranslationOptions');

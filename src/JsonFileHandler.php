@@ -4,6 +4,8 @@ namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Concerns\ComparesTranslations;
+use BrunosCode\TranslationHandler\Concerns\IdentifiesManagedKeys;
+use BrunosCode\TranslationHandler\Concerns\NormalizesRawValues;
 use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
@@ -11,7 +13,7 @@ use Illuminate\Support\Facades\File;
 
 class JsonFileHandler implements FileHandlerInterface
 {
-    use ComparesTranslations;
+    use ComparesTranslations, IdentifiesManagedKeys, NormalizesRawValues;
 
     public function __construct(
         private TranslationOptions $options
@@ -50,15 +52,15 @@ class JsonFileHandler implements FileHandlerInterface
     //     return $translations;
     // }
 
-    private function buildFromNestedArray(TranslationCollection $translations, string $key, string $locale, string|array &$value): TranslationCollection
+    private function buildFromNestedArray(TranslationCollection $translations, string $key, string $locale, mixed $value): TranslationCollection
     {
         if (is_array($value)) {
             foreach ($value as $childKey => $childValue) {
-                $currentKey = $key ? $key.$this->options->keyDelimiter.$childKey : $childKey;
+                $currentKey = $key ? $key.$this->options->keyDelimiter.$childKey : (string) $childKey;
                 $translations = $this->buildFromNestedArray($translations, $currentKey, $locale, $childValue);
             }
         } else {
-            $translations->addTranslation(new Translation($key, $locale, $value));
+            $translations->addTranslation(new Translation($key, $locale, $this->normalizeRawValue($value, $key)));
         }
 
         return $translations;
@@ -94,15 +96,24 @@ class JsonFileHandler implements FileHandlerInterface
         foreach ($this->options->locales as $locale) {
             $filteredTranslations = $translations->whereLocale($locale);
 
-            if ($filteredTranslations->isEmpty()) {
+            $existing = $this->read($path, $locale);
+
+            // The locale file is shared with keys this handler does not manage
+            // (other groups, or plain sentence keys): replace only the managed
+            // part and carry the rest over untouched.
+            $rawTranslations = $this->mergeWithUnmanaged(
+                $existing,
+                $this->buildForFile($filteredTranslations, $locale),
+            );
+
+            if ($this->rawTranslationsEqual($existing, $rawTranslations)) {
                 continue;
             }
 
-            $rawTranslations = $this->buildForFile($filteredTranslations, $locale);
+            if (empty($rawTranslations)) {
+                File::delete($this->getFilePath($path, $locale));
+                $counter += $this->countRawDifferences($existing, []);
 
-            $existing = $this->read($path, $locale);
-
-            if ($this->rawTranslationsEqual($existing, $rawTranslations)) {
                 continue;
             }
 
@@ -112,6 +123,27 @@ class JsonFileHandler implements FileHandlerInterface
         }
 
         return $counter;
+    }
+
+    /**
+     * Managed entries come first, in the order of the collection (so sorting
+     * is honoured); unmanaged entries of the existing file follow, in their
+     * original order. Managed entries missing from the collection are dropped.
+     */
+    private function mergeWithUnmanaged(array $existing, array $managed): array
+    {
+        $unmanaged = [];
+
+        foreach ($existing as $key => $value) {
+            // The reader accepts both flat ("group.key") and nested ({"group": {...}})
+            // entries whatever jsonNested says, so both forms count as managed here.
+            if (! $this->isManagedKey((string) $key) && ! $this->isManagedGroup((string) $key)) {
+                $unmanaged[$key] = $value;
+            }
+        }
+
+        // Array union rather than array_merge: numeric-looking keys must not be renumbered.
+        return $managed + $unmanaged;
     }
 
     protected function buildForFile(TranslationCollection $translations, string $locale): array
@@ -140,6 +172,8 @@ class JsonFileHandler implements FileHandlerInterface
 
     private function buildForNestedFile(array $fileTranslations, string $locale, TranslationCollection $translations): array
     {
+        $translations->assertNoParentLeafConflicts($this->options->keyDelimiter);
+
         foreach ($translations as $translation) {
             if ($translation->locale !== $locale) {
                 continue;
@@ -167,11 +201,14 @@ class JsonFileHandler implements FileHandlerInterface
             File::makeDirectory(dirname($filePath), 0777, true);
         }
 
-        return (bool) File::put(
-            $filePath,
-            json_encode($translations, $this->options->jsonFormat ? JSON_PRETTY_PRINT : 0),
-            false
+        // Encode before touching the file: on invalid UTF-8 json_encode used to
+        // return false and File::put() wrote an empty file, wiping the locale.
+        $json = json_encode(
+            $translations,
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | ($this->options->jsonFormat ? JSON_PRETTY_PRINT : 0)
         );
+
+        return (bool) File::put($filePath, $json, false);
     }
 
     public function delete(?string $path = null): int

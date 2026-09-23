@@ -55,13 +55,13 @@ class CsvFileHandler implements FileHandlerInterface
 
         $handler = fopen($filePath, 'r');
 
-        $headers = fgetcsv($handler, 0, $this->options->csvDelimiter);
+        $headers = fgetcsv($handler, 0, $this->options->csvDelimiter, escape: '\\');
 
         $rawTranslations = [];
 
         $line = 1;
 
-        while ($data = fgetcsv($handler, 0, $this->options->csvDelimiter)) {
+        while ($data = fgetcsv($handler, 0, $this->options->csvDelimiter, escape: '\\')) {
             $line++;
 
             if (count($data) <= 1) {
@@ -212,10 +212,10 @@ class CsvFileHandler implements FileHandlerInterface
         }
 
         $csv = fopen($filePath, 'w');
-        fputcsv($csv, $headers ?? ['key', ...$this->options->locales], $this->options->csvDelimiter);
+        fputcsv($csv, $headers ?? ['key', ...$this->options->locales], $this->options->csvDelimiter, escape: '\\');
 
         foreach ($translations as $translation) {
-            fputcsv($csv, $translation, $this->options->csvDelimiter);
+            fputcsv($csv, $translation, $this->options->csvDelimiter, escape: '\\');
         }
 
         return fclose($csv);

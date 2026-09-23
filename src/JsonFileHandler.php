@@ -141,6 +141,8 @@ class JsonFileHandler implements FileHandlerInterface
 
     private function buildForNestedFile(array $fileTranslations, string $locale, TranslationCollection $translations): array
     {
+        $translations->assertNoParentLeafConflicts($this->options->keyDelimiter);
+
         foreach ($translations as $translation) {
             if ($translation->locale !== $locale) {
                 continue;

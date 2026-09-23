@@ -35,7 +35,7 @@ class TranslationHandlerService
         }
 
         if ($group) {
-            $collection = $collection->whereGroup($group);
+            $collection = $collection->whereGroup($group, $this->getOptions()->keyDelimiter);
         }
 
         return $collection;
@@ -133,7 +133,7 @@ class TranslationHandlerService
         };
 
         return $translations
-            ->whereGroupIn($options->fileNames)
+            ->whereGroupIn($options->fileNames, $options->keyDelimiter)
             ->whereLocaleIn($options->locales);
     }
 
@@ -144,6 +144,10 @@ class TranslationHandlerService
         $newTranslations = $force
             ? $oldTranslations->replaceTranslations($translations)
             : $oldTranslations->addTranslations($translations);
+
+        // Fail before touching the target: a leaf/parent pair would otherwise
+        // crash (or silently overwrite) the nested PHP and JSON writers.
+        $newTranslations->assertNoParentLeafConflicts($this->getOptions()->keyDelimiter);
 
         return $this->putCollection($to, $newTranslations->sortTranslations(), $path);
     }
@@ -159,7 +163,7 @@ class TranslationHandlerService
         }
 
         if (! empty($groups)) {
-            $target = $target->whereGroupIn($groups);
+            $target = $target->whereGroupIn($groups, $this->getOptions()->keyDelimiter);
         }
 
         $count = $target->count();

@@ -56,7 +56,7 @@ class DatabaseHandler implements DatabaseHandlerInterface
         $db->transaction(function () use ($translations, $db, &$counter) {
             foreach ($this->options->fileNames as $filename) {
                 $filteredTranslations = $translations
-                    ->whereGroup($filename);
+                    ->whereGroup($filename, $this->options->keyDelimiter);
 
                 $dbKeys = $this->getCurrentKeys($db, $filename);
 

@@ -71,7 +71,7 @@ class PhpFileHandler implements FileHandlerInterface
             foreach ($this->options->locales as $locale) {
                 $filteredTranslations = $translations
                     ->clone()
-                    ->whereGroup($filename)
+                    ->whereGroup($filename, $this->options->keyDelimiter)
                     ->whereLocale($locale);
 
                 $existing = $this->read($path, $filename, $locale);
@@ -108,6 +108,8 @@ class PhpFileHandler implements FileHandlerInterface
 
     protected function buildForFile(TranslationCollection $translations, string $filename, string $locale): array
     {
+        $translations->assertNoParentLeafConflicts($this->options->keyDelimiter);
+
         $fileTranslations = [];
 
         foreach ($translations as $translation) {

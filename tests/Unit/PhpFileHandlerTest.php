@@ -2,6 +2,7 @@
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Data\Translation;
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use Illuminate\Support\Facades\File;
 
@@ -105,6 +106,28 @@ describe('PhpFileHandler put', function () {
         expect($content)->not->toContain('array (');
         expect($content)->toEndWith("\n");
         expect(include "{$options->phpPath}/en/test1.php")->toBe(['put' => 'put1']);
+    });
+
+    test('put should refuse a key that is both a value and a parent, leaving the file untouched', function () {
+        $translations = new TranslationCollection([
+            new Translation('test1.a', 'en', 'leaf'),
+            new Translation('test1.a.b', 'en', 'child'),
+        ]);
+
+        $before = File::get(lang_path('php-test/en/test1.php'));
+
+        expect(fn () => TranslationHandler::getPhpHandler()->put($translations))
+            ->toThrow(InvalidArgumentException::class, 'test1.a.b');
+
+        expect(File::get(lang_path('php-test/en/test1.php')))->toBe($before);
+    });
+
+    test('set through the service should refuse a leaf/parent conflict against existing keys', function () {
+        // test1.nested.get already exists in the fixture, so test1.nested cannot become a value.
+        $translations = new TranslationCollection([new Translation('test1.nested', 'en', 'leaf')]);
+
+        expect(fn () => TranslationHandler::set($translations, TranslationOptions::PHP))
+            ->toThrow(InvalidArgumentException::class, 'test1.nested.get');
     });
 })->group('PhpFileHandler');
 

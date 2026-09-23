@@ -48,43 +48,50 @@ class SyncCommand extends Command
 
         $this->comment(__('Starting sync...'));
 
-        TranslationHandler::resetOptions()
-            ->setOption('fileNames', $fileNames)
-            ->setOption('locales', $locales);
+        // Narrow the shared options for this run only: the service is a
+        // singleton and would otherwise keep the narrowed scope in a
+        // long-running process (Octane, queue worker, MCP server).
+        try {
+            TranslationHandler::resetOptions()
+                ->setOption('fileNames', $fileNames)
+                ->setOption('locales', $locales);
 
-        if ($fresh) {
-            $int = TranslationHandler::delete(
-                from: $to,
-                path: $toPath,
+            if ($fresh) {
+                $int = TranslationHandler::delete(
+                    from: $to,
+                    path: $toPath,
+                );
+
+                if ($int > 0) {
+                    $this->comment(__('Old translations deleted!'));
+                }
+            }
+
+            $result = TranslationHandler::sync(
+                from: $from,
+                to: $to,
+                force: $force,
+                fromPath: $fromPath,
+                toPath: $toPath
             );
 
-            if ($int > 0) {
-                $this->comment(__('Old translations deleted!'));
+            if ($result === false) {
+                $this->error(__('Sync failed!'));
+
+                return self::FAILURE;
             }
+
+            $this->comment(__('Sync finished!'));
+
+            if ($result === 0) {
+                $this->comment(__('Already in sync.'));
+            } else {
+                $this->comment(__(':count translation(s) changed.', ['count' => $result]));
+            }
+
+            return self::SUCCESS;
+        } finally {
+            TranslationHandler::resetOptions();
         }
-
-        $result = TranslationHandler::sync(
-            from: $from,
-            to: $to,
-            force: $force,
-            fromPath: $fromPath,
-            toPath: $toPath
-        );
-
-        if ($result === false) {
-            $this->error(__('Sync failed!'));
-
-            return self::FAILURE;
-        }
-
-        $this->comment(__('Sync finished!'));
-
-        if ($result === 0) {
-            $this->comment(__('Already in sync.'));
-        } else {
-            $this->comment(__(':count translation(s) changed.', ['count' => $result]));
-        }
-
-        return self::SUCCESS;
     }
 }

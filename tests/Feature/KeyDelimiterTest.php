@@ -23,6 +23,12 @@ function delimiterService(array $overrides = []): TranslationHandlerService
 }
 
 describe('keyDelimiter "::"', function () {
+    beforeEach(function () {
+        File::deleteDirectory(lang_path('php-test'));
+        File::deleteDirectory(lang_path('json-test'));
+        File::deleteDirectory(storage_path('lang/csv-test'));
+    });
+
     afterEach(function () {
         File::deleteDirectory(lang_path('php-test'));
         File::deleteDirectory(lang_path('json-test'));

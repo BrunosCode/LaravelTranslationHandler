@@ -163,14 +163,9 @@ class TestCase extends Orchestra
 
     public function cleanJsonTranslations()
     {
-        $options = TranslationHandler::getOptions();
-        foreach ($options->locales as $locale) {
-            $path = ! empty($options->jsonFileName)
-                ? "{$options->jsonPath}/{$locale}/{$options->jsonFileName}.json"
-                : "{$options->jsonPath}/{$locale}.json";
-
-            File::delete($path);
-        }
+        // Whole directory, not per configured locale: a command run in the
+        // test may have narrowed the locales and the fixture must not leak.
+        File::deleteDirectory(TranslationHandler::getOptions()->jsonPath);
     }
 
     public function prepareCsvTranslations()
@@ -189,8 +184,7 @@ class TestCase extends Orchestra
 
     public function cleanCsvTranslations()
     {
-        $options = TranslationHandler::getOptions();
-        File::delete("{$options->csvPath}/{$options->csvFileName}.csv");
+        File::deleteDirectory(TranslationHandler::getOptions()->csvPath);
     }
 
     public function prepareDbTranslations()

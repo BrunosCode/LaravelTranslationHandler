@@ -4,6 +4,7 @@ namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Concerns\ComparesTranslations;
+use BrunosCode\TranslationHandler\Concerns\IdentifiesManagedKeys;
 use BrunosCode\TranslationHandler\Concerns\NormalizesRawValues;
 use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\File;
 
 class JsonFileHandler implements FileHandlerInterface
 {
-    use ComparesTranslations, NormalizesRawValues;
+    use ComparesTranslations, IdentifiesManagedKeys, NormalizesRawValues;
 
     public function __construct(
         private TranslationOptions $options
@@ -95,15 +96,24 @@ class JsonFileHandler implements FileHandlerInterface
         foreach ($this->options->locales as $locale) {
             $filteredTranslations = $translations->whereLocale($locale);
 
-            if ($filteredTranslations->isEmpty()) {
+            $existing = $this->read($path, $locale);
+
+            // The locale file is shared with keys this handler does not manage
+            // (other groups, or plain sentence keys): replace only the managed
+            // part and carry the rest over untouched.
+            $rawTranslations = $this->mergeWithUnmanaged(
+                $existing,
+                $this->buildForFile($filteredTranslations, $locale),
+            );
+
+            if ($this->rawTranslationsEqual($existing, $rawTranslations)) {
                 continue;
             }
 
-            $rawTranslations = $this->buildForFile($filteredTranslations, $locale);
+            if (empty($rawTranslations)) {
+                File::delete($this->getFilePath($path, $locale));
+                $counter += $this->countRawDifferences($existing, []);
 
-            $existing = $this->read($path, $locale);
-
-            if ($this->rawTranslationsEqual($existing, $rawTranslations)) {
                 continue;
             }
 
@@ -113,6 +123,27 @@ class JsonFileHandler implements FileHandlerInterface
         }
 
         return $counter;
+    }
+
+    /**
+     * Managed entries come first, in the order of the collection (so sorting
+     * is honoured); unmanaged entries of the existing file follow, in their
+     * original order. Managed entries missing from the collection are dropped.
+     */
+    private function mergeWithUnmanaged(array $existing, array $managed): array
+    {
+        $unmanaged = [];
+
+        foreach ($existing as $key => $value) {
+            // The reader accepts both flat ("group.key") and nested ({"group": {...}})
+            // entries whatever jsonNested says, so both forms count as managed here.
+            if (! $this->isManagedKey((string) $key) && ! $this->isManagedGroup((string) $key)) {
+                $unmanaged[$key] = $value;
+            }
+        }
+
+        // Array union rather than array_merge: numeric-looking keys must not be renumbered.
+        return $managed + $unmanaged;
     }
 
     protected function buildForFile(TranslationCollection $translations, string $locale): array

@@ -2,6 +2,19 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## Unreleased
+
+### Fixed
+
+- **JSON and CSV writes no longer wipe entries outside the configured scope.** `set` / `sync` / `import` / `export` read the destination filtered by `fileNames` and `locales`, then the JSON and CSV handlers rewrote the whole file with that filtered collection: keys of other groups (or plain sentence keys) in a JSON locale file, and rows of other groups or columns of unconfigured locales in the CSV, were silently deleted on every write (e.g. with `--file-names=auth`). Both handlers now replace only the managed entries and carry the rest over; the CSV keeps its existing column order and appends columns for newly configured locales.
+- **Invalid UTF-8 no longer produces an empty JSON file.** `json_encode` returned `false` and the whole locale file was written empty. The writer now throws (`JSON_THROW_ON_ERROR`) before touching the file. JSON output is also written with `JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES`, so `è` is stored as `è` instead of `\u00e8` — existing files are rewritten in the new form on their next change.
+- **Writes outside the configured locales / file names are rejected** with an explicit `InvalidArgumentException` (surfaced by the MCP tools as an error response) instead of being dropped silently with `written: 0`.
+- **`keyDelimiter` other than `.` works again.** Group filters were always called with the default `.` separator, so `get()` returned nothing with a custom delimiter.
+- **Leaf/parent key conflicts are refused up front.** A key used both as a value and as a parent of another key (`auth.a` + `auth.a.b`) crashed the nested PHP/JSON writers with a TypeError or silently overwrote data depending on order. `set()` now fails with a message naming both keys before writing anything.
+- **Null and non-string scalar values no longer crash the readers.** `Translation` accepts a nullable value; the PHP and JSON readers coerce int/float/bool leaves to strings and keep `null`; the DB reader accepts a `NULL` value column; the CSV reader skips locales whose column is missing from the header.
+- **`csvDelimiter` is actually validated against `keyDelimiter`.** The `different:` rule was given a literal value instead of a field name and always passed.
+- **PHP 8.4 deprecation** on `fgetcsv` / `fputcsv` without an explicit `$escape` parameter.
+
 ## v2.6.1 — Boost v2 alignment - 2026-06-16
 
 ### Changed

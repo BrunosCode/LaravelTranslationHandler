@@ -32,6 +32,16 @@ describe('DatabaseHandler get', function () {
         expect(DB::table('translation_keys')->count())->toBe(2);
         expect(DB::table('translation_values')->count())->toBe(4);
     });
+
+    it('keeps a null value instead of failing', function () {
+        $id = DB::table('translation_keys')->insertGetId(['key' => 'test1.none', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('translation_values')->insert(['translation_key_id' => $id, 'locale' => 'en', 'value' => null, 'created_at' => now(), 'updated_at' => now()]);
+
+        $translations = TranslationHandler::getDbHandler()->get();
+
+        expect($translations->count())->toBe(5);
+        expect($translations->whereKey('test1.none')->first()?->value)->toBeNull();
+    });
 })->group('DatabaseHandler');
 
 describe('DatabaseHandler put', function () {

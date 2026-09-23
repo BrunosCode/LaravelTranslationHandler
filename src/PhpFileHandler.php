@@ -4,6 +4,7 @@ namespace BrunosCode\TranslationHandler;
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Concerns\ComparesTranslations;
+use BrunosCode\TranslationHandler\Concerns\NormalizesRawValues;
 use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\FileHandlerInterface;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Process;
 
 class PhpFileHandler implements FileHandlerInterface
 {
-    use ComparesTranslations;
+    use ComparesTranslations, NormalizesRawValues;
 
     public function __construct(
         private TranslationOptions $options
@@ -33,15 +34,15 @@ class PhpFileHandler implements FileHandlerInterface
         return $translations;
     }
 
-    private function build(TranslationCollection $translations, string $key, string $locale, string|array &$value): TranslationCollection
+    private function build(TranslationCollection $translations, string $key, string $locale, mixed $value): TranslationCollection
     {
         if (is_array($value)) {
             foreach ($value as $childKey => $childValue) {
-                $currentKey = $key ? $key.$this->options->keyDelimiter.$childKey : $childKey;
+                $currentKey = $key ? $key.$this->options->keyDelimiter.$childKey : (string) $childKey;
                 $translations = $this->build($translations, $currentKey, $locale, $childValue);
             }
         } else {
-            $translations->addTranslation(new Translation($key, $locale, $value));
+            $translations->addTranslation(new Translation($key, $locale, $this->normalizeRawValue($value, $key)));
         }
 
         return $translations;

@@ -107,7 +107,7 @@ class TranslationCollection extends Collection
 
     public function whereValueContains(string $value): self
     {
-        return $this->filter(fn (Translation $translation) => str_contains($translation->value, $value));
+        return $this->filter(fn (Translation $translation) => str_contains($translation->value ?? '', $value));
     }
 
     public function whereValueIn(array $values): self

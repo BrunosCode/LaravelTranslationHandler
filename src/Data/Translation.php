@@ -18,7 +18,7 @@ class Translation
     public function __construct(
         string $key,
         string $locale,
-        string $value
+        ?string $value
     ) {
         $validator = self::validator([
             'key' => $key,
@@ -34,7 +34,7 @@ class Translation
 
         $this->key = $validated['key'];
         $this->locale = $validated['locale'];
-        $this->value = $validated['value'];
+        $this->value = $validated['value'] ?? null;
     }
 
     public function toArray(): array

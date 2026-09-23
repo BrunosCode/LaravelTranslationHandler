@@ -3,6 +3,7 @@
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
+use Illuminate\Support\Facades\File;
 
 beforeEach(function () {
     $this->prepareJsonTranslations();
@@ -40,6 +41,20 @@ describe('JsonFileHandler get', function () {
         $firstTranslation = $translations->where('key', 'test1.nested.get')->where('locale', 'en')->first();
         expect($firstTranslation)->toBeInstanceOf(Translation::class);
         expect($firstTranslation->value)->toBe('get-1-en');
+    });
+
+    it('coerces numbers and booleans and keeps null values', function () {
+        File::put(lang_path('json-test/en/test-translations.json'), json_encode([
+            'test1.count' => 5,
+            'test1.on' => true,
+            'test1.none' => null,
+        ]));
+
+        $translations = TranslationHandler::getJsonHandler()->get()->whereLocale('en');
+
+        expect($translations->whereKey('test1.count')->first()?->value)->toBe('5');
+        expect($translations->whereKey('test1.on')->first()?->value)->toBe('true');
+        expect($translations->whereKey('test1.none')->first()?->value)->toBeNull();
     });
 })->group('JsonFileHandler');
 

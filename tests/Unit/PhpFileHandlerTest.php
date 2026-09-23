@@ -24,6 +24,25 @@ describe('PhpFileHandler get', function () {
         expect($translations)->toBeInstanceOf(TranslationCollection::class);
         expect($translations->count())->toBe(8);
     });
+
+    test('get should coerce non-string scalars and keep null values', function () {
+        File::put(lang_path('php-test/en/test1.php'), '<?php return ["count" => 5, "ratio" => 1.5, "on" => true, "off" => false, "none" => null];');
+
+        $translations = TranslationHandler::getPhpHandler()->get()->whereLocale('en')->whereGroup('test1');
+
+        expect($translations->whereKey('test1.count')->first()?->value)->toBe('5');
+        expect($translations->whereKey('test1.ratio')->first()?->value)->toBe('1.5');
+        expect($translations->whereKey('test1.on')->first()?->value)->toBe('true');
+        expect($translations->whereKey('test1.off')->first()?->value)->toBe('false');
+        expect($translations->whereKey('test1.none')->first()?->value)->toBeNull();
+    });
+
+    test('get should reject non-scalar leaves with the offending key', function () {
+        File::put(lang_path('php-test/en/test1.php'), '<?php return ["obj" => new stdClass];');
+
+        expect(fn () => TranslationHandler::getPhpHandler()->get())
+            ->toThrow(InvalidArgumentException::class, 'test1.obj');
+    });
 })->group('PhpFileHandler');
 
 describe('PhpFileHandler put', function () {

@@ -31,8 +31,13 @@ class CsvFileHandler implements FileHandlerInterface
         foreach ($rawTranslations as $row) {
             $key = $row['key'];
             foreach ($this->options->locales as $locale) {
-                $value = $row[$locale];
-                $translations->push(new Translation($key, $locale, $value));
+                // A locale column missing from the header means "no value here",
+                // not a malformed file: skip it instead of raising an undefined index.
+                if (! array_key_exists($locale, $row)) {
+                    continue;
+                }
+
+                $translations->push(new Translation($key, $locale, $row[$locale]));
             }
         }
 

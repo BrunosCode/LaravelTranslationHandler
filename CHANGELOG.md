@@ -2,7 +2,7 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
-## Unreleased
+## v2.7.0 — Data-safe writes & fast DB updates - 2026-09-23
 
 ### Performance
 
@@ -24,6 +24,8 @@ All notable changes to `laravel-translation-handler` will be documented in this 
 - **`csvDelimiter` is actually validated against `keyDelimiter`.** The `different:` rule was given a literal value instead of a field name and always passed.
 - **PHP 8.4 deprecation** on `fgetcsv` / `fputcsv` without an explicit `$escape` parameter.
 - **Commands no longer leave the service options narrowed.** `sync` / `import` / `export` (and the deprecated `translation-handler`) set `fileNames` / `locales` on the shared service and never restored them, so in a long-running process (Octane, queue worker, Boost MCP server) the narrowed scope leaked into later calls. Options are now reset in a `finally` block.
+
+**Full Changelog**: https://github.com/BrunosCode/LaravelTranslationHandler/compare/v2.6.1...v2.7.0
 
 ## v2.6.1 — Boost v2 alignment - 2026-06-16
 

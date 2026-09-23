@@ -36,34 +36,57 @@ class TranslationCollection extends Collection
 
     public function addTranslations(TranslationCollection $newTranslations): self
     {
-        $newTranslations->each(function (Translation $newTranslation) {
-            $oldTranslationKey = $this->searchTranslation($newTranslation);
+        $index = $this->indexByKeyAndLocale();
 
-            if ($oldTranslationKey !== false) {
-                return;
+        foreach ($newTranslations as $newTranslation) {
+            $indexKey = $newTranslation->key.'|'.$newTranslation->locale;
+
+            if (isset($index[$indexKey])) {
+                continue;
             }
 
             $this->push($newTranslation);
-        });
+            $index[$indexKey] = true;
+        }
 
         return $this;
     }
 
     public function replaceTranslations(TranslationCollection $newTranslations): self
     {
-        $newTranslations->each(function (Translation $newTranslation) {
-            $oldTranslationKey = $this->searchTranslation($newTranslation);
+        $index = $this->indexByKeyAndLocale();
 
-            if ($oldTranslationKey === false) {
-                $this->push($newTranslation);
+        foreach ($newTranslations as $newTranslation) {
+            $indexKey = $newTranslation->key.'|'.$newTranslation->locale;
 
-                return;
+            if (isset($index[$indexKey])) {
+                $this->put($index[$indexKey], $newTranslation);
+
+                continue;
             }
 
-            $this->put($oldTranslationKey, $newTranslation);
-        });
+            $this->push($newTranslation);
+            $index[$indexKey] = array_key_last($this->items);
+        }
 
         return $this;
+    }
+
+    /**
+     * Offsets of the items keyed by "key|locale", so bulk merges run in
+     * linear time instead of one search() per incoming translation.
+     *
+     * @return array<string, int|string>
+     */
+    private function indexByKeyAndLocale(): array
+    {
+        $index = [];
+
+        foreach ($this->items as $offset => $translation) {
+            $index[$translation->key.'|'.$translation->locale] = $offset;
+        }
+
+        return $index;
     }
 
     public function searchTranslation(Translation $translation): int|bool

@@ -2,6 +2,7 @@
 
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Data\Translation;
+use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use BrunosCode\TranslationHandler\Interfaces\DatabaseHandlerInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -169,6 +170,29 @@ describe('DatabaseHandler put', function () {
                 ->first()
                 ?->value
         )->toBe('new-value');
+    });
+
+    it('leaves values of unconfigured locales alone and keeps their keys', function () {
+        $id = DB::table('translation_keys')->insertGetId(['key' => 'test1.only-de', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('translation_values')->insert(['translation_key_id' => $id, 'locale' => 'de', 'value' => 'nur-de', 'created_at' => now(), 'updated_at' => now()]);
+
+        // Full rewrite of the group without test1.only-de: en/it are managed, de is not.
+        TranslationHandler::getDbHandler()->put(new TranslationCollection([
+            new Translation('test1.get', 'en', 'get-1-en'),
+            new Translation('test1.get', 'it', 'get-1-it'),
+            new Translation('test2.get', 'en', 'get-2-en'),
+            new Translation('test2.get', 'it', 'get-2-it'),
+        ]));
+
+        expect(DB::table('translation_keys')->where('id', $id)->value('deleted_at'))->toBeNull();
+        expect(DB::table('translation_values')->where('translation_key_id', $id)->value('deleted_at'))->toBeNull();
+    });
+
+    it('only touches the locales present in a set() call', function () {
+        TranslationHandler::set(new TranslationCollection([new Translation('test1.new', 'en', 'x')]), TranslationOptions::DB);
+
+        expect(DB::table('translation_values')->whereNull('deleted_at')->count())->toBe(5);
+        expect(DB::table('translation_values')->where('locale', 'it')->whereNull('deleted_at')->count())->toBe(2);
     });
 })->group('DatabaseHandler');
 

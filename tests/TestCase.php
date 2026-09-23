@@ -73,24 +73,6 @@ class TestCase extends Orchestra
         config()->set('database.default', 'sqlite');
     }
 
-    public function prepareService()
-    {
-        $options = new TranslationOptions;
-        TranslationHandler::shouldReceive('getDefaultOptions')->andReturn($options);
-
-        $phpHandler = app($options->phpHandlerClass, [$options]);
-        TranslationHandler::shouldReceive('getPhpHandler')->andReturn($phpHandler);
-
-        $jsonHandler = app($options->jsonHandlerClass, [$options]);
-        TranslationHandler::shouldReceive('getJsonHandler')->andReturn($jsonHandler);
-
-        $csvHandler = app($options->csvHandlerClass, [$options]);
-        TranslationHandler::shouldReceive('getCsvHandler')->andReturn($csvHandler);
-
-        $dbHandler = app($options->dbHandlerClass, [$options]);
-        TranslationHandler::shouldReceive('getDbHandler')->andReturn($dbHandler);
-    }
-
     public function preparePhpTranslations()
     {
         $options = TranslationHandler::getOptions();

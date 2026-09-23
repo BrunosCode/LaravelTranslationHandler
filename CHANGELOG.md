@@ -4,6 +4,15 @@ All notable changes to `laravel-translation-handler` will be documented in this 
 
 ## Unreleased
 
+### Performance
+
+- **Single-key writes to the database are now constant in query count.** Changing one translation against a table of 2000 keys × 2 locales went from ~2000 queries (one `UPDATE` per kept key in the soft-delete pass) and ~21 s to 4 queries and ~0.15 s in the test suite. Concretely: `set()` reads and writes only the groups and locales present in the input (the handlers leave everything else untouched); the database handler loads keys and values once per group and shares them across insert/update/soft-delete, decides in PHP what to soft-delete and applies it with a single `UPDATE`; `Translation` no longer builds a `Validator` per instance (same checks, plain PHP); collection merges (`addTranslations` / `replaceTranslations`) run in linear time. A regression test guards the query budget.
+
+### Changed
+
+- **The database handler only manages the configured locales**, like the file handlers already did: values of other locales are never soft-deleted, and a key is only retired when no active value of another locale still depends on it. Previously a key whose only values were in an unconfigured locale was soft-deleted (with its values) on every write to its group.
+- `DatabaseHandler::handleUpdate()` and `handleSoftDelete()` accept an optional pre-loaded `$dbValues` collection; a new public `getCurrentValues()` returns the value rows of the given keys. Existing calls keep working.
+
 ### Fixed
 
 - **JSON and CSV writes no longer wipe entries outside the configured scope.** `set` / `sync` / `import` / `export` read the destination filtered by `fileNames` and `locales`, then the JSON and CSV handlers rewrote the whole file with that filtered collection: keys of other groups (or plain sentence keys) in a JSON locale file, and rows of other groups or columns of unconfigured locales in the CSV, were silently deleted on every write (e.g. with `--file-names=auth`). Both handlers now replace only the managed entries and carry the rest over; the CSV keeps its existing column order and appends columns for newly configured locales.

@@ -143,17 +143,58 @@ class TranslationHandlerService
         // the handlers without a trace (count 0, nothing written): refuse it here.
         $this->assertWithinScope($translations);
 
-        $oldTranslations = $this->get($to, $path);
+        // Only the groups and locales present in the input can change, so read
+        // and write just those: the handlers leave everything else untouched.
+        return $this->withScopedOptions($translations, function () use ($translations, $to, $path, $force) {
+            $oldTranslations = $this->get($to, $path);
 
-        $newTranslations = $force
-            ? $oldTranslations->replaceTranslations($translations)
-            : $oldTranslations->addTranslations($translations);
+            $newTranslations = $force
+                ? $oldTranslations->replaceTranslations($translations)
+                : $oldTranslations->addTranslations($translations);
 
-        // Fail before touching the target: a leaf/parent pair would otherwise
-        // crash (or silently overwrite) the nested PHP and JSON writers.
-        $newTranslations->assertNoParentLeafConflicts($this->getOptions()->keyDelimiter);
+            // Fail before touching the target: a leaf/parent pair would otherwise
+            // crash (or silently overwrite) the nested PHP and JSON writers.
+            $newTranslations->assertNoParentLeafConflicts($this->getOptions()->keyDelimiter);
 
-        return $this->putCollection($to, $newTranslations->sortTranslations(), $path);
+            return $this->putCollection($to, $newTranslations->sortTranslations(), $path);
+        });
+    }
+
+    /**
+     * Run the callback with fileNames and locales narrowed to those touched
+     * by the given translations, restoring the previous options afterwards.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    private function withScopedOptions(TranslationCollection $translations, callable $callback): mixed
+    {
+        $current = $this->getOptions();
+
+        $locales = $translations->map(fn (Translation $t) => $t->locale)->unique()->values()->all();
+
+        $groups = [];
+
+        foreach ($current->fileNames as $fileName) {
+            if ($translations->whereGroup($fileName, $current->keyDelimiter)->isNotEmpty()) {
+                $groups[] = $fileName;
+            }
+        }
+
+        $scoped = clone $current;
+        $scoped->fileNames = $groups;
+        $scoped->locales = $locales;
+
+        $previous = $this->options;
+        $this->options = $scoped;
+
+        try {
+            return $callback();
+        } finally {
+            $this->options = $previous;
+        }
     }
 
     public function sortKeys(string $from, array $locales = [], array $groups = [], ?string $path = null): int

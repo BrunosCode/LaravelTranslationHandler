@@ -83,6 +83,15 @@ describe('SetCommand php', function () {
                 ?->value
         )->toBe('new-translation');
     });
+
+    it('refuses a key outside the configured file names instead of silently writing nothing', function () {
+        $this->artisan('translation-handler:set', [
+            'to' => TranslationOptions::PHP,
+            'key' => 'other.put',
+            'locale' => 'en',
+            'value' => 'put-1-en',
+        ]);
+    })->throws(InvalidArgumentException::class, 'Key "other.put" does not belong to any configured file name');
 })->group('SetCommand', 'PhpFileHandler');
 
 describe('SetCommand json', function () {

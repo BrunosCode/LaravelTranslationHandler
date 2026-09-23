@@ -116,4 +116,26 @@ describe('SetTranslationTool errors', function () {
         expect($response)->toBeInstanceOf(Response::class);
         expect($response->isError())->toBeTrue();
     });
+
+    it('returns an explicit error for a locale that is not configured', function () {
+        $this->preparePhpTranslations();
+
+        $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'key' => 'test1.hello', 'locale' => 'fr', 'value' => 'Bonjour']));
+
+        $this->cleanPhpTranslations();
+
+        expect($response->isError())->toBeTrue();
+        expect((string) $response->content())->toContain('Locale "fr"')->toContain('en, it');
+    });
+
+    it('returns an explicit error for a key outside the configured file names', function () {
+        $this->preparePhpTranslations();
+
+        $response = $this->tool->handle(new Request(['format' => TranslationOptions::PHP, 'key' => 'other.hello', 'locale' => 'en', 'value' => 'Hello']));
+
+        $this->cleanPhpTranslations();
+
+        expect($response->isError())->toBeTrue();
+        expect((string) $response->content())->toContain('Key "other.hello"')->toContain('test1., test2.');
+    });
 })->group('Mcp', 'SetTranslationTool');

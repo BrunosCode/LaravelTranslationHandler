@@ -139,6 +139,10 @@ class TranslationHandlerService
 
     public function set(TranslationCollection $translations, string $to, ?string $path = null, bool $force = false): int
     {
+        // Anything outside the configured locales/fileNames would be dropped by
+        // the handlers without a trace (count 0, nothing written): refuse it here.
+        $this->assertWithinScope($translations);
+
         $oldTranslations = $this->get($to, $path);
 
         $newTranslations = $force
@@ -218,6 +222,42 @@ class TranslationHandlerService
         $this->putCollection($from, new TranslationCollection($survivors->values()->all()), $path);
 
         return $deleted;
+    }
+
+    /**
+     * @throws \InvalidArgumentException when a translation targets a locale or a group that is not configured
+     */
+    private function assertWithinScope(TranslationCollection $translations): void
+    {
+        $options = $this->getOptions();
+
+        foreach ($translations as $translation) {
+            if (! in_array($translation->locale, $options->locales, true)) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Locale "%s" (key "%s") is not configured. Configured locales: %s',
+                    $translation->locale,
+                    $translation->key,
+                    implode(', ', $options->locales),
+                ));
+            }
+
+            $inScope = false;
+
+            foreach ($options->fileNames as $fileName) {
+                if (str_starts_with($translation->key, $fileName.$options->keyDelimiter)) {
+                    $inScope = true;
+                    break;
+                }
+            }
+
+            if (! $inScope) {
+                throw new \InvalidArgumentException(sprintf(
+                    'Key "%s" does not belong to any configured file name. Keys must start with one of: %s',
+                    $translation->key,
+                    implode(', ', array_map(fn (string $f) => $f.$options->keyDelimiter, $options->fileNames)),
+                ));
+            }
+        }
     }
 
     private function putCollection(string $to, TranslationCollection $collection, ?string $path): int

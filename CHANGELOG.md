@@ -2,7 +2,7 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
-## Unreleased
+## v2.8.0 — Laravel 13 & hardening - 2026-10-21
 
 ### Added
 
@@ -24,6 +24,8 @@ All notable changes to `laravel-translation-handler` will be documented in this 
 - The package description in `composer.json` describes the package.
 - `phpunit.xml.dist` no longer configures coverage reports: on PHPUnit 12 they made every run without a coverage driver exit with a warning before any test ran. `composer test-coverage` still passes `--coverage`.
 - CI actions bumped: `actions/checkout` v7, `dependabot/fetch-metadata` v3.1.0.
+
+**Full Changelog**: https://github.com/BrunosCode/LaravelTranslationHandler/compare/v2.7.0...v2.8.0
 
 ## v2.7.0 — Data-safe writes & fast DB updates - 2026-09-23
 

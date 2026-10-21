@@ -37,6 +37,11 @@ return [
     'phpPath' => lang_path(),
 
     'csvDelimiter' => ';',
+    // if csvEscapeFormulas is true, values starting with =, +, -, @, tab or
+    // carriage return are written with a leading ' so Excel / LibreOffice /
+    // Google Sheets do not evaluate them as formulas. The quote is stripped
+    // again when this package reads the file back.
+    'csvEscapeFormulas' => true,
     'csvFileName' => 'translations',
     'csvPath' => storage_path('lang'),
 

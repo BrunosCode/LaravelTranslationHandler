@@ -588,6 +588,7 @@ The `config/translation-handler.php` file contains:
 | `csvPath` | `storage_path('lang')` | Path to CSV files |
 | `csvFileName` | `translations` | CSV file name |
 | `csvDelimiter` | `;` | CSV delimiter (must differ from `keyDelimiter`) |
+| `csvEscapeFormulas` | `true` | Prefix values starting with `=`, `+`, `-`, `@`, tab or carriage return with `'` when writing, so spreadsheets do not run them as formulas. The prefix is removed again when the package reads the file. |
 | `csvHandlerClass` | `CsvFileHandler::class` | Handler class |
 
 ### Database

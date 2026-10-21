@@ -198,7 +198,7 @@ class JsonFileHandler implements FileHandlerInterface
         $filePath = $this->getFilePath($path, $locale);
 
         if (! File::exists(dirname($filePath))) {
-            File::makeDirectory(dirname($filePath), 0777, true);
+            File::makeDirectory(dirname($filePath), 0755, true);
         }
 
         // Encode before touching the file: on invalid UTF-8 json_encode used to

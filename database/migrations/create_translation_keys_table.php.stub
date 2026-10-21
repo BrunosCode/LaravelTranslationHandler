@@ -8,10 +8,16 @@ return new class extends Migration
 {
     public function up()
     {
+        // The table may already exist: TwillTranslationHandler (or an earlier
+        // publish of these stubs) creates it too. Skip instead of failing.
+        if (Schema::hasTable('translation_keys')) {
+            return;
+        }
+
         Schema::create('translation_keys', function (Blueprint $table) {
             $table->id();
 
-            $table->string('key')->unique();  
+            $table->string('key')->unique();
 
             $table->timestamps();
             $table->softDeletes();

@@ -8,13 +8,19 @@ return new class extends Migration
 {
     public function up()
     {
+        // The table may already exist: TwillTranslationHandler (or an earlier
+        // publish of these stubs) creates it too. Skip instead of failing.
+        if (Schema::hasTable('translation_values')) {
+            return;
+        }
+
         Schema::create('translation_values', function (Blueprint $table) {
             $table->id();
 
             $table->foreignId('translation_key_id')->constrained('translation_keys')->onDelete('cascade');
             $table->string('locale', 7);
             $table->unique(['translation_key_id', 'locale']);
-            
+
             $table->text('value')->nullable();
 
             $table->timestamps();

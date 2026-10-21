@@ -71,12 +71,17 @@ class SetTranslationGroupTool extends Tool
                     return Response::error("Subkey \"{$subkey}\" contains an invalid locale key.");
                 }
 
-                $items[] = new Translation($fullKey, $locale, $value);
+                $items[] = [$fullKey, $locale, $value];
             }
         }
 
         try {
-            $collection = new TranslationCollection($items);
+            // Built inside the try: an invalid locale or value must come back
+            // as an error response, not as an uncaught exception.
+            $collection = new TranslationCollection(array_map(
+                fn (array $item) => new Translation(...$item),
+                $items,
+            ));
             $count = TranslationHandler::set($collection, $format, force: $force);
         } catch (\Throwable $e) {
             return Response::error('Failed to set translations: '.$e->getMessage());

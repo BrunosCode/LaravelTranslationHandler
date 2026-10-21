@@ -1,6 +1,6 @@
 {
     "name": "brunoscode/laravel-translation-handler",
-    "description": "This is my package laravel-translation-handler",
+    "description": "Move Laravel translations between PHP files, JSON, CSV and the database, check source code for missing keys, and expose it all to AI agents via Laravel Boost MCP tools.",
     "keywords": [
         "BrunosCode",
         "laravel",
@@ -17,6 +17,8 @@
     ],
     "require": {
         "php": "^8.2",
+        "illuminate/contracts": "^11.0 || ^12.0 || ^13.0",
+        "illuminate/support": "^11.0 || ^12.0 || ^13.0",
         "spatie/laravel-package-tools": "^1.14.0"
     },
     "suggest": {
@@ -25,13 +27,14 @@
     "require-dev": {
         "larastan/larastan": "^3.0",
         "laravel/boost": "^2.0",
-        "laravel/mcp": "^0.8.0",
+        "laravel/framework": "^13.0",
+        "laravel/mcp": "^0.8.0 || ^0.9.5 || ^1.0",
         "laravel/pint": "^1.0",
         "nunomaduro/collision": "^7.8 || ^8.0",
-        "orchestra/testbench": "^9.0 || ^10.0",
-        "pestphp/pest": "^2.34 || ^3.0",
-        "pestphp/pest-plugin-arch": "^2.7 || ^3.0",
-        "pestphp/pest-plugin-laravel": "^2.3 || ^3.0",
+        "orchestra/testbench": "^11.0",
+        "pestphp/pest": "^2.34 || ^3.0 || ^4.0",
+        "pestphp/pest-plugin-arch": "^2.7 || ^3.0 || ^4.0",
+        "pestphp/pest-plugin-laravel": "^2.3 || ^3.0 || ^4.0",
         "phpstan/extension-installer": "^1.1",
         "phpstan/phpstan": "^2.0",
         "phpstan/phpstan-deprecation-rules": "^2.0",

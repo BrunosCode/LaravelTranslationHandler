@@ -74,6 +74,8 @@ For database-backed translations, run the migrations:
 php artisan migrate
 ```
 
+The migrations skip the `translation_keys` and `translation_values` tables if they already exist, for example when [Twill Translation Handler](https://github.com/BrunosCode/TwillTranslationHandler) created them, so they are safe to run in any order (since v2.8.1).
+
 ## Quick Start
 
 ```bash

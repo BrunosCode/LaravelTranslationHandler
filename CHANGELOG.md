@@ -2,6 +2,14 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.8.1 — Re-runnable migrations - 2026-10-21
+
+### Fixed
+
+- **The published migration stubs skip tables that already exist.** `create_translation_keys_table` and `create_translation_values_table` failed with "table already exists" when the tables had been created first, typically by `brunoscode/twill-translation-handler`, whose migrations create them too, or by an earlier publish of the stubs. Both now return early when the table is present, leaving its data and any extra columns (such as Twill's `published` / `active`) untouched. Migrations already published in an app keep their old content: if one has not run yet and the table may already exist, add the same `if (Schema::hasTable(...)) { return; }` guard to it by hand. Re-publishing would add a second copy with a new timestamp.
+
+**Full Changelog**: https://github.com/BrunosCode/LaravelTranslationHandler/compare/v2.8.0...v2.8.1
+
 ## v2.8.0 — Laravel 13 & hardening - 2026-10-21
 
 ### Added

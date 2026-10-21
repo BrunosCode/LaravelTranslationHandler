@@ -3,6 +3,7 @@
 use BrunosCode\TranslationHandler\Collections\TranslationCollection;
 use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
+use BrunosCode\TranslationHandler\DatabaseHandler;
 use BrunosCode\TranslationHandler\Facades\TranslationHandler;
 use BrunosCode\TranslationHandler\Interfaces\DatabaseHandlerInterface;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -215,5 +216,23 @@ describe('DatabaseHandler delete', function () {
         expect($handler->delete(hardDelete: true))->toBe(4);
         expect(DB::table('translation_keys')->count())->toBe(0);
         expect(DB::table('translation_values')->count())->toBe(0);
+    });
+
+    it('matches groups on the full prefix including the delimiter', function () {
+        $id = DB::table('translation_keys')->insertGetId(['key' => 'test10.get', 'created_at' => now(), 'updated_at' => now()]);
+        DB::table('translation_values')->insert(['translation_key_id' => $id, 'locale' => 'en', 'value' => 'x', 'created_at' => now(), 'updated_at' => now()]);
+
+        expect(TranslationHandler::getDbHandler()->get()->whereKey('test10.get'))->toHaveCount(0);
+    });
+
+    it('treats LIKE wildcards in a group name literally', function () {
+        // "te_t1" must not match "test1": with an unescaped LIKE the underscore
+        // matched any character and the write soft-deleted test1's keys.
+        $handler = new DatabaseHandler(new TranslationOptions($this->config(['fileNames' => ['te_t1']])));
+
+        $handler->put(new TranslationCollection([new Translation('te_t1.key', 'en', 'v')]));
+
+        expect(DB::table('translation_keys')->where('key', 'test1.get')->value('deleted_at'))->toBeNull();
+        expect($handler->get()->pluck('key')->all())->toBe(['te_t1.key']);
     });
 })->group('DatabaseHandler');

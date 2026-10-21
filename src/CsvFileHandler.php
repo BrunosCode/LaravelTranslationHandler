@@ -14,6 +14,9 @@ class CsvFileHandler implements FileHandlerInterface
 {
     use ComparesTranslations, IdentifiesManagedKeys;
 
+    /** Optional leading quotes followed by a character spreadsheets treat as a formula start. */
+    private const FORMULA_PATTERN = "/^'*[=+\\-@\t\r]/";
+
     public function __construct(
         private TranslationOptions $options
     ) {}
@@ -53,16 +56,31 @@ class CsvFileHandler implements FileHandlerInterface
             return [];
         }
 
-        $handler = fopen($filePath, 'r');
+        $handler = @fopen($filePath, 'r');
+
+        if ($handler === false) {
+            throw new \RuntimeException("Unable to open CSV file for reading: {$filePath}");
+        }
 
         $headers = fgetcsv($handler, 0, $this->options->csvDelimiter, escape: '\\');
+
+        if ($headers === false || $headers === [null]) {
+            fclose($handler);
+
+            return [];
+        }
 
         $rawTranslations = [];
 
         $line = 1;
 
-        while ($data = fgetcsv($handler, 0, $this->options->csvDelimiter, escape: '\\')) {
+        while (($data = fgetcsv($handler, 0, $this->options->csvDelimiter, escape: '\\')) !== false) {
             $line++;
+
+            // Blank lines (e.g. a trailing empty line added by an editor) carry no data.
+            if ($data === [null]) {
+                continue;
+            }
 
             if (count($data) <= 1) {
                 throw new \InvalidArgumentException("Invalid CSV at line {$line}: expected at least 2 columns, got ".count($data).'. Check that the delimiter is "'.$this->options->csvDelimiter.'"');
@@ -72,7 +90,15 @@ class CsvFileHandler implements FileHandlerInterface
                 throw new \InvalidArgumentException("Invalid CSV at line {$line}: expected ".count($headers).' columns (matching headers), got '.count($data));
             }
 
-            $rawTranslations[$data[0]] = array_combine($headers, $data);
+            $row = array_combine($headers, $data);
+
+            foreach ($row as $column => $value) {
+                if ($column !== 'key') {
+                    $row[$column] = $this->unescapeFormula($value);
+                }
+            }
+
+            $rawTranslations[$data[0]] = $row;
         }
 
         fclose($handler);
@@ -208,17 +234,55 @@ class CsvFileHandler implements FileHandlerInterface
 
         // check if folder exists
         if (! File::exists(dirname($filePath))) {
-            File::makeDirectory(dirname($filePath), 0777, true);
+            File::makeDirectory(dirname($filePath), 0755, true);
         }
 
-        $csv = fopen($filePath, 'w');
+        $csv = @fopen($filePath, 'w');
+
+        if ($csv === false) {
+            throw new \RuntimeException("Unable to open CSV file for writing: {$filePath}");
+        }
+
         fputcsv($csv, $headers ?? ['key', ...$this->options->locales], $this->options->csvDelimiter, escape: '\\');
 
-        foreach ($translations as $translation) {
-            fputcsv($csv, $translation, $this->options->csvDelimiter, escape: '\\');
+        foreach ($translations as $row) {
+            foreach ($row as $column => $value) {
+                if ($column !== 'key') {
+                    $row[$column] = $this->escapeFormula($value);
+                }
+            }
+
+            fputcsv($csv, $row, $this->options->csvDelimiter, escape: '\\');
         }
 
         return fclose($csv);
+    }
+
+    /**
+     * Prefix values a spreadsheet would evaluate as a formula (leading =, +,
+     * -, @, tab or carriage return) with a single quote, so opening the CSV
+     * in Excel / LibreOffice / Google Sheets cannot execute them. Values that
+     * already start with quotes followed by such a character get one more
+     * quote, so unescapeFormula() restores every value exactly.
+     */
+    protected function escapeFormula(?string $value): ?string
+    {
+        if (! $this->options->csvEscapeFormulas || $value === null || ! preg_match(self::FORMULA_PATTERN, $value)) {
+            return $value;
+        }
+
+        return "'".$value;
+    }
+
+    protected function unescapeFormula(?string $value): ?string
+    {
+        if (! $this->options->csvEscapeFormulas || $value === null || ! str_starts_with($value, "'")) {
+            return $value;
+        }
+
+        $unquoted = substr($value, 1);
+
+        return preg_match(self::FORMULA_PATTERN, $unquoted) ? $unquoted : $value;
     }
 
     public function delete(?string $path = null): int

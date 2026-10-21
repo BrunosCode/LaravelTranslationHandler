@@ -140,7 +140,7 @@ class PhpFileHandler implements FileHandlerInterface
         $filePath = $this->getFilePath($path, $filename, $locale);
 
         if (! File::exists(dirname($filePath))) {
-            File::makeDirectory(dirname($filePath), 0777, true);
+            File::makeDirectory(dirname($filePath), 0755, true);
         }
 
         return (bool) File::put(

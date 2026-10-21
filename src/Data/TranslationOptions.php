@@ -2,6 +2,7 @@
 
 namespace BrunosCode\TranslationHandler\Data;
 
+use BrunosCode\TranslationHandler\TranslationChecker;
 use Illuminate\Contracts\Validation\Validator as ValidatorContract;
 use Illuminate\Support\Facades\Validator;
 
@@ -26,6 +27,21 @@ class TranslationOptions
         self::PHP,
         self::CSV,
         self::JSON,
+    ];
+
+    /**
+     * Used when the config has no `check` entry (published before the option
+     * existed). Mirrors the shipped config/translation-handler.php.
+     */
+    const DEFAULT_CHECK = [
+        'backend' => [
+            'paths' => ['app', 'resources/views', 'routes', 'database'],
+            'extensions' => ['php'],
+        ],
+        'frontend' => [
+            'paths' => ['resources/js'],
+            'extensions' => ['ts', 'tsx', 'js', 'jsx'],
+        ],
     ];
 
     public string $keyDelimiter;
@@ -70,6 +86,8 @@ class TranslationOptions
 
     public string $csvDelimiter;
 
+    public bool $csvEscapeFormulas;
+
     /** @var array<string, array{paths: string[], extensions: string[]}> */
     public array $check;
 
@@ -112,23 +130,25 @@ class TranslationOptions
         $this->phpPint = $validated['phpPint'] ?? false;
 
         $this->jsonPath = $validated['jsonPath'];
-        $this->jsonFileName = $validated['jsonFileName'];
-        $this->jsonNested = $validated['jsonNested'];
-        $this->jsonFormat = $validated['jsonFormat'];
+        // jsonFileName, jsonNested, jsonFormat, csvEscapeFormulas, check,
+        // checkIncludeFrameworkKeys and checkerClass are optional with the
+        // shipped defaults, like phpPint above: a config published (or cached)
+        // before an option existed keeps working after upgrade.
+        $this->jsonFileName = $validated['jsonFileName'] ?? null;
+        $this->jsonNested = $validated['jsonNested'] ?? false;
+        $this->jsonFormat = $validated['jsonFormat'] ?? true;
 
         $this->csvPath = $validated['csvPath'];
         $this->csvFileName = $validated['csvFileName'];
         $this->csvDelimiter = $validated['csvDelimiter'];
+        $this->csvEscapeFormulas = $validated['csvEscapeFormulas'] ?? true;
 
         // Read check/checkerClass from the raw config so the full structure
         // (including optional per-side `patterns`) is preserved — validated()
-        // only returns the leaves it has explicit rules for. Both are required
-        // by the validator above, so they are guaranteed to be present here.
-        $this->check = $config['check'];
-        // Optional with a default, like phpPint above, so configs published
-        // before this option existed keep working after upgrade.
+        // only returns the leaves it has explicit rules for.
+        $this->check = $config['check'] ?? self::DEFAULT_CHECK;
         $this->checkIncludeFrameworkKeys = $validated['checkIncludeFrameworkKeys'] ?? false;
-        $this->checkerClass = $config['checkerClass'];
+        $this->checkerClass = $config['checkerClass'] ?? TranslationChecker::class;
     }
 
     public function validator(array $data): ValidatorContract
@@ -165,16 +185,17 @@ class TranslationOptions
             'phpPint' => 'sometimes|boolean',
 
             'jsonPath' => 'required|string|min:1',
-            'jsonFileName' => 'nullable|string|min:0',
-            'jsonNested' => 'required|boolean',
-            'jsonFormat' => 'required|boolean',
+            'jsonFileName' => 'sometimes|nullable|string|min:0',
+            'jsonNested' => 'sometimes|boolean',
+            'jsonFormat' => 'sometimes|boolean',
 
             'csvPath' => 'required|string|min:1',
             'csvFileName' => 'required|string|min:1',
             // `different:` takes the name of another field, not a literal value.
             'csvDelimiter' => 'required|string|min:1|different:keyDelimiter',
+            'csvEscapeFormulas' => 'sometimes|boolean',
 
-            'check' => 'required|array|min:1',
+            'check' => 'sometimes|array|min:1',
             'check.*' => 'required|array',
             'check.*.paths' => 'present|array',
             'check.*.paths.*' => 'required|string|min:1',
@@ -188,7 +209,7 @@ class TranslationOptions
 
             'checkIncludeFrameworkKeys' => 'sometimes|boolean',
 
-            'checkerClass' => 'required|string|min:1',
+            'checkerClass' => 'sometimes|string|min:1',
         ], [
             'fileNames.*.distinct' => 'Duplicate file name ":input" in fileNames',
             'locales.*.distinct' => 'Duplicate locale ":input" in locales',

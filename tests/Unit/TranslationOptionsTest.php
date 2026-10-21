@@ -73,22 +73,6 @@ describe('TranslationOptions', function () {
         expect((new TranslationOptions)->checkerClass)->toBe(TranslationChecker::class);
     });
 
-    it('throws when the check option is missing', function () {
-        $config = $this->config();
-        unset($config['check']);
-        config()->set('translation-handler', $config);
-
-        new TranslationOptions;
-    })->throws(InvalidArgumentException::class);
-
-    it('throws when the checker class is missing', function () {
-        $config = $this->config();
-        unset($config['checkerClass']);
-        config()->set('translation-handler', $config);
-
-        new TranslationOptions;
-    })->throws(InvalidArgumentException::class);
-
     it('keeps a custom checker class provided via config', function () {
         config()->set('translation-handler', array_merge($this->config(), [
             'checkerClass' => 'App\\Custom\\Checker',
@@ -182,5 +166,25 @@ describe('TranslationOptions', function () {
         $options = new TranslationOptions($this->config(['keyDelimiter' => '.', 'csvDelimiter' => ',']));
 
         expect($options->csvDelimiter)->toBe(',');
+    });
+
+    it('falls back to the shipped defaults for options missing from an older published config', function () {
+        $config = $this->config();
+        unset($config['check'], $config['checkerClass'], $config['jsonFileName'], $config['jsonNested'], $config['jsonFormat'], $config['csvEscapeFormulas']);
+
+        $options = new TranslationOptions($config);
+
+        expect($options->check)->toBe(TranslationOptions::DEFAULT_CHECK);
+        expect($options->checkerClass)->toBe(TranslationChecker::class);
+        expect($options->jsonFileName)->toBeNull();
+        expect($options->jsonNested)->toBeFalse();
+        expect($options->jsonFormat)->toBeTrue();
+        expect($options->csvEscapeFormulas)->toBeTrue();
+    });
+
+    it('keeps DEFAULT_CHECK in sync with the shipped config file', function () {
+        $shipped = require __DIR__.'/../../config/translation-handler.php';
+
+        expect(TranslationOptions::DEFAULT_CHECK)->toBe($shipped['check']);
     });
 })->group('TranslationOptions');

@@ -7,6 +7,7 @@ use BrunosCode\TranslationHandler\Data\Translation;
 use BrunosCode\TranslationHandler\Data\TranslationOptions;
 use BrunosCode\TranslationHandler\Interfaces\DatabaseHandlerInterface;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -26,7 +27,7 @@ class DatabaseHandler implements DatabaseHandlerInterface
             ->join('translation_keys', 'translation_keys.id', '=', 'translation_values.translation_key_id')
             ->where(function ($q) {
                 foreach ($this->options->fileNames as $fileName) {
-                    $q->orWhere('translation_keys.key', 'like', $fileName.'%');
+                    $this->whereKeyStartsWith($q, 'translation_keys.key', $fileName.$this->options->keyDelimiter, 'or');
                 }
             })
             ->whereIn('translation_values.locale', $this->options->locales)
@@ -77,8 +78,24 @@ class DatabaseHandler implements DatabaseHandlerInterface
     public function getCurrentKeys(Connection $db, ?string $filename = null): Collection
     {
         return $db->table('translation_keys')
-            ->when(! empty($filename), fn ($q) => $q->where('key', 'like', $filename.$this->options->keyDelimiter.'%'))
+            ->when(! empty($filename), fn ($q) => $this->whereKeyStartsWith($q, 'key', $filename.$this->options->keyDelimiter))
             ->get();
+    }
+
+    /**
+     * Prefix match with LIKE, escaping the LIKE wildcards (% and _) a group
+     * name or delimiter may contain. `ESCAPE '!'` is portable across MySQL,
+     * PostgreSQL, SQLite and SQL Server, unlike a backslash default.
+     */
+    protected function whereKeyStartsWith(Builder $query, string $column, string $prefix, string $boolean = 'and'): Builder
+    {
+        $escaped = str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $prefix);
+
+        return $query->whereRaw(
+            $query->getGrammar()->wrap($column)." LIKE ? ESCAPE '!'",
+            [$escaped.'%'],
+            $boolean,
+        );
     }
 
     /**

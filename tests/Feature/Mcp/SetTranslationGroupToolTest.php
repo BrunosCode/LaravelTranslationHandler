@@ -178,4 +178,15 @@ describe('SetTranslationGroupTool errors', function () {
         expect($response)->toBeInstanceOf(Response::class);
         expect($response->isError())->toBeTrue();
     });
+
+    it('returns an error response for an invalid locale instead of throwing', function () {
+        $response = $this->tool->handle(new Request([
+            'format' => TranslationOptions::PHP,
+            'group' => 'test1',
+            'translations' => ['welcome' => ['x' => 'too short locale']],
+        ]));
+
+        expect($response->isError())->toBeTrue();
+        expect((string) $response->content())->toContain('too short');
+    });
 })->group('Mcp', 'SetTranslationGroupTool');

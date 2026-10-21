@@ -2,6 +2,31 @@
 
 All notable changes to `laravel-translation-handler` will be documented in this file.
 
+## v2.8.0 — Laravel 13 & hardening - 2026-10-21
+
+### Added
+
+- **Laravel 13 support.** `illuminate/contracts` and `illuminate/support` are now declared in `require` (`^11.0 || ^12.0 || ^13.0`), so Composer knows the supported framework range. The test matrix covers Laravel 13 on PHP 8.3 and 8.4, and the suite passes with Pest 4 and `laravel/mcp` 1.x (dev constraints widened accordingly).
+- **`csvEscapeFormulas` option** (default `true`). CSV values starting with `=`, `+`, `-`, `@`, tab or carriage return are written with a leading `'`, so opening an export in Excel, LibreOffice or Google Sheets cannot evaluate them as formulas. The package strips the quote again when it reads the file, and every value round-trips exactly. Set it to `false` to write raw values.
+- PHPStan now runs in CI.
+
+### Fixed
+
+- **Configs published before newer options keep working.** `check`, `checkerClass`, `jsonFileName`, `jsonNested` and `jsonFormat` were required, so a config published (or cached) before an option existed failed validation on every command after an upgrade. They now fall back to the shipped defaults.
+- **The database handler matches groups on the full prefix and escapes LIKE wildcards.** `auth` no longer matches `authors.*`, and a group name containing `%` or `_` no longer matches other groups — which could make a write soft-delete their keys.
+- **CSV reader**: blank lines are skipped, an empty file reads as no translations, and an unreadable file fails with a clear message instead of a TypeError.
+- **`set-translation-group-tool`** returns an error response for an invalid locale instead of throwing.
+- Lang directories are created with `0755` instead of `0777`.
+- The facade docblock lists every service method with its real return type.
+
+### Changed
+
+- The package description in `composer.json` describes the package.
+- `phpunit.xml.dist` no longer configures coverage reports: on PHPUnit 12 they made every run without a coverage driver exit with a warning before any test ran. `composer test-coverage` still passes `--coverage`.
+- CI actions bumped: `actions/checkout` v7, `dependabot/fetch-metadata` v3.1.0.
+
+**Full Changelog**: https://github.com/BrunosCode/LaravelTranslationHandler/compare/v2.7.0...v2.8.0
+
 ## v2.7.0 — Data-safe writes & fast DB updates - 2026-09-23
 
 ### Performance
